@@ -27,12 +27,12 @@ import glob
 import math
 import multiprocessing
 import os
-from pathlib import Path
 import socket
 import subprocess
 import sys
 import tempfile
 import time
+from pathlib import Path
 from timeit import default_timer as timer
 
 import cv2

@@ -1,9 +1,9 @@
 import glob
 import os
-from pathlib import Path
 import platform
 import socket
 import sys
+from pathlib import Path
 
 import pandas as pd
 import torch

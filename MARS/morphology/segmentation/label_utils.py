@@ -2,9 +2,9 @@ import difflib
 import math
 import multiprocessing
 import os
-from pathlib import Path
 import re
 import tempfile
+from pathlib import Path
 from timeit import default_timer as timer
 
 import numpy as np

@@ -14,10 +14,10 @@ Author: Lily DeMars (lvd5263@psu.edu)
 
 import glob
 import os
-from pathlib import Path
 import platform
 import re
 import shutil
+from pathlib import Path
 from time import time as timer
 
 import numpy as np

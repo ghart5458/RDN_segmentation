@@ -2,8 +2,8 @@
 Can we make a compact dashboard across several columns and with a dark theme?"""
 #import gmsh
 import os
-from pathlib import Path
 import subprocess
+from pathlib import Path
 from timeit import default_timer as timer
 
 import pandas as pd

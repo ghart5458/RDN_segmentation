@@ -12,12 +12,12 @@ python -m pip install -U prompt-toolkit~=2.0
 import math
 import multiprocessing
 import os
-from pathlib import Path
 import platform
 import re
 import socket
 import sys
 import time
+from pathlib import Path
 from timeit import default_timer as timer
 
 import numpy as np

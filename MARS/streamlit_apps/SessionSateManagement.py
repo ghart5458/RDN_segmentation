@@ -2,9 +2,9 @@ import base64
 import glob
 import math
 import os
-from pathlib import Path
 import sys
 import time
+from pathlib import Path
 from timeit import default_timer as timer
 
 import SimpleITK as sitk

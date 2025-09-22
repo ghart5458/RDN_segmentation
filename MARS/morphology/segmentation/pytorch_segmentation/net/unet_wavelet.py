@@ -3,6 +3,7 @@
 import numpy as np
 import torch
 from pytorch_wavelets import DWTForward
+from torch import nn
 
 from .unet_parts import DoubleConv, Down, OutConv, Up
 

@@ -10,8 +10,8 @@ Date: 06/21/2019
 
 '''
 
-from pathlib import Path
 import sys
+from pathlib import Path
 from timeit import default_timer as timer
 
 import trimesh

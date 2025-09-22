@@ -1,8 +1,8 @@
 import glob
 import os
-from pathlib import Path
 import shutil
 import subprocess
+from pathlib import Path
 
 import pandas as pd
 import SimpleITK as sitk

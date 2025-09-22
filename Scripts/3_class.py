@@ -1,7 +1,7 @@
-from pathlib import Path
 import platform
 import socket
 import sys
+from pathlib import Path
 from subprocess import PIPE, Popen
 
 if platform.system() == "Windows":

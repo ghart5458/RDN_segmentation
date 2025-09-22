@@ -7,8 +7,8 @@ Author: Nick Stephens nbs49@psu.edu
 '''
 
 import os
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import numpy as np
 import torch
