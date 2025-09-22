@@ -11,7 +11,7 @@ This software requires an NVIDIA graphics card with CUDA support for deep learni
 
 ### Supported Platforms
 - **Windows** with NVIDIA GPU
-- **Linux** with NVIDIA GPU  
+- **Linux** with NVIDIA GPU
 - **macOS** - Not supported (no CUDA support)
 
 ### Prerequisites
@@ -54,7 +54,7 @@ If you prefer manual installation:
    ```bash
    # Windows (PowerShell)
    irm https://astral.sh/uv/install.ps1 | iex
-   
+
    # Linux/macOS
    curl -LsSf https://astral.sh/uv/install.sh | sh
    ```
@@ -87,7 +87,7 @@ For Windows users who prefer a pre-built container, download RDN_segmentation_co
 * **Nicholas B. Stephens** - *Initial work* nbstephens@proton.me
 * **Amiraseed Yazdani** - *Network design*
 * **Yung-Chen Sun** - *Network design*
-* **Sharon Kuo** -  SharonKuo@psu.edu
+* **Sharon Kuo** -  kuo@d.umn.edu
 * **Lily J. Demars** - lvd5263@psu.edu
 * **Tim M. Ryan** - *PI* tmr21@psu.edu
 * **Vishal Monga** - *PI* vum4@psu.edu
