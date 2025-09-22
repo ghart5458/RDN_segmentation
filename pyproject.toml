@@ -8,8 +8,8 @@ authors = [
     {name = "Vishal Monga", email = "vum4@psu.edu"},
 ]
 readme = "README.md"
-license = {text = "GPL-3.0"}
-requires-python = ">=3.8,<3.13"
+license = "GPL-3.0"
+requires-python = ">=3.11,<3.14"
 dependencies = [
     # Core scientific computing
     "numpy>=1.21.0",
@@ -28,8 +28,10 @@ dependencies = [
     # Medical imaging
     "simpleitk>=2.1.0",
     
-    # Deep learning (will be handled by optional dependencies)
-    # PyTorch ecosystem handled below with custom sources
+    # Deep learning - CUDA-enabled PyTorch (required)
+    "torch>=2.5.0,<2.6.0",
+    "torchvision>=0.20.0,<0.21.0",
+    "tensorboard>=2.15.0",
     
     # Data handling
     "h5py>=3.1.0",
@@ -67,19 +69,6 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# PyTorch CPU-only build
-cpu = [
-    "torch>=1.7.0,<2.0.0",
-    "torchvision>=0.8.0,<1.0.0",
-    "tensorboard>=2.4.0",
-]
-
-# PyTorch CUDA build (recommended for training)
-cuda = [
-    "torch>=1.7.0,<2.0.0",
-    "torchvision>=0.8.0,<1.0.0",
-    "tensorboard>=2.4.0",
-]
 
 # Development dependencies
 dev = [
@@ -101,40 +90,30 @@ Repository = "https://github.com/femr-lab/RDN_segmentation"
 Documentation = "https://github.com/femr-lab/RDN_segmentation/blob/main/README.md"
 
 # uv-specific configuration
-[tool.uv]
-conflicts = [
-    [{ extra = "cpu" }, { extra = "cuda" }],
-]
-
-# Configure PyTorch sources for different platforms and accelerators
 [tool.uv.sources]
-torch = [
-    { index = "pytorch-cpu", extra = "cpu" },
-    { index = "pytorch-cuda118", extra = "cuda", marker = "sys_platform == 'win32' or sys_platform == 'linux'" },
-]
-torchvision = [
-    { index = "pytorch-cpu", extra = "cpu" },
-    { index = "pytorch-cuda118", extra = "cuda", marker = "sys_platform == 'win32' or sys_platform == 'linux'" },
-]
+torch = { index = "pytorch-cuda124" }
+torchvision = { index = "pytorch-cuda124" }
 
-# PyTorch index configuration
+# PyTorch CUDA index configuration
 [[tool.uv.index]]
-name = "pytorch-cpu"
-url = "https://download.pytorch.org/whl/cpu"
-explicit = true
-
-[[tool.uv.index]]
-name = "pytorch-cuda118"
-url = "https://download.pytorch.org/whl/cu118"
+name = "pytorch-cuda124"
+url = "https://download.pytorch.org/whl/cu124"
 explicit = true
 
 [build-system]
 requires = ["setuptools>=45", "wheel"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools]
+packages = ["MARS", "Scripts"]
+include-package-data = true
+
+[tool.setuptools.package-dir]
+"" = "."
+
 [tool.black]
 line-length = 88
-target-version = ['py38']
+target-version = ['py311']
 include = '\.pyi?$'
 extend-exclude = '''
 /(
@@ -151,8 +130,10 @@ extend-exclude = '''
 '''
 
 [tool.mypy]
-python_version = "3.8"
+python_version = "3.11"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
 ignore_missing_imports = true
+
+# Add newline at end of file
