@@ -74,10 +74,10 @@ version_check = check_streamlit_versions(tested_version=73)
 check_sitk_version()
 
 if version_check == "below":
-    with st.beta_expander("View/hide warnings"):
+    with st.expander("View/hide warnings"):
         streamlit_minor(tested_version=73, below_above=version_check)
 if version_check == "above":
-    with st.beta_expander("View/hide warnings"):
+    with st.expander("View/hide warnings"):
         streamlit_minor(tested_version=73, below_above=version_check)
 
 
@@ -134,8 +134,8 @@ def main():
         unsegmented_imgs = []
         segmented_imgs = []
 
-        with st.beta_expander("View/hide training data inputs", expanded=True):
-            label_col1, label_col2 = st.beta_columns([1, 1])
+        with st.expander("View/hide training data inputs", expanded=True):
+            label_col1, label_col2 = st.columns([1, 1])
 
             with label_col1:
                 st.header("New unsegmented training data")
@@ -201,7 +201,7 @@ def main():
                     st.write("Please paste in a valid directory")
         "---"
         if state.unsegmented_imgs and state.segmented_imgs:
-            with st.beta_expander("Setup for standardizing labels", expanded=True):
+            with st.expander("Setup for standardizing labels", expanded=True):
                 unseg_dir = Path(state.unsegmented_training)
                 label_dir = Path(state.segmented_training)
                 st.write(f"Standardized unsegmented images will be written to {unseg_dir} as tif")
@@ -212,7 +212,7 @@ def main():
                 segmented_imgs = state.segmented_imgs
 
                 #Begin standardization columns
-                stnd_col1, stnd_col2 = st.beta_columns([1, 1])
+                stnd_col1, stnd_col2 = st.columns([1, 1])
 
                 with stnd_col1:
                     # Convert the unsegmented images to 8bit tif
@@ -267,8 +267,8 @@ def main():
         #state.unsegmented_training is the directory with training data
         #state.segmented_training is the directory with label data
 
-        with st.beta_expander("View/hide training data inputs", expanded=True):
-            names_col1, names_col2 = st.beta_columns([1, 1])
+        with st.expander("View/hide training data inputs", expanded=True):
+            names_col1, names_col2 = st.columns([1, 1])
 
             with names_col1:
                 st.header("New unsegmented training data")
@@ -309,7 +309,7 @@ def main():
 
                 if match_list:
                     state.match_list = match_list
-                    with st.beta_expander("View/hide match information", expanded=False):
+                    with st.expander("View/hide match information", expanded=False):
                         unmatched_labels = {}
                         for label_name in match_list:
                             if not state.unsegmented_training.joinpath(label_name).is_file():
@@ -400,12 +400,12 @@ def main():
         #state.unsegmented_training is the directory with training data
         #state.segmented_training is the directory with label data
 
-        with st.beta_expander("View/hide infomration", expanded=False):
+        with st.expander("View/hide infomration", expanded=False):
             st.info("This is an optional step where we explicitly create variation in our training data."
                     "Althoughr there are internal steps that randomize data augemntation (e.g. skewing, invert, cropping), "
                     "this is still useful if some of the images you are working with have very low grey values.")
 
-        data_aug_1, data_aug_2 = st.beta_columns([1, 1])
+        data_aug_1, data_aug_2 = st.columns([1, 1])
         with data_aug_1:
             st.header("New unsegmented training data")
             training_list = [item.name for item in state.unsegmented_training.rglob("*.tif")]
@@ -476,7 +476,7 @@ def main():
         cuda_mem = int(torch.cuda.get_device_properties(device=state.use_gpu).total_memory)
         cuda_mem = list(_convert_size(sizeBytes=cuda_mem))
 
-        with st.beta_expander("View/hide information"):
+        with st.expander("View/hide information"):
             st.info(
                 f"GPU set to device number {state.use_gpu}: {torch.cuda.get_device_properties(device=state.use_gpu).name}, "
                 f"{cuda_mem[0]} of VRAM")
@@ -495,7 +495,7 @@ def main():
         previous_weight_decay = train_yaml_file["optimizer"]["weight_decay"]
 
         #Columns for the standard settings
-        yaml_col_1, yaml_col_2, yaml_col_3, yaml_col_4 = st.beta_columns([1, 1, 1, 2])
+        yaml_col_1, yaml_col_2, yaml_col_3, yaml_col_4 = st.columns([1, 1, 1, 2])
         with yaml_col_1:
             batch_size = st.text_input("Input batch size (an integer):", f"{previous_batch}")
         with yaml_col_3:
@@ -513,7 +513,7 @@ def main():
 
         #If there are additional optimizer settings then they go under advanced use
         if st.checkbox("Advanced parameters"):
-            yaml2_col_1, yaml2_col_2, yaml2_col_3, yaml2_col_4 = st.beta_columns([1, 1, 1, 1])
+            yaml2_col_1, yaml2_col_2, yaml2_col_3, yaml2_col_4 = st.columns([1, 1, 1, 1])
             with yaml2_col_1:
                 optimizer = st.selectbox("Optimizer", supported_optimizers)
             with yaml2_col_2:
@@ -640,7 +640,7 @@ def main():
             state.hdf5 = hdf5_name
         ("---")
 
-        train_col_1, train_col_2, train_col_3, _train_col_4 = st.beta_columns([1, 1, 2, 1])
+        train_col_1, train_col_2, train_col_3, _train_col_4 = st.columns([1, 1, 2, 1])
         with train_col_1:
             stride = int(st.text_input("Stride size:", 32))
         with train_col_2:
@@ -664,7 +664,7 @@ def main():
                 st.write(state.val_names)
         ("---")
 
-        ratio_col_1, ratio_col_2, _ratio_col_3, _ratio_col_4 = st.beta_columns([2, 2, 1, 1])
+        ratio_col_1, ratio_col_2, _ratio_col_3, _ratio_col_4 = st.columns([2, 2, 1, 1])
 
         with ratio_col_2:
             if st.checkbox("Multithreaded calculation (recommended)"):
@@ -707,7 +707,7 @@ def main():
         #Should probably move this up to the yaml section and put it into state
         timestamp = time.time()
         sub_save_file = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d_%H')
-        config_col_1, config_col_2, config_col_3, config_col_4 = st.beta_columns([1, 1, 1, 2])
+        config_col_1, config_col_2, config_col_3, config_col_4 = st.columns([1, 1, 1, 2])
 
         if st.checkbox("Load training configuration!"):
             with open(new_train_yaml_name) as file:
@@ -957,7 +957,7 @@ def main():
             train_data = validate_yaml["path"]["data_path"]
             validation_csv = validate_yaml["csv_path"]["val"]
 
-            config_col_1, config_col_2, config_col_3 = st.beta_columns([1, 1, 2])
+            config_col_1, config_col_2, config_col_3 = st.columns([1, 1, 2])
             with config_col_1:
                 st.header("Graphics card")
                 st.info(f"GPU Validation ID: {gpu_ID}")
@@ -977,7 +977,7 @@ def main():
                     st.error("Can't find validation data, is the path correct?")
 
             model_directory = str(train_data).replace("dataset.hdf5", "new_model")
-            with st.beta_expander("View hide/validation choices", expanded=True):
+            with st.expander("View hide/validation choices", expanded=True):
                 model_directory = [str(e) for e in Path(model_directory).iterdir() if e.is_dir()]
                 model_directory.sort(key=os.path.getctime, reverse=True)
                 model_validation_directory = st.selectbox("Select model directory (Likely the most recent)",
@@ -1054,7 +1054,7 @@ def main():
             st.write('Validating is finished.')
 
             st.balloons()
-            validation_col1, validation_col2 = st.beta_columns([1, 1])
+            validation_col1, validation_col2 = st.columns([1, 1])
             with validation_col1:
                 st.subheader("Best 3 models per non-bone class:")
                 st.write(class_overlap.head(3))
@@ -1065,7 +1065,7 @@ def main():
 
         #Save the model so people can name it whatever they want
         if state.validated_models:
-            model_col_1, model_col_2, _model_col_3 = st.beta_columns([1, 1, 1])
+            model_col_1, model_col_2, _model_col_3 = st.columns([1, 1, 1])
             #Give the top 10 choices, because why not?
             model_list = list(state.class_overlap_df.index[:10])
             with model_col_1:
@@ -1110,7 +1110,7 @@ def main():
                 state.label_set = label_set
                 state.image_set = image_set
 
-        control_col_1, control_col_2, control_col_3, control_col_4 = st.beta_columns([1, 1, 1, 1])
+        control_col_1, control_col_2, control_col_3, control_col_4 = st.columns([1, 1, 1, 1])
         if state.image_set not in [None, "None"]:
             with control_col_1:
                 view_style = st.radio("View comparisons", ["Side by side", "On top of one another", "Overlay"])
@@ -1119,7 +1119,7 @@ def main():
         else:
             view_style = st.empty()
         if view_style == "Side by side":
-            gallery_col_1, gallery_col_2, _gallery_col_3 = st.beta_columns([1, 1, 1])
+            gallery_col_1, gallery_col_2, _gallery_col_3 = st.columns([1, 1, 1])
             if state.image_set not in [None, "None"]:
                 with gallery_col_1:
                     st.image(state.image_set, width=image_size)
@@ -2110,7 +2110,7 @@ def setup_gpu(device_num, state):
     elif device_num in [False, None]:
         st.error("GPU not found!")
     elif device_num == "multiple":
-        with st.beta_expander("Select gpu"):
+        with st.expander("Select gpu"):
             st.write("Multiple gpu's found")
             st.write("Look at you with the sweet setup... :smile:")
             num_gpus = torch.cuda.device_count()

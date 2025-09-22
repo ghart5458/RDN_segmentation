@@ -44,7 +44,7 @@ import streamlit as st
 import torch
 import vtk
 from PIL import Image, ImageColor
-from streamlit import StreamlitAPIException, caching
+# Removed deprecated StreamlitAPIException and caching imports
 
 # Removed deprecated streamlit internal imports
 
@@ -99,49 +99,87 @@ try:
         initial_sidebar_state="auto",
     )
 except AttributeError:
-    st.beta_set_page_config(
+    st.set_page_config(
         page_title="RDN Segmentation",
         page_icon=tab_logo,
         layout="wide",
         initial_sidebar_state="auto",
     )
 
-# Check the version
-# Check the version
-streamlit_version = st.__version__.split(".")
-streamlit_major = int(streamlit_version[0])
-streamlit_minor = int(streamlit_version[1])
-streamlit_patch = int(streamlit_version[2])
+# Check library versions
+from packaging import version
 
-if streamlit_minor < 69:
-    st.error(f"The version of streamlit needs to be 0.69+ and this is {st.__version__}")
-    st.error("Please install the newest version using:")
-    with st.echo():
-        "pip install streamlit --upgrade"
+def check_library_versions():
+    """Check if required library versions meet minimum requirements."""
+    min_streamlit = "1.28.0"  # Modern stable version
+    min_sitk = "2.2.0"        # Current SimpleITK version
 
-with st.beta_expander("View warnings", expanded=True):
-    st.info("You can hide warnings by clicking on the minus sign to the top right.")
-    if streamlit_minor > 72:
-        st.warning(
-            f"This version of streamlit is {st.__version__}, which is ahead of the currently tested version."
-            " Some features may not work as anticipated. To get on the same version you can run:"
-        )
-        with st.echo():
-            "pip install streamlit==0.72"
+    warnings = []
 
-    if sitk.SITK_ITK_VERSION_MAJOR < 5:
-        st.warning(
-            "You have an older version of SimpleITK installed in your anaconda environment."
-            "While many functions should be backwards compatiable, it is best to upgrade to SimpleITK 2.0."
-            " If anything doesn't seem to work please contact me through my github https://github.com/NBStephens/ or "
-            "email me at nbs49@psu.edu"
-        )
+    # Check Streamlit version
+    current_st = st.__version__
+    if version.parse(current_st) < version.parse(min_streamlit):
+        warnings.append({
+            "type": "error",
+            "message": f"Streamlit {current_st} is too old. Minimum required: {min_streamlit}",
+            "fix": "uv pip install --upgrade streamlit"
+        })
+
+    # Check SimpleITK version
+    current_sitk = sitk.Version.VersionString()
+    if version.parse(current_sitk) < version.parse(min_sitk):
+        warnings.append({
+            "type": "warning",
+            "message": f"SimpleITK {current_sitk} is outdated. Recommended: {min_sitk}+",
+            "fix": "uv pip install --upgrade SimpleITK"
+        })
+
+    return warnings
+
+# Display version warnings if any
+version_warnings = check_library_versions()
+if version_warnings:
+    with st.expander("Version Compatibility", expanded=bool([w for w in version_warnings if w["type"] == "error"])):
+        for warning in version_warnings:
+            if warning["type"] == "error":
+                st.error(warning["message"])
+                st.code(warning["fix"])
+            else:
+                st.warning(warning["message"])
+                st.code(warning["fix"])
+
+def initialize_session_state():
+    """Initialize session state variables with defaults."""
+    if "model_path" not in st.session_state:
+        st.session_state.model_path = ""
+    if "model" not in st.session_state:
+        st.session_state.model = ""
+    if "input_path" not in st.session_state:
+        st.session_state.input_path = ""
+    if "input_type" not in st.session_state:
+        st.session_state.input_type = "mhd"
+    if "output_path" not in st.session_state:
+        st.session_state.output_path = ""
+    if "out_type" not in st.session_state:
+        st.session_state.out_type = "mhd"
+    if "use_gpu" not in st.session_state:
+        st.session_state.use_gpu = 0
+    if "cuda_mem" not in st.session_state:
+        st.session_state.cuda_mem = ""
+    if "net" not in st.session_state:
+        st.session_state.net = None
+    if "twoD_to_threeD" not in st.session_state:
+        st.session_state.twoD_to_threeD = False
+    if "parm_file" not in st.session_state:
+        st.session_state.parm_file = ""
+
 
 # Defines the body of the gui
 def main():
     """Streamlit GUI to perform segmentation of grey value images using a trained RDN 3-class segmentation network
     implemented in pytorch. Reading and writing of values is predominantly handled with SimpleITK.
     """
+    initialize_session_state()
     current_user = _get_user()
 
     # Load in the logo
@@ -159,9 +197,6 @@ def main():
         "Batch meshing": page_batch_meshing,
     }
 
-    # Saves settings between pages.
-    state = _get_state()
-
     page = st.sidebar.radio("Navigation:", tuple(pages.keys()))
 
     ###
@@ -169,16 +204,16 @@ def main():
 
     # Button to save state values
     if st.sidebar.button("Save settings"):
-        save_state_values(state=state, user=current_user)
+        save_state_values(user=current_user)
 
     # Button to update graphics card information
     if st.sidebar.button("Initialize GPU"):
-        initiate_cuda(state)
+        initiate_cuda()
 
     # Launch notepad++ on windows.
     if st.sidebar.button("Parameter notepad++"):
-        if state.parm_file:
-            parm_file_loc = Path(state.parm_file).as_posix()
+        if st.session_state.parm_file:
+            parm_file_loc = Path(st.session_state.parm_file).as_posix()
             subprocess.run(f'start notepad++ "{parm_file_loc!s}"', check=False, shell=True)
         else:
             st.warning("No parameter file set, opening notepad++ instead")
@@ -186,8 +221,8 @@ def main():
 
     if st.sidebar.button("Parameter Sublime Text"):
         sublime_dir = Path(r"C:\Program Files\Sublime Text 3\subl.exe")
-        if state.parm_file:
-            parm_file_loc = Path(state.parm_file).as_posix()
+        if st.session_state.parm_file:
+            parm_file_loc = Path(st.session_state.parm_file).as_posix()
             command = subprocess.run(
                 f'"{sublime_dir!s}" "{parm_file_loc!s}"', check=False, shell=True
             )
@@ -208,17 +243,19 @@ def main():
 
     # Button to clear state values
     if st.sidebar.button("Clear settings"):
-        state.clear()
-        st.write("Settings cleared.")
+        # Clear session state keys
+        keys_to_clear = ['model_path', 'model', 'input_path', 'output_path', 'net', 'parm_file']
+        for key in keys_to_clear:
+            if key in st.session_state:
+                del st.session_state[key]
+        st.success("Settings cleared!")
+        st.rerun()
 
-    # Display the selected page with the session state
-    pages[page](state)
-
-    # Mandatory to avoid rollbacks with widgets, must be called at the end of your app
-    state.sync()
+    # Display the selected page
+    pages[page]()
 
 
-def page_settings(state):
+def page_settings():
     """Page to define the settings for the segmentation. If using batch mode, a parameter file is needed.
 
     """
@@ -243,14 +280,14 @@ def page_settings(state):
     #    st.markdown("3) Paste the location of the parameter file and select the csv")
 
     # Writes and info cell with the graphics card infromation.
-    if state.cuda_mem is None:
+    if st.session_state.cuda_mem is None:
         st.error("GPU not initialized!")
     else:
         st.write(
-            f"Segmenting with {torch.cuda.get_device_name(state.use_gpu)}, {state.cuda_mem} of memory."
+            f"Segmenting with {torch.cuda.get_device_name(st.session_state.use_gpu)}, {st.session_state.cuda_mem} of memory."
         )
 
-    col1, col2 = st.beta_columns(2)
+    col1, col2 = st.columns(2)
     # Writes out a thing line across the gui page.
     with col1:
         st.write("---")
@@ -262,7 +299,7 @@ def page_settings(state):
             "Only previous path",
             "New model settings",
         ]
-        query_params = st.experimental_get_query_params()
+        query_params = st.query_params
 
         # Query parameters are returned as a list to support multiselect.
         # Get the first item in the list if the query parameter exists.
@@ -272,28 +309,28 @@ def page_settings(state):
         )
 
         if model_settings_activity:
-            st.experimental_set_query_params(
+            st.query_params(
                 activity=model_radio_list.index(model_settings_activity)
             )
 
             if model_settings_activity == "Previous model":
                 if st.button("Load previous model settings"):
-                    restored_state = load_state_values(state, user=current_user)
-                    state.model_path = restored_state.model_path
-                    st.write(state.model_path)
-                    state.model = Path(restored_state.model)
-                    st.write(Path(state.model).parts[-1])
+                    restored_state = load_state_values(user=current_user)
+                    st.session_state.model_path = restored_st.session_state.model_path
+                    st.write(st.session_state.model_path)
+                    st.session_state.model = Path(restored_st.session_state.model)
+                    st.write(Path(st.session_state.model).parts[-1])
 
             if model_settings_activity == "Only previous path":
-                restored_state = load_state_values(state, user=current_user)
-                state.model_path = restored_state.model_path
-                state.model = file_selector(state.model_path, extension="pth")
-                save_state_values(state, current_user)
+                restored_state = load_state_values(user=current_user)
+                st.session_state.model_path = restored_st.session_state.model_path
+                st.session_state.model = file_selector(st.session_state.model_path, extension="pth")
+                save_state_values(current_user)
 
             if model_settings_activity == "New model settings":
-                state.model_path = Path(st.text_input("Model location", ""))
-                state.model = file_selector(state.model_path, extension="pth")
-                save_state_values(state, current_user)
+                st.session_state.model_path = Path(st.text_input("Model location", ""))
+                st.session_state.model = file_selector(st.session_state.model_path, extension="pth")
+                save_state_values(current_user)
 
     with col2:
         st.write("---")
@@ -306,7 +343,7 @@ def page_settings(state):
             "Build parameters from directory",
             "Parameters from Medtool par file",
         ]
-        parm_query_params = st.experimental_get_query_params()
+        parm_query_params = st.query_params
 
         # Query parameters are returned as a list to support multiselect.
         # Get the first item in the list if the query parameter exists.
@@ -320,21 +357,21 @@ def page_settings(state):
         )
         if parm_settings_activity == "Previous parameters":
             # If segmenting in batch you can set it the location here.
-            restored_state = load_state_values(state, user=current_user)
-            if str(restored_state.parm_file) != "None" or "nan":
-                state.existing_parm = True
+            load_state_values(user=current_user)
+            if str(st.session_state.parm_file) not in ["None", "nan", ""]:
+                st.session_state.existing_parm = True
 
         if parm_settings_activity == "Load from new location":
-            state.existing_parm = "defining"
+            st.session_state.existing_parm = "defining"
             parm_file_loc = Path(st.text_input("Parameter file location", ""))
-            state.parm_file = file_selector(parm_file_loc, extension=".csv")
+            st.session_state.parm_file = file_selector(parm_file_loc, extension=".csv")
             if st.checkbox("Load and view parameter file", key="99990287"):
-                loaded_parm = read_parameter_file(state.parm_file)
+                loaded_parm = read_parameter_file(st.session_state.parm_file)
                 st.write(loaded_parm)
-                save_state_values(state=state, user=current_user)
+                save_state_values(user=current_user)
 
         if parm_settings_activity == "Build parameters from directory":
-            state.existing_parm = "defining"
+            st.session_state.existing_parm = "defining"
             in_dir_loc = Path(
                 st.text_input("Segmentation input directory ", "")
             )
@@ -352,7 +389,7 @@ def page_settings(state):
                 )
                 st.write(new_parm_file)
                 if st.checkbox("Save parameter file"):
-                    state.existing_parm = "defining"
+                    st.session_state.existing_parm = "defining"
                     parm_file_output = Path(st.text_input("Save directory", ""))
                     parm_file_name = st.text_input(
                         "Save name",
@@ -363,8 +400,8 @@ def page_settings(state):
                         )
                         new_parm_file.to_csv(parm_outname)
                         st.info(f"Parameter file saved as {parm_file_output} :smile:")
-                        state.parm_file = parm_outname
-                        save_state_values(state=state, user=current_user)
+                        st.session_state.parm_file = parm_outname
+                        save_state_values(user=current_user)
 
         if parm_settings_activity == "Parameters from Medtool par file":
             in_dir_loc = Path(st.text_input("Medtool par input directory ", ""))
@@ -383,27 +420,27 @@ def page_settings(state):
             if st.button("Save converted parameter file"):
                 RDN_output = out_dir_loc.joinpath(f"{medtool_par_file[:-4]}_RDN.csv")
                 RDN_parm_file.to_csv(RDN_output, sep=",")
-                state.parm_file = str(RDN_output)
-                save_state_values(state=state, user=current_user)
-    with st.beta_expander("Check parameter file", False):
-        if state.existing_parm == "defining":
+                st.session_state.parm_file = str(RDN_output)
+                save_state_values(user=current_user)
+    with st.expander("Check parameter file", False):
+        if st.session_state.existing_parm == "defining":
             pass
-        elif state.existing_parm:
+        elif st.session_state.existing_parm:
             if st.checkbox("Load and view previous parameter file", False):
                 restored_state = load_state_values(
                     state, user=current_user, verbose=False
                 )
-                parm_file_loc = Path(restored_state.parm_file)
-                state.parm_file = parm_file_loc
-                if str(state.parm_file) == "None":
+                parm_file_loc = Path(restored_st.session_state.parm_file)
+                st.session_state.parm_file = parm_file_loc
+                if str(st.session_state.parm_file) == "None":
                     st.warning(
                         "Couldn't find previous parameters file, please choose location."
                     )
                 else:
-                    st.info(f"Loaded parameter file: {state.parm_file}")
-                    loaded_parm = read_parameter_file(state.parm_file)
+                    st.info(f"Loaded parameter file: {st.session_state.parm_file}")
+                    loaded_parm = read_parameter_file(st.session_state.parm_file)
                     st.write(loaded_parm)
-                    save_state_values(state=state, user=current_user)
+                    save_state_values(user=current_user)
         else:
             st.error("Couldn't find previous parameters file!")
 
@@ -416,13 +453,13 @@ def page_settings(state):
 
 
 # Rescale to prevent overflow
-def page_segmentations(state):
+def page_segmentations():
     """Sets up the single segmentation page
     """
     current_user = _get_user()
-    state.twoD_to_threeD = False
+    st.session_state.twoD_to_threeD = False
 
-    if len(state._state["data"]) == 0:
+    if len(st.session_state._state["data"]) == 0:
         st.error("Must fill out settings!")
 
     st.title("Single segmentation settings:")
@@ -432,7 +469,7 @@ def page_segmentations(state):
         "New input/output settings",
     ]
 
-    single_settings_activity = st.experimental_get_query_params()
+    single_settings_activity = st.query_params
     st.write("---")
     # Query parameters are returned as a list to support multiselect.
     # Get the first item in the list if the query parameter exists.
@@ -449,113 +486,113 @@ def page_segmentations(state):
         restored_state = load_state_values(state, user=current_user)
 
         if st.checkbox("Previous input path", value=True, key="9990363"):
-            if is_state_value_empty(restored_state.input_path, verbose=False):
+            if is_state_value_empty(restored_st.session_state.input_path, verbose=False):
                 st.warning("No saved path found, please enter a new location")
-                state.output_path = Path(st.text_input("Output location", ""))
-                save_state_values(state=state, user=current_user)
+                st.session_state.output_path = Path(st.text_input("Output location", ""))
+                save_state_values(user=current_user)
             else:
-                state.input_path = Path(restored_state.input_path)
-                st.write(state.input_path)
-                save_state_values(state=state, user=current_user)
+                st.session_state.input_path = Path(restored_st.session_state.input_path)
+                st.write(st.session_state.input_path)
+                save_state_values(user=current_user)
         else:
-            state.input_path = Path(st.text_input("Input location", ""))
-            save_state_values(state=state, user=current_user)
+            st.session_state.input_path = Path(st.text_input("Input location", ""))
+            save_state_values(user=current_user)
 
         if st.checkbox("Previous input type", value=True, key="9990376"):
-            state.input_type = restored_state.input_type
-            st.write(state.input_type)
-            save_state_values(state=state, user=current_user)
+            st.session_state.input_type = restored_st.session_state.input_type
+            st.write(st.session_state.input_type)
+            save_state_values(user=current_user)
         else:
             try:
-                state.input_type = st.selectbox(
+                st.session_state.input_type = st.selectbox(
                     "Input file types",
                     supported_file_types,
-                    supported_file_types.index(state.input_type)
-                    if state.input_type
+                    supported_file_types.index(st.session_state.input_type)
+                    if st.session_state.input_type
                     else 0,
                 )
             except ValueError:
-                state.input_type = "mhd"
-            save_state_values(state=state, user=current_user)
+                st.session_state.input_type = "mhd"
+            save_state_values(user=current_user)
 
         if st.checkbox("Previous output path", value=True, key="9990383"):
-            if is_state_value_empty(restored_state.output_path, verbose=False):
+            if is_state_value_empty(restored_st.session_state.output_path, verbose=False):
                 st.warning("No saved path found, please enter a new location")
-                state.output_path = Path(
+                st.session_state.output_path = Path(
                     st.text_input("Output location", "", key="9990393")
                 )
-                save_state_values(state=state, user=current_user)
+                save_state_values(user=current_user)
             else:
-                st.write(state.output_path)
-                save_state_values(state=state, user=current_user)
+                st.write(st.session_state.output_path)
+                save_state_values(user=current_user)
         else:
-            state.output_path = Path(
+            st.session_state.output_path = Path(
                 st.text_input("Output location", "", key="9990420")
             )
-            save_state_values(state=state, user=current_user)
+            save_state_values(user=current_user)
 
         if st.checkbox("Previous output type", value=True):
-            state.out_type = restored_state.out_type
-            st.write(state.out_type)
-            save_state_values(state=state, user=current_user)
+            st.session_state.out_type = restored_st.session_state.out_type
+            st.write(st.session_state.out_type)
+            save_state_values(user=current_user)
         else:
             try:
-                state.out_type = st.selectbox(
+                st.session_state.out_type = st.selectbox(
                     "Select value.",
                     supported_file_types,
-                    supported_file_types.index(state.out_type) if state.out_type else 0,
+                    supported_file_types.index(st.session_state.out_type) if st.session_state.out_type else 0,
                 )
             except ValueError:
-                state.out_type = "mhd"
-            save_state_values(state=state, user=current_user)
+                st.session_state.out_type = "mhd"
+            save_state_values(user=current_user)
 
     if single_settings_activity == "New input/output settings":
-        state.input_path = Path(st.text_input("Input location", ""))
-        if str(state.input_type) == "nan":
-            state.input_type = st.selectbox(
+        st.session_state.input_path = Path(st.text_input("Input location", ""))
+        if str(st.session_state.input_type) == "nan":
+            st.session_state.input_type = st.selectbox(
                 "Input file type", supported_file_types, key="99990420"
             )
         else:
-            st.write(state.input_type)
-            state.input_type = st.selectbox(
+            st.write(st.session_state.input_type)
+            st.session_state.input_type = st.selectbox(
                 "Input file type",
                 supported_file_types,
-                supported_file_types.index(state.input_type) if state.input_type else 0,
+                supported_file_types.index(st.session_state.input_type) if st.session_state.input_type else 0,
             )
-        state.output_path = Path(st.text_input("Output location", ""))
+        st.session_state.output_path = Path(st.text_input("Output location", ""))
 
-        if str(state.out_type) == str(None):
-            state.out_type = st.selectbox("Output file type", supported_file_types)
+        if str(st.session_state.out_type) == str(None):
+            st.session_state.out_type = st.selectbox("Output file type", supported_file_types)
         else:
-            state.out_type = st.selectbox(
+            st.session_state.out_type = st.selectbox(
                 "Output file type",
                 supported_file_types,
-                supported_file_types.index(state.out_type) if state.out_type else 0,
+                supported_file_types.index(st.session_state.out_type) if st.session_state.out_type else 0,
             )
-        save_state_values(state=state, user=current_user)
+        save_state_values(user=current_user)
 
-    if state.input_type in volume_types:
-        st.write(f"Please select {state.input_type} file:")
+    if st.session_state.input_type in volume_types:
+        st.write(f"Please select {st.session_state.input_type} file:")
         individual_seg = file_selector(
-            folder_path=str(state.input_path), extension=f"{state.input_type}"
+            folder_path=str(st.session_state.input_path), extension=f"{st.session_state.input_type}"
         )
         st.info(f"Selected {individual_seg} for segmentation...")
-    elif state.input_type in slice_types:
-        search_dir = Path(state.input_path)
+    elif st.session_state.input_type in slice_types:
+        search_dir = Path(st.session_state.input_path)
         individual_seg_list = glob.glob(
-            str(search_dir.joinpath(f"*.{state.input_type}"))
+            str(search_dir.joinpath(f"*.{st.session_state.input_type}"))
         )
-        st.write(f"Found {len(individual_seg_list)} {state.input_type} files")
+        st.write(f"Found {len(individual_seg_list)} {st.session_state.input_type} files")
         if st.checkbox("Show image file list"):
             st.write(individual_seg_list)
     else:
         st.warning("Must indicate and input file type and make a file selection!")
 
     if st.checkbox("Rescale to 255 prior to segmentation?"):
-        state.rescale_prior = True
+        st.session_state.rescale_prior = True
         if st.checkbox("Check for metal/bright inclusions?"):
             if st.checkbox("View mid-plane histogram?", key="9990438"):
-                if state.input_type in slice_types:
+                if st.session_state.input_type in slice_types:
                     st.error(
                         "Histograms are only supported with volume types at this time."
                     )
@@ -563,22 +600,22 @@ def page_segmentations(state):
                         "Please email the author at nbs49@psu.edu if you want me emphasize adding this."
                     )
                 else:
-                    input_path = Path(state.input_path)
+                    input_path = Path(st.session_state.input_path)
                     input_vol = input_path.joinpath(individual_seg)
                     if st.checkbox("Log scale", key="9990445"):
                         get_midplane_histogram(input_vol, log=True)
                     else:
                         get_midplane_histogram(input_vol, log=False)
 
-            state.check_for_metal = True
-            state.cut_off = st.text_input("Threshold out values above:", 200)
+            st.session_state.check_for_metal = True
+            st.session_state.cut_off = st.text_input("Threshold out values above:", 200)
     else:
-        state.rescale_prior = False
-        state.check_for_metal = False
+        st.session_state.rescale_prior = False
+        st.session_state.check_for_metal = False
 
     st.write("---")
-    in_check = str(state.input_type)
-    out_check = str(state.out_type)
+    in_check = str(st.session_state.input_type)
+    out_check = str(st.session_state.out_type)
 
     _check_for_slice_to_vol(
         state,
@@ -589,30 +626,31 @@ def page_segmentations(state):
         verbose=True,
     )
 
-    if not state.output_path.exists():
-        st.warning(f"{state.output_path} doesn't exist and will be created!")
+    if not st.session_state.output_path.exists():
+        st.warning(f"{st.session_state.output_path} doesn't exist and will be created!")
 
     segmentation_state_values(state)
 
     if st.button("Load model!"):
-        state.net = UNet_Light_RDN(n_channels=1, n_classes=3)
+        st.session_state.net = UNet_Light_RDN(n_channels=1, n_classes=3)
         # Load in the trained model
-        state.net.load_state_dict(
-            torch.load(state.model, map_location=f"cuda:{state.use_gpu}")
+        st.session_state.net.load_state_dict(
+            torch.load(st.session_state.model, map_location=f"cuda:{st.session_state.use_gpu}")
         )
-        state.net.cuda()
-        state.net.eval()
+        st.session_state.net.cuda()
+        st.session_state.net.eval()
         st.info("Model loaded!")
-        save_state_values(state=state, user=current_user)
+        save_state_values(user=current_user)
 
     if st.button("Segment!"):
-        caching.clear_cache()
+        st.cache_data.clear()
+        st.cache_resource.clear()
         failed_images = []
         st.warning(
             ":exclamation: The segmentation will stop if you navigate away from this page or interact with other "
             "buttons :frowning: :exclamation:"
         )
-        net = state.net
+        net = st.session_state.net
         if net is None:
             st.error("You forgot to hit load model!")
             st.info(
@@ -620,26 +658,26 @@ def page_segmentations(state):
                 "with the model you want. Better this than wasting hours segmenting with the wrong thing."
             )
             st.stop()
-        input_path = Path(state.input_path)
-        input_type = state.input_type
+        input_path = Path(st.session_state.input_path)
+        input_type = st.session_state.input_type
 
-        output_path = Path(state.output_path)
-        out_type = state.out_type
+        output_path = Path(st.session_state.output_path)
+        out_type = st.session_state.out_type
 
         if not output_path.exists():
             Path.mkdir(output_path)
 
-        if state.input_type in slice_types:
+        if st.session_state.input_type in slice_types:
             individual_seg_list.sort(key=natural_keys)
             st.write(
                 f"Processing {len(individual_seg_list)} image files for segmentation in {input_path}..."
             )
-            if not bool(state.twoD_to_threeD):
+            if not bool(st.session_state.twoD_to_threeD):
                 three_class_segmentation(
                     input_image=individual_seg_list,
                     outDir=output_path,
                     outType=out_type,
-                    network=state.net,
+                    network=st.session_state.net,
                 )
             else:
                 st.info(
@@ -658,14 +696,14 @@ def page_segmentations(state):
                     )
                 image_vol = rescale_8(image_vol)
 
-                if state.rescale_prior:
-                    if not state.check_for_metal:
+                if st.session_state.rescale_prior:
+                    if not st.session_state.check_for_metal:
                         image_vol = rescale_before_seg(inputImage=image_vol)
                     else:
                         image_vol = rescale_before_seg(
                             inputImage=image_vol,
                             check_for_metal=True,
-                            cut_off=int(state.cut_off),
+                            cut_off=int(st.session_state.cut_off),
                         )
 
                 st.write("Segmenting...")
@@ -680,15 +718,15 @@ def page_segmentations(state):
                     fileFormat=out_type,
                 )
 
-        elif state.input_type in volume_types:
+        elif st.session_state.input_type in volume_types:
             out_name = _get_file_name_from_input(individual_seg, suffix="RDN_seg")
             try:
                 image_vol = read_image(inputImage=individual_seg)
                 image_vol = rescale_8(image_vol)
 
-                if state.rescale_prior is True:
-                    if state.check_for_metal is True:
-                        cut_off = int(state.cut_off)
+                if st.session_state.rescale_prior is True:
+                    if st.session_state.check_for_metal is True:
+                        cut_off = int(st.session_state.cut_off)
                         st.write(
                             f"Threshold for metal/bright inclusions set at {cut_off}"
                         )
@@ -719,11 +757,11 @@ def page_segmentations(state):
         st.write(failed_images)
 
 
-def page_batch_segmentations(state):
+def page_batch_segmentations():
     current_user = _get_user()
     segmentation_batch_values(state)
     try:
-        if not state._state["data"]["model"]:
+        if not st.session_state._state["data"]["model"]:
             st.error("Model not set!")
     except KeyError:
         st.error("Model not set!")
@@ -742,8 +780,8 @@ def page_batch_segmentations(state):
         st.sidebar.markdown("4) Segment!")
 
     st.write("---")
-    state.rescale_prior = False
-    state.check_for_metal = False
+    st.session_state.rescale_prior = False
+    st.session_state.check_for_metal = False
     if st.checkbox("Everything looks ok"):
         st.warning(
             "After hitting 'Segment', hitting other buttons or navigating away from this page will terminate "
@@ -751,26 +789,26 @@ def page_batch_segmentations(state):
         )
 
         if st.checkbox("Rescale to 255 prior to segmentation?"):
-            state.rescale_prior = True
+            st.session_state.rescale_prior = True
             if st.checkbox("Check for metal/bright inclusions?", key="9990619"):
-                state.check_for_metal = True
-                state.cut_off = st.text_input("Threshold out values above:", 200)
+                st.session_state.check_for_metal = True
+                st.session_state.cut_off = st.text_input("Threshold out values above:", 200)
         else:
-            state.rescale_prior = False
-            state.check_for_metal = False
+            st.session_state.rescale_prior = False
+            st.session_state.check_for_metal = False
 
         if st.button("Segment"):
             failed_images = []
-            batch = state.parms
-            net = state.net
-            batch_len = len(state.parms)
+            batch = st.session_state.parms
+            net = st.session_state.net
+            batch_len = len(st.session_state.parms)
             curr_batch = batch_len
             st.sidebar.text(f"Currently segmenting {batch_len} images:")
 
             with st.spinner("Running segmentations..."):
                 for row in batch.itertuples():
                     st.sidebar.text(f"{curr_batch} of {batch_len} remaining.")
-                    state.twoD_to_threeD = False
+                    st.session_state.twoD_to_threeD = False
                     st.write(row.input_path)
                     input_path = Path(row.input_path)
                     input_type = str(row.input_type)
@@ -788,7 +826,7 @@ def page_batch_segmentations(state):
                         volume_types=volume_types,
                     )
 
-                    if state.twoD_to_threeD:
+                    if st.session_state.twoD_to_threeD:
                         image_files = gather_image_files(
                             input_path=input_path, input_type=input_type
                         )
@@ -820,9 +858,9 @@ def page_batch_segmentations(state):
                     else:
                         st.error(f"Input type {input_type} not supported!")
 
-                    if state.rescale_prior is True:
-                        if state.check_for_metal is True:
-                            cut_off = int(state.cut_off)
+                    if st.session_state.rescale_prior is True:
+                        if st.session_state.check_for_metal is True:
+                            cut_off = int(st.session_state.cut_off)
                             st.write(
                                 f"Threshold for metal/bright inclusions set at {cut_off}"
                             )
@@ -849,7 +887,7 @@ def page_batch_segmentations(state):
             if failed_images:
                 st.write("Failed segmentations:", failed_images)
                 failed_images = pd.DataFrame(failed_images)
-                failed_segs = str(Path(state.parm_file).as_posix()).replace(
+                failed_segs = str(Path(st.session_state.parm_file).as_posix()).replace(
                     ".csv", "_failed_segmentations.csv"
                 )
                 failed_images.to_csv(failed_segs)
@@ -861,27 +899,27 @@ def page_batch_segmentations(state):
         )
         st.write("---")
         if st.button("Load model!"):
-            state.net = UNet_Light_RDN(n_channels=1, n_classes=3)
+            st.session_state.net = UNet_Light_RDN(n_channels=1, n_classes=3)
             # Load in the trained model
-            state.net.load_state_dict(
-                torch.load(state.model, map_location=f"cuda:{state.use_gpu}")
+            st.session_state.net.load_state_dict(
+                torch.load(st.session_state.model, map_location=f"cuda:{st.session_state.use_gpu}")
             )
-            state.net.cuda()
-            state.net.eval()
+            st.session_state.net.cuda()
+            st.session_state.net.eval()
             st.info("Model loaded!")
 
         if st.button("Load parameter file"):
-            state.parms = read_parameter_file(state.parm_file)
-            save_state_values(state=state, user=current_user)
+            st.session_state.parms = read_parameter_file(st.session_state.parm_file)
+            save_state_values(user=current_user)
         if st.checkbox("View parameters file"):
-            if state.parms is None:
+            if st.session_state.parms is None:
                 st.error("Please define the parameter file in settings!")
             elif st.checkbox("Wrap style", value=True):
                 st.subheader("Batch parameters")
-                st.table(state.parms.style.highlight_null(null_color="red"))
+                st.table(st.session_state.parms.style.highlight_null(null_color="red"))
             else:
                 st.subheader("Batch parameters")
-                st.dataframe(state.parms.style.highlight_null(null_color="red"))
+                st.dataframe(st.session_state.parms.style.highlight_null(null_color="red"))
 
 
 #####
@@ -891,10 +929,10 @@ def page_batch_segmentations(state):
 #####
 
 
-def page_midslice_viewer(state):
+def page_midslice_viewer():
     _get_user()
     temp_state = _get_state()
-    temp_state.compare_selected = "False"
+    temp_st.session_state.compare_selected = "False"
     st.title("RDN segmentation viewer")
     midslice_radio_list = [
         "Compare single segmentations",
@@ -902,7 +940,7 @@ def page_midslice_viewer(state):
         "View isolated file",
     ]
 
-    midslice_settings_activity = st.experimental_get_query_params()
+    midslice_settings_activity = st.query_params
     # Query parameters are returned as a list to support multiselect.
     # Get the first item in the list if the query parameter exists.
     midslice_default = (
@@ -919,186 +957,187 @@ def page_midslice_viewer(state):
     st.write("---")
     if midslice_settings_activity == "Compare single segmentations":
         if st.checkbox("Use saved input", value=False):
-            st.write(state.input_path)
-            if state.input_path != "None":
-                temp_state.unseg_path = state.input_path
-                temp_state.unseg_type = state.input_type
-                temp_state.unseg_location = file_selector(
-                    folder_path=temp_state.unseg_path,
-                    extension=str(temp_state.unseg_type),
+            st.write(st.session_state.input_path)
+            if st.session_state.input_path != "None":
+                temp_st.session_state.unseg_path = st.session_state.input_path
+                temp_st.session_state.unseg_type = st.session_state.input_type
+                temp_st.session_state.unseg_location = file_selector(
+                    folder_path=temp_st.session_state.unseg_path,
+                    extension=str(temp_st.session_state.unseg_type),
                 )
 
-                st.write(f"Unsegmented file: {temp_state.unseg_location}")
+                st.write(f"Unsegmented file: {temp_st.session_state.unseg_location}")
             else:
                 st.error("No saved unsegmented input path found")
         else:
-            temp_state.unseg_path = Path(
+            temp_st.session_state.unseg_path = Path(
                 st.text_input("Unsegmented input path")
             )
-            temp_state.unseg_type = st.selectbox(
+            temp_st.session_state.unseg_type = st.selectbox(
                 "Unsegmetned file type", supported_file_types
             )
-            temp_state.unseg_location = file_selector(
-                folder_path=temp_state.unseg_path, extension=str(temp_state.unseg_type)
+            temp_st.session_state.unseg_location = file_selector(
+                folder_path=temp_st.session_state.unseg_path, extension=str(temp_st.session_state.unseg_type)
             )
         if st.checkbox("Use saved output", value=False):
-            if str(state.output_path) == "None" or str(state.output_path) == ".":
+            if str(st.session_state.output_path) == "None" or str(st.session_state.output_path) == ".":
                 st.error("No saved segmented output path found")
             else:
-                temp_state.seg_path = state.output_path
-                temp_state.seg_type = state.out_type
-                temp_state.seg_location = file_selector(
-                    folder_path=temp_state.seg_path,
-                    extension=str(temp_state.seg_type),
+                temp_st.session_state.seg_path = st.session_state.output_path
+                temp_st.session_state.seg_type = st.session_state.out_type
+                temp_st.session_state.seg_location = file_selector(
+                    folder_path=temp_st.session_state.seg_path,
+                    extension=str(temp_st.session_state.seg_type),
                     unique_key="9990722",
                 )
 
         else:
-            temp_state.seg_path = Path(st.text_input("Segmented input path"))
-            temp_state.seg_type = st.selectbox(
+            temp_st.session_state.seg_path = Path(st.text_input("Segmented input path"))
+            temp_st.session_state.seg_type = st.selectbox(
                 "Segmented file type", supported_file_types
             )
-            temp_state.seg_location = file_selector(
-                folder_path=temp_state.seg_path,
-                extension=str(temp_state.seg_type),
+            temp_st.session_state.seg_location = file_selector(
+                folder_path=temp_st.session_state.seg_path,
+                extension=str(temp_st.session_state.seg_type),
                 unique_key="999688",
             )
 
     if midslice_settings_activity == "Compare from batch file":
         if st.button("Load parameter file"):
-            if state.parm_file is None:
+            if st.session_state.parm_file is None:
                 pass
             else:
-                temp_state.parm_file = state.parm_file
-                temp_state.batch_df = read_parameter_file(temp_state.parm_file)
+                temp_st.session_state.parm_file = st.session_state.parm_file
+                temp_st.session_state.batch_df = read_parameter_file(temp_st.session_state.parm_file)
 
         if st.checkbox("View parameter file"):
-            st.write("Loaded", (temp_state.parm_file))
+            st.write("Loaded", (temp_st.session_state.parm_file))
             if st.checkbox("Wrap style"):
                 st.subheader("Batch parameters")
-                st.table(temp_state.batch_df)
+                st.table(temp_st.session_state.batch_df)
             else:
                 st.subheader("Batch parameters")
-                st.dataframe(temp_state.batch_df)
+                st.dataframe(temp_st.session_state.batch_df)
 
         st.write("---")
-        st.write(temp_state.batch_df)
-        if temp_state.batch_df is not None:
-            batch_df = temp_state.batch_df
+        st.write(temp_st.session_state.batch_df)
+        if temp_st.session_state.batch_df is not None:
+            batch_df = temp_st.session_state.batch_df
             input_options = list(batch_df["input_path"].unique())
             input_file_options = list(batch_df["input_type"].unique())
             output_options = list(batch_df["output_path"].unique())
             output_file_options = list(batch_df["output_type"].unique())
 
             if len(input_options) > 1:
-                temp_state.unseg_path = st.selectbox(
+                temp_st.session_state.unseg_path = st.selectbox(
                     "Unsegmented location", input_options
                 )
             else:
-                temp_state.unseg_path = input_options[0]
-                # st.info(f"Unsegmented path set to {temp_state.unseg_path}")
+                temp_st.session_state.unseg_path = input_options[0]
+                # st.info(f"Unsegmented path set to {temp_st.session_state.unseg_path}")
 
             if len(input_file_options) > 1:
-                temp_state.unseg_type = st.selectbox(
+                temp_st.session_state.unseg_type = st.selectbox(
                     "Choose file input_type", input_file_options
                 )
             else:
-                temp_state.unseg_type = input_file_options[0]
-                # st.info(f"Unsegmented file type set to {temp_state.unseg_type}")
+                temp_st.session_state.unseg_type = input_file_options[0]
+                # st.info(f"Unsegmented file type set to {temp_st.session_state.unseg_type}")
 
             if len(output_options) > 1:
-                temp_state.seg_path = st.selectbox("Segmented location", output_options)
+                temp_st.session_state.seg_path = st.selectbox("Segmented location", output_options)
             else:
-                temp_state.seg_path = output_options[0]
-                # st.info(f"Segmented path set to {temp_state.seg_path}")
+                temp_st.session_state.seg_path = output_options[0]
+                # st.info(f"Segmented path set to {temp_st.session_state.seg_path}")
 
             if len(output_file_options) > 1:
-                temp_state.seg_type = st.selectbox(
+                temp_st.session_state.seg_type = st.selectbox(
                     "Choose file input_type", output_file_options
                 )
             else:
-                temp_state.seg_type = output_file_options[0]
-                # st.info(f"Unsegmented file type set to {temp_state.seg_type}")
+                temp_st.session_state.seg_type = output_file_options[0]
+                # st.info(f"Unsegmented file type set to {temp_st.session_state.seg_type}")
 
-            temp_state.unseg_location = file_selector(
-                folder_path=temp_state.unseg_path, extension=str(temp_state.unseg_type)
+            temp_st.session_state.unseg_location = file_selector(
+                folder_path=temp_st.session_state.unseg_path, extension=str(temp_st.session_state.unseg_type)
             )
 
             # The unique key is just to circumvent creating two widgets with the same id
-            temp_state.seg_location = file_selector(
-                folder_path=temp_state.seg_path,
-                extension=temp_state.seg_type,
+            temp_st.session_state.seg_location = file_selector(
+                folder_path=temp_st.session_state.seg_path,
+                extension=temp_st.session_state.seg_type,
                 unique_key="999901",
             )
 
     ##
     image_zoom = st.sidebar.text_input("Image scale:", 1.0)
-    if temp_state.unseg_type is None:
+    if temp_st.session_state.unseg_type is None:
         pass
 
-    elif temp_state.unseg_type in slice_types:
-        temp_state.unseg_vol_file = gather_image_files(
-            input_path=temp_state.seg_location, input_type=temp_state.unseg_type
+    elif temp_st.session_state.unseg_type in slice_types:
+        temp_st.session_state.unseg_vol_file = gather_image_files(
+            input_path=temp_st.session_state.seg_location, input_type=temp_st.session_state.unseg_type
         )
         # TODO write this up to work with single slices
-        temp_state.unseg_name = _get_file_name_from_list(temp_state.unseg_vol_file)
+        temp_st.session_state.unseg_name = _get_file_name_from_list(temp_st.session_state.unseg_vol_file)
     else:
-        temp_state.unseg_vol_file = temp_state.unseg_location
+        temp_st.session_state.unseg_vol_file = temp_st.session_state.unseg_location
 
-    if (temp_state.unseg_type is None and temp_state.seg_type is None) or temp_state.unseg_type is None or temp_state.seg_type is None:
+    if (temp_st.session_state.unseg_type is None and temp_st.session_state.seg_type is None) or temp_st.session_state.unseg_type is None or temp_st.session_state.seg_type is None:
         st.write("Please choose your unsegmented and segmented files to compare")
-    elif str(temp_state.unseg_type) != "nan":
-        st.write(temp_state.unseg_vol_file)
-        temp_state.unseg_type = temp_state.unseg_type
-        if str(temp_state.unseg_vol_file) != "None":
+    elif str(temp_st.session_state.unseg_type) != "nan":
+        st.write(temp_st.session_state.unseg_vol_file)
+        temp_st.session_state.unseg_type = temp_st.session_state.unseg_type
+        if str(temp_st.session_state.unseg_vol_file) != "None":
             st.info(
-                f"{Path(temp_state.unseg_vol_file)} ready to load :smile:"
+                f"{Path(temp_st.session_state.unseg_vol_file)} ready to load :smile:"
             )
     st.write("---")
     view_style = st.radio("Views:", ["Comparative", "Single view"])
 
     if st.button("Clear comparison"):
-        caching.clear_cache()
-        temp_state.unseg_vol_file = ""
-        temp_state.stack_loaded = False
+        st.cache_data.clear()
+        st.cache_resource.clear()
+        temp_st.session_state.unseg_vol_file = ""
+        temp_st.session_state.stack_loaded = False
 
     if view_style == "Comparative":
         if st.checkbox("View comparison", key="9990827"):
-            if temp_state.unseg_vol_file == "":
+            if temp_st.session_state.unseg_vol_file == "":
                 st.error("Please select an input and output")
                 st.stop()
             with st.spinner("Loading volumes..."):
-                if temp_state.unseg_type in slice_types:
-                    temp_state.stack_loaded = True
-                    stack_input = Path(temp_state.unseg_location)
+                if temp_st.session_state.unseg_type in slice_types:
+                    temp_st.session_state.stack_loaded = True
+                    stack_input = Path(temp_st.session_state.unseg_location)
                     stack_list = glob.glob(
-                        str(stack_input.joinpath(f"*.{temp_state.unseg_type}"))
+                        str(stack_input.joinpath(f"*.{temp_st.session_state.unseg_type}"))
                     )
                     stack_list.sort(key=natural_keys)
                     st.write(
                         f"Processing {len(stack_list)} image files from {stack_input}..."
                     )
 
-                    if temp_state.unseg_type == "dcm":
+                    if temp_st.session_state.unseg_type == "dcm":
                         unseg_vol, _metadata = two_to_three(
-                            image_stack=stack_list, input_type=temp_state.unseg_type
+                            image_stack=stack_list, input_type=temp_st.session_state.unseg_type
                         )
                     else:
                         unseg_vol = two_to_three(
-                            image_stack=stack_list, input_type=temp_state.unseg_type
+                            image_stack=stack_list, input_type=temp_st.session_state.unseg_type
                         )
 
                     unseg_vol = rescale_8(unseg_vol)
-                    seg_vol = generate_single_vol_data(vol_file=temp_state.seg_location)
+                    seg_vol = generate_single_vol_data(vol_file=temp_st.session_state.seg_location)
 
-                elif temp_state.unseg_type in volume_types:
+                elif temp_st.session_state.unseg_type in volume_types:
                     vols = generate_vol_data(
-                        unseg_vol_file=str(temp_state.unseg_vol_file),
-                        seg_vol_file=temp_state.seg_location,
+                        unseg_vol_file=str(temp_st.session_state.unseg_vol_file),
+                        seg_vol_file=temp_st.session_state.seg_location,
                     )
                     unseg_vol, seg_vol = vols
 
-                # unseg_vol = sitk.ReadImage(temp_state.unseg_vol_file)
+                # unseg_vol = sitk.ReadImage(temp_st.session_state.unseg_vol_file)
                 unseg_dims = unseg_vol.GetSize()
 
                 # image_vol = sitk.ReadImage(str(seg_location))
@@ -1109,8 +1148,9 @@ def page_midslice_viewer(state):
                     st.error(
                         f":fearful: {slice_direction} dimension isn't the same for the two images! :fearful:"
                     )
-                    caching.clear_cache()
-                    raise st.ScriptRunner.StopException
+                    st.cache_data.clear()
+                    st.cache_resource.clear()
+                    st.stop()
 
             slice_direction = st.sidebar.selectbox("Slice direction", ["x", "y", "z"])
             d_index = _direction_index(slice_direction)
@@ -1150,14 +1190,9 @@ def page_midslice_viewer(state):
                 overlay_opacity = st.sidebar.slider(
                     label="Overlay opacity", min_value=0.0, max_value=1.0, value=0.5
                 )
-                try:
-                    color = st.sidebar.color_picker(
-                        label="Overlay Color", value="#ff1493"
-                    )
-                except StreamlitAPIException:
-                    color = st.sidebar.beta_color_picker(
-                        label="Overlay Color", value="#ff1493"
-                    )
+                color = st.sidebar.color_picker(
+                    label="Overlay Color", value="#ff1493"
+                )
                 rgb_color = ImageColor.getrgb(str(color))
 
                 bottom_layer = cv2.cvtColor(
@@ -1254,14 +1289,9 @@ def page_midslice_viewer(state):
                         max_value=1.0,
                         value=0.5,
                     )
-                    try:
-                        color = st.sidebar.color_picker(
-                            label="Overlay Color", value="#ff1493"
-                        )
-                    except StreamlitAPIException:
-                        color = st.sidebar.beta_color_picker(
-                            label="Overlay Color", value="#ff1493"
-                        )
+                    color = st.sidebar.color_picker(
+                        label="Overlay Color", value="#ff1493"
+                    )
                     rgb_color = ImageColor.getrgb(str(color))
 
                     bottom_layer_x = cv2.cvtColor(unseg_array_x, cv2.COLOR_GRAY2BGR)
@@ -1318,7 +1348,7 @@ def page_midslice_viewer(state):
         )
         if st.sidebar.checkbox("Setup Sharon's magic mesh button "):
             unseg_file_name = (
-                Path(temp_state.unseg_location).parts[-1].split(".")[0]
+                Path(temp_st.session_state.unseg_location).parts[-1].split(".")[0]
             )
             suggested_name = _get_file_name_from_input(
                 volume_file=unseg_file_name, suffix="Mesh"
@@ -1328,7 +1358,7 @@ def page_midslice_viewer(state):
                 "Mesh type", ["ply", "off", "vtk", "inp", "stl", "obj"]
             )
             mesh_out_dir = st.sidebar.text_input(
-                "Output directory", str(Path(temp_state.seg_path))
+                "Output directory", str(Path(temp_st.session_state.seg_path))
             )
             resample_amount = st.sidebar.selectbox("Resample by", list(range(1, 21)))
             try:
@@ -1377,7 +1407,7 @@ def page_midslice_viewer(state):
             if st.sidebar.button("MESH!"):
                 res = seg_vol.GetSpacing()
                 if resample_amount == 1:
-                    vtk_image = vtk_read_mhd(inputImage=str(temp_state.seg_location))
+                    vtk_image = vtk_read_mhd(inputImage=str(temp_st.session_state.seg_location))
                 else:
                     resampled = seg_vol
                     resample_spacing = float(resample_amount) * res[0]
@@ -1509,42 +1539,42 @@ def page_midslice_viewer(state):
                 st.image(seg, caption=f"{seg_name}", use_column_width=False)
 
 
-def page_batch_meshing(state):
+def page_batch_meshing():
     st.title("Batch RDN Meshing")
     _get_user()
     mesh_state = _get_state()
     if st.sidebar.button("Reload parameter file", key="99991194"):
-        mesh_state.parms = read_parameter_file(state.parm_file)
+        mesh_st.session_state.parms = read_parameter_file(st.session_state.parm_file)
 
     if st.sidebar.button("Help!"):
         st.sidebar.info("Note: TODO.")
 
     st.write("---")
     if st.button("Load parameter file", key="9991105"):
-        mesh_state.parms = read_parameter_file(state.parm_file)
+        mesh_st.session_state.parms = read_parameter_file(st.session_state.parm_file)
     if st.checkbox("View parameters file"):
-        if mesh_state.parms is None:
+        if mesh_st.session_state.parms is None:
             st.error("Please define the parameter file in settings!")
         elif st.checkbox("Wrap style", value=True):
             st.subheader("Batch parameters")
-            st.table(mesh_state.parms.style.highlight_null(null_color="red"))
+            st.table(mesh_st.session_state.parms.style.highlight_null(null_color="red"))
         else:
             st.subheader("Batch parameters")
-            st.dataframe(mesh_state.parms.style.highlight_null(null_color="red"))
+            st.dataframe(mesh_st.session_state.parms.style.highlight_null(null_color="red"))
     st.write("---")
     st.markdown(
         ":rainbow: :sparkles: :rainbow: :sparkles: :rainbow: :sparkles: :rainbow: :sparkles: :rainbow: :sparkles: :rainbow:"
     )
 
     if st.checkbox("Setup Sharon's magic mesh button "):
-        mesh_state.mesh_name_append = st.text_input(
+        mesh_st.session_state.mesh_name_append = st.text_input(
             "Append to mesh name", "_RDN_Mesh", key="9991113"
         )
-        mesh_state.mesh_out_type = st.selectbox(
+        mesh_st.session_state.mesh_out_type = st.selectbox(
             "Mesh type", ["ply", "off", "vtk", "inp", "stl", "obj"]
         )
 
-        if not mesh_state.mesh_out_dir:
+        if not mesh_st.session_state.mesh_out_dir:
             st.write("The output path from the parameter file will be used.")
 
         if st.checkbox("Override output dir?"):
@@ -1552,25 +1582,25 @@ def page_batch_meshing(state):
                 "This is useful if you suspect that you will need to post process a large number of meshes "
                 "with the MARS meshlab app."
             )
-            mesh_state.overide_output = True
-            mesh_state.mesh_out_dir = st.text_input(
-                "Output directory", str(Path(mesh_state.seg_path))
+            mesh_st.session_state.overide_output = True
+            mesh_st.session_state.mesh_out_dir = st.text_input(
+                "Output directory", str(Path(mesh_st.session_state.seg_path))
             )
             try:
-                if not Path(str(mesh_state.mesh_out_dir)).exists():
+                if not Path(str(mesh_st.session_state.mesh_out_dir)).exists():
                     st.warning(
-                        f"{mesh_state.mesh_out_dir} doesn't exist and will be created!"
+                        f"{mesh_st.session_state.mesh_out_dir} doesn't exist and will be created!"
                     )
             except:
                 st.write("Please paste ")
 
         else:
-            mesh_state.overide_output = False
+            mesh_st.session_state.overide_output = False
 
         st.write("---")
         # TODO put in the option to run the connected component filter prior to close
         if st.checkbox("Keep largest voxel structure prior to closing/resampling?"):
-            mesh_state.isolate_largest_voxel = True
+            mesh_st.session_state.isolate_largest_voxel = True
             st.warning(
                 "A connected components filter finds the largest contiguous set of voxels. "
                 "This can take a long time and uses lots of memory, but if elements are really close "
@@ -1581,9 +1611,9 @@ def page_batch_meshing(state):
                 st.info(
                     "Isoalted volume will be saved in the output folder with '_isolated' appended to the name."
                 )
-                mesh_state.save_isolated = True
+                mesh_st.session_state.save_isolated = True
             else:
-                mesh_state.save_isolated = False
+                mesh_st.session_state.save_isolated = False
             if st.checkbox("Additional info", key="999901208"):
                 st.info(
                     "The connected voxel threshold is the number of connected voxels required to be a 'valid' portion"
@@ -1591,15 +1621,15 @@ def page_batch_meshing(state):
                     "This can be much larger than you may expect. A 100 x 100 x 100 volume contains 1 million "
                     "voxels."
                 )
-            mesh_state.min_connect_voxels = int(
+            mesh_st.session_state.min_connect_voxels = int(
                 st.text_input("Minimum connected voxel threshold", 10000, key="99901209")
             )
         else:
-            mesh_state.isolate_largest_voxel = False
-            mesh_state.min_connect_voxels = None
+            mesh_st.session_state.isolate_largest_voxel = False
+            mesh_st.session_state.min_connect_voxels = None
 
         if st.checkbox("Keep largest mesh component?"):
-            mesh_state.keep_largest = True
+            mesh_st.session_state.keep_largest = True
             if st.checkbox("Additional info", key=999901215):
                 st.info(
                     "This occurs after meshing and considers the largest connected faces in a mesh. It is fast, and "
@@ -1607,7 +1637,7 @@ def page_batch_meshing(state):
                     "structure it may be necessary to use this if you want to move directly to remeshing/cleaning."
                 )
         else:
-            mesh_state.keep_largest = False
+            mesh_st.session_state.keep_largest = False
         st.write("---")
 
         # TODO make it keep going if the meshing fails, then provide a list at the end wof which ones failed
@@ -1616,22 +1646,22 @@ def page_batch_meshing(state):
                 st.info(
                     "This is useful if you need distinct parameters for elements of a different size."
                 )
-                mesh_state.resample_column = True
-                mesh_state.resample_amount = 999999
+                mesh_st.session_state.resample_column = True
+                mesh_st.session_state.resample_amount = 999999
                 if st.button("Create resample column", key=1208):
                     _save_altered_parm(
-                        current_state_parm=mesh_state.parm_file,
+                        current_state_parm=mesh_st.session_state.parm_file,
                         new_column="resample_amount",
                         column_value=5,
                         dtype=float,
                     )
             else:
-                mesh_state.resample_amount = st.selectbox(
+                mesh_st.session_state.resample_amount = st.selectbox(
                     "Resample by", list(range(2, 21)), key=99901208
                 )
-                mesh_state.resample_column = False
+                mesh_st.session_state.resample_column = False
         else:
-            mesh_state.resample_amount = 0
+            mesh_st.session_state.resample_amount = 0
 
         st.write("---")
 
@@ -1639,17 +1669,17 @@ def page_batch_meshing(state):
             st.info(
                 "This is useful if you have complex segmentations that won't mesh properly with a single value."
             )
-            mesh_state.threshold_column = True
+            mesh_st.session_state.threshold_column = True
             if st.button("Create threshold column", key=99901208):
                 _save_altered_parm(
-                    current_state_parm=mesh_state.parm_file,
+                    current_state_parm=mesh_st.session_state.parm_file,
                     new_column="mesh_threshold",
                     column_value=128,
                     dtype=int,
                 )
         else:
-            mesh_state.threshold_column = False
-            mesh_state.thresh_amount = st.text_input(
+            mesh_st.session_state.threshold_column = False
+            mesh_st.session_state.thresh_amount = st.text_input(
                 "Segmentation threshold", 128, max_chars=3, key=99901237
             )
         st.write("---")
@@ -1657,33 +1687,33 @@ def page_batch_meshing(state):
         prior_close = str(st.selectbox("Close holes?", ["Yes", "No"]))
         if prior_close == "Yes":
             if st.checkbox("Use closing kernel column?", key=99901232):
-                mesh_state.closing_column = True
+                mesh_st.session_state.closing_column = True
                 if st.button("Create closing kernel column", key=99901234):
                     _save_altered_parm(
-                        current_state_parm=mesh_state.parm_file,
+                        current_state_parm=mesh_st.session_state.parm_file,
                         new_column="closing_kernel",
                         column_value=3,
                         dtype=int,
                     )
             else:
-                mesh_state.prior_close_size = st.selectbox(
+                mesh_st.session_state.prior_close_size = st.selectbox(
                     "Maximum closing kernel size", list(range(1, 26)), key=99901241
                 )
-                mesh_state.closing_column = False
+                mesh_st.session_state.closing_column = False
 
         else:
-            mesh_state.prior_close_size = 0
+            mesh_st.session_state.prior_close_size = 0
 
-        if mesh_state.resample_amount >= 2:
-            mesh_state.fill_holes = str(
+        if mesh_st.session_state.resample_amount >= 2:
+            mesh_st.session_state.fill_holes = str(
                 st.selectbox("Voting fill holes filter?", ["No", "Yes"], key=9991153)
             )
-            if mesh_state.fill_holes == "Yes":
-                mesh_state.voting_fill = True
-                mesh_state.kernel_amount = st.selectbox(
+            if mesh_st.session_state.fill_holes == "Yes":
+                mesh_st.session_state.voting_fill = True
+                mesh_st.session_state.kernel_amount = st.selectbox(
                     "Voting closing kernel size", list(range(2, 21))
                 )
-                mesh_state.majority_amount = st.selectbox(
+                mesh_st.session_state.majority_amount = st.selectbox(
                     "Number of touching voxels required", list(range(0, 30))
                 )
                 st.info(
@@ -1691,11 +1721,11 @@ def page_batch_meshing(state):
                     "slow or resampling is sufficiently high (e.g. spacing of ~ 0.5 spacing)"
                 )
             else:
-                mesh_state.voting_fill = False
+                mesh_st.session_state.voting_fill = False
 
         st.write("---")
         if st.checkbox("Everything is set the way I want", key=9991141):
-            batch = pd.read_csv(mesh_state.parm_file, comment="#")
+            batch = pd.read_csv(mesh_st.session_state.parm_file, comment="#")
             st.warning(
                 "After hitting the 'Mesh!' button, hitting other buttons or navigating away from this page will terminate "
                 "progress. :confounded:"
@@ -1714,39 +1744,39 @@ def page_batch_meshing(state):
                         input_path = Path(row.output_path)
                         out_type = row.output_type
 
-                        if not mesh_state.resample_column:
-                            resample_amount = mesh_state.resample_amount
+                        if not mesh_st.session_state.resample_column:
+                            resample_amount = mesh_st.session_state.resample_amount
                         else:
                             resample_amount = row.resample_amount
 
-                        if mesh_state.overide_output:
-                            mesh_out_dir = Path(mesh_state.mesh_out_dir)
+                        if mesh_st.session_state.overide_output:
+                            mesh_out_dir = Path(mesh_st.session_state.mesh_out_dir)
                             if not mesh_out_dir.exists():
                                 Path.mkdir(mesh_out_dir)
                         else:
                             mesh_out_dir = Path(row.output_path)
 
-                        if mesh_state.threshold_column:
+                        if mesh_st.session_state.threshold_column:
                             thresh_amount = row.mesh_threshold
                         else:
-                            thresh_amount = mesh_state.thresh_amount
+                            thresh_amount = mesh_st.session_state.thresh_amount
 
-                        if mesh_state.closing_column:
+                        if mesh_st.session_state.closing_column:
                             closing_kernel = row.closing_kernel
                         else:
-                            closing_kernel = mesh_state.prior_close_size
+                            closing_kernel = mesh_st.session_state.prior_close_size
 
                         st.info(f"Meshing {input_name}")
                         segmentation_name = input_path.joinpath(
                             f"{input_name}_RDN_seg.{out_type}"
                         )
 
-                        if mesh_state.isolate_largest_voxel:
+                        if mesh_st.session_state.isolate_largest_voxel:
                             seg_vol = read_image(str(segmentation_name), verbose=True)
                             seg_vol = isolate_largest_bone(
-                                seg_vol, min_size=int(mesh_state.min_connect_voxels)
+                                seg_vol, min_size=int(mesh_st.session_state.min_connect_voxels)
                             )
-                            if mesh_state.save_isolated:
+                            if mesh_st.session_state.save_isolated:
                                 isolated_name = f"{input_name}_isolated"
                             else:
                                 isolated_name = "temp_isolated"
@@ -1764,7 +1794,7 @@ def page_batch_meshing(state):
 
                         if (
                             float(resample_amount) == 1.0
-                            and mesh_state.isolate_largest_voxel
+                            and mesh_st.session_state.isolate_largest_voxel
                         ):
                             isolated_seg = input_path.joinpath(
                                 f"{isolated_name}.{out_type}"
@@ -1773,7 +1803,7 @@ def page_batch_meshing(state):
                         elif float(resample_amount) == 1.0:
                             vtk_image = vtk_read_mhd(inputImage=str(segmentation_name))
                         else:
-                            if mesh_state.isolate_largest_voxel:
+                            if mesh_st.session_state.isolate_largest_voxel:
                                 isolated_seg = input_path.joinpath(
                                     f"{isolated_name}.{out_type}"
                                 )
@@ -1819,15 +1849,15 @@ def page_batch_meshing(state):
                                     threads="threads",
                                 )
 
-                            if mesh_state.voting_fill:
+                            if mesh_st.session_state.voting_fill:
                                 st.write("Filling holes...")
                                 resampled = binary_voting_fill_iterative(
                                     inputImage=resampled,
                                     iterations=3,
-                                    radius=int(mesh_state.kernel_amount),
+                                    radius=int(mesh_st.session_state.kernel_amount),
                                     background=0,
                                     foreground=1,
-                                    majority=int(mesh_state.majority_amount),
+                                    majority=int(mesh_st.session_state.majority_amount),
                                     threads="threads",
                                 )
 
@@ -1856,14 +1886,14 @@ def page_batch_meshing(state):
                         vtk_mesh = vtk_MarchingCubes(
                             inputImage=vtk_image,
                             threshold=1,
-                            extract_largest=bool(mesh_state.keep_largest),
+                            extract_largest=bool(mesh_st.session_state.keep_largest),
                         )
                         vtk_mesh = pv.wrap(vtk_mesh)
                         mesh_out = Path(mesh_out_dir).joinpath(
-                            f"{input_name}{mesh_state.mesh_name_append}.{mesh_state.mesh_out_type}"
+                            f"{input_name}{mesh_st.session_state.mesh_name_append}.{mesh_st.session_state.mesh_out_type}"
                         )
                         st.write(f"Writing out {mesh_out}")
-                        if mesh_state.mesh_out_type in ["ply", "vtk", "stl"]:
+                        if mesh_st.session_state.mesh_out_type in ["ply", "vtk", "stl"]:
                             vtk_mesh.save(f"{mesh_out!s}", vtk_mesh)
                         else:
                             pv.save_meshio(f"{mesh_out!s}", vtk_mesh)
@@ -1888,127 +1918,127 @@ def page_batch_meshing(state):
 
 
 def display_state_values(state):
-    if ".pth" in str(state.model):
-        st.info(f"Model path: {state.model}")
+    if ".pth" in str(st.session_state.model):
+        st.info(f"Model path: {st.session_state.model}")
     else:
         st.error("Model path not set!")
 
-    if str(state.parm_file) == "None":
+    if str(st.session_state.parm_file) == "None":
         st.warning("Parameter file not set")
     else:
-        st.info(f"Parameter file: {state.parm_file}")
+        st.info(f"Parameter file: {st.session_state.parm_file}")
 
-    if str(state.input_path) == ".":
+    if str(st.session_state.input_path) == ".":
         pass
     else:
-        st.write("Input path:", state.input_path)
+        st.write("Input path:", st.session_state.input_path)
 
-    st.info(f"Input file type {state.input_type}")
+    st.info(f"Input file type {st.session_state.input_type}")
 
-    if str(state.output_path) == ".":
+    if str(st.session_state.output_path) == ".":
         pass
     else:
-        st.write("Output path:", state.output_path)
+        st.write("Output path:", st.session_state.output_path)
 
-    st.info(f"Output file type {state.out_type}")
+    st.info(f"Output file type {st.session_state.out_type}")
 
 
 def segmentation_state_values(state):
     st.title("RDN 3-class segmentation:")
-    if str(state.cuda_mem) == "None":
+    if str(st.session_state.cuda_mem) == "None":
         st.error("GPU not initialized!")
     else:
         st.info(
-            f"Segmenting with {torch.cuda.get_device_name(state.use_gpu)}, {state.cuda_mem} of memory."
+            f"Segmenting with {torch.cuda.get_device_name(st.session_state.use_gpu)}, {st.session_state.cuda_mem} of memory."
         )
 
-    if ".pth" in str(state.model):
-        st.info(f"Model path: {state.model}")
+    if ".pth" in str(st.session_state.model):
+        st.info(f"Model path: {st.session_state.model}")
     else:
         st.error("Model path not set!")
     st.info(
-        f"Segmentations will be written to {state.output_path!s} in {state.out_type} file format"
+        f"Segmentations will be written to {st.session_state.output_path!s} in {st.session_state.out_type} file format"
     )
 
     _check_for_slice_to_vol(
         state=state,
-        input_type=str(state.input_type),
-        out_type=str(state.out_type),
+        input_type=str(st.session_state.input_type),
+        out_type=str(st.session_state.out_type),
         slice_types=slice_types,
         volume_types=volume_types,
     )
-    if bool(state.twoD_to_three):
+    if bool(st.session_state.twoD_to_three):
         st.info(
-            f"{state.input_type} is assumed to be slices and will be converted to 3d output type: {state.out_type}"
+            f"{st.session_state.input_type} is assumed to be slices and will be converted to 3d output type: {st.session_state.out_type}"
         )
 
 
 def segmentation_batch_values(state):
     st.title("Batch RDN 3-class segmentation:")
-    if str(state.cuda_mem) == "None":
+    if str(st.session_state.cuda_mem) == "None":
         st.error("GPU not initialized!")
     else:
         st.info(
-            f"Segmenting with {torch.cuda.get_device_name(state.use_gpu)}, {state.cuda_mem} of memory."
+            f"Segmenting with {torch.cuda.get_device_name(st.session_state.use_gpu)}, {st.session_state.cuda_mem} of memory."
         )
-    if ".pth" in str(state.model):
-        st.info(f"Model path: {state.model}")
+    if ".pth" in str(st.session_state.model):
+        st.info(f"Model path: {st.session_state.model}")
     else:
         st.error("Model path not set!")
-    st.info(f"Parameter file: {state.parm_file}")
+    st.info(f"Parameter file: {st.session_state.parm_file}")
 
 
 def mesh_batch_values(mesh_state):
-    # st.write(mesh_state._state["data"])
+    # st.write(mesh_st.session_state._state["data"])
     st.title("Batch RDN Meshing:")
-    if not mesh_state.parm_file:
+    if not mesh_st.session_state.parm_file:
         st.error("No parameter file set for meshing!")
     else:
         st.info(
-            f"Meshing volumes contained in the {mesh_state.parm_file} parameter file."
+            f"Meshing volumes contained in the {mesh_st.session_state.parm_file} parameter file."
         )
 
-    if mesh_state.overide_output:
-        st.info(f"Mesh files will be written to {mesh_state.mesh_out_dir}")
+    if mesh_st.session_state.overide_output:
+        st.info(f"Mesh files will be written to {mesh_st.session_state.mesh_out_dir}")
     st.info(
-        f"Mesh file names will have *{mesh_state.mesh_name_append}* appended to each."
+        f"Mesh file names will have *{mesh_st.session_state.mesh_name_append}* appended to each."
     )
-    st.info(f"Mesh files will be written in {mesh_state.mesh_out_type} file format.")
+    st.info(f"Mesh files will be written in {mesh_st.session_state.mesh_out_type} file format.")
 
-    if not mesh_state.resample_amount:
+    if not mesh_st.session_state.resample_amount:
         st.info("No resampling set")
-    elif int(mesh_state.resample_amount) == 999999:
+    elif int(mesh_st.session_state.resample_amount) == 999999:
         st.info(
             "Segmented volume will be resampled according to the parameter files 'resample_amount' column."
         )
     else:
-        st.info(f"Segmented volume will be resampled by {mesh_state.resample_amount}")
+        st.info(f"Segmented volume will be resampled by {mesh_st.session_state.resample_amount}")
 
-    if mesh_state.threshold_column:
+    if mesh_st.session_state.threshold_column:
         st.info(
             "Segmented volumes will be thresholded according to the 'mesh_threshold' column."
         )
     else:
-        st.info(f"Threshold set at {mesh_state.thresh_amount}.")
+        st.info(f"Threshold set at {mesh_st.session_state.thresh_amount}.")
 
-    if mesh_state.closing_column:
+    if mesh_st.session_state.closing_column:
         st.info(
             "Segmented volumes will have a closing filter applied according to the 'closing_kernel' column."
         )
-    elif mesh_state.prior_close_size != 0:
+    elif mesh_st.session_state.prior_close_size != 0:
         st.info(
-            f"Segmentation holes will be closed using a spherical kernel size of {mesh_state.prior_close_size}"
+            f"Segmentation holes will be closed using a spherical kernel size of {mesh_st.session_state.prior_close_size}"
         )
     else:
         st.info("No closing will be performed prior to meshing.")
 
-    if mesh_state.fill_holes == "Yes":
+    if mesh_st.session_state.fill_holes == "Yes":
         st.info(
-            f"Voting closing will of {int(mesh_state.kernel_amount)} will be applied if "
-            f"{int(mesh_state.majority_amount)} voxels are touching."
+            f"Voting closing will of {int(mesh_st.session_state.kernel_amount)} will be applied if "
+            f"{int(mesh_st.session_state.majority_amount)} voxels are touching."
         )
 
-    if mesh_state.keep_largest:
+    if mesh_st.session_state.keep_largest:
         st.info("A mesh of the largest connected elements will be extracted.")
     else:
         st.info("Not extracting the largest connected mesh element.")
@@ -2036,21 +2066,17 @@ def _get_tab_logo():
 
 def _get_user():
     """Internal function to get the username for saving the settings.
-    :return: Returns the operating system username using os.environ
+
+    Returns:
+        str: Username combined with hostname for unique identification
     """
-    # We can't always count on this being launchde from a C: on windows
-    # So we get the current working directory, then if there are back slashes we grab the root drive letter.
-    current = Path.cwd()
-    if "\\" in str(current):
-        windows_drive = str(current.parts[0])
-    pc = socket.gethostname()
-    user = [
-        os.environ["USERNAME"]
-        if str(windows_drive) in os.getcwd()
-        else os.environ["USER"]
-    ]
-    user = f"{user[0]}_{pc}"
-    return user
+    import platform
+
+    # Get username in a cross-platform way
+    username = os.environ.get("USERNAME") or os.environ.get("USER") or "unknown"
+    hostname = socket.gethostname()
+
+    return f"{username}_{hostname}"
 
 
 def _get_file_name_from_list(image_files, suffix=""):
@@ -2082,11 +2108,11 @@ def _check_for_slice_to_vol(
             st.info(
                 " This is assumed to be an image stack and the slices will be converted to a volume output."
             )
-        state.twoD_to_threeD = True
+        st.session_state.twoD_to_threeD = True
         current_user = _get_user()
-        save_state_values(state=state, user=current_user)
+        save_state_values(user=current_user)
     else:
-        state.twoD_to_threeD = False
+        st.session_state.twoD_to_threeD = False
 
 
 def _direction_index(slice_direction="z"):
@@ -2174,39 +2200,39 @@ def get_state_path(current_state, current_user, key, message=""):
     """
     state = current_state
     if st.checkbox("Previous input path", value=True, key=9990363):
-        if is_state_value_empty(state.input_path, verbose=False):
+        if is_state_value_empty(st.session_state.input_path, verbose=False):
             st.warning("No saved path found, please enter a new location")
-            state.output_path = Path(st.text_input("Output location", ""))
-            save_state_values(state=state, user=current_user)
+            st.session_state.output_path = Path(st.text_input("Output location", ""))
+            save_state_values(user=current_user)
         else:
-            state.input_path = Path(state.input_path)
-            st.write(state.input_path)
-            save_state_values(state=state, user=current_user)
+            st.session_state.input_path = Path(st.session_state.input_path)
+            st.write(st.session_state.input_path)
+            save_state_values(user=current_user)
     else:
-        state.input_path = Path(st.text_input("Input location", ""))
-        save_state_values(state=state, user=current_user)
+        st.session_state.input_path = Path(st.text_input("Input location", ""))
+        save_state_values(user=current_user)
 
 
-def save_state_values(state, user):
+def save_state_values(user):
     script_dir = Path(os.path.dirname(os.path.realpath(__file__)))
     saved_dir = script_dir.joinpath("saved_states").joinpath(
-        f"{user}_RDN_saved_state.json"
+        f"{user}_RDN_saved_st.session_state.json"
     )
     session_dict = {
-        "model_path": [str(state.model_path)],
-        "model": [str(state.model)],
-        "input_path": [str(state.input_path)],
-        "input_type": [state.input_type],
-        "output_path": [str(state.output_path)],
-        "out_type": [str(state.out_type)],
-        "parm_file": [str(state.parm_file)],
+        "model_path": [str(st.session_state.model_path)],
+        "model": [str(st.session_state.model)],
+        "input_path": [str(st.session_state.input_path)],
+        "input_type": [st.session_state.input_type],
+        "output_path": [str(st.session_state.output_path)],
+        "out_type": [str(st.session_state.out_type)],
+        "parm_file": [str(st.session_state.parm_file)],
     }
     session_dict = pd.DataFrame.from_dict(session_dict)
     session_dict.to_json(saved_dir)
     st.write(f"Saved settings for {user}!")
 
 
-def load_state_values(state, user, verbose=True):
+def load_state_values(user, verbose=True):
     script_dir = Path(os.path.dirname(os.path.realpath(__file__)))
     saved_dir = script_dir.joinpath("saved_states").joinpath(
         f"{user}_RDN_saved_state.json"
@@ -2214,14 +2240,14 @@ def load_state_values(state, user, verbose=True):
     restored_session = pd.read_json(str(saved_dir))
     if verbose:
         st.write("Restored previous settings")
-    state.model_path = str(restored_session["model_path"][0])
-    state.model = restored_session["model"][0]
-    state.input_path = restored_session["input_path"][0]
-    state.input_type = restored_session["input_type"][0]
-    state.output_path = Path(restored_session["output_path"][0])
-    state.out_type = restored_session["out_type"][0]
-    state.parm_file = restored_session["parm_file"][0]
-    return state
+    st.session_state.model_path = str(restored_session["model_path"][0])
+    st.session_state.model = restored_session["model"][0]
+    st.session_state.input_path = restored_session["input_path"][0]
+    st.session_state.input_type = restored_session["input_type"][0]
+    st.session_state.output_path = Path(restored_session["output_path"][0])
+    st.session_state.out_type = restored_session["out_type"][0]
+    st.session_state.parm_file = restored_session["parm_file"][0]
+    return True  # Return success status
 
 
 def file_selector(folder_path=".", extension="", selectbox_text="", unique_key=""):
@@ -2340,18 +2366,18 @@ def two_to_three(image_stack, input_type):
 #####
 
 
-def initiate_cuda(state):
+def initiate_cuda():
     num_gpus = torch.cuda.device_count()
     if num_gpus == 0:
         st.write("No cuda device found!")
     elif num_gpus > 1:
         st.write("Multiple gpu's found...")
-        state.use_gpu = gpu_selector(num_gpus=num_gpus)
+        st.session_state.use_gpu = gpu_selector(num_gpus=num_gpus)
     else:
-        state.use_gpu = 0
-    torch.cuda.set_device(state.use_gpu)
-    state.cuda_mem = (
-        str(torch.cuda.get_device_properties(state.use_gpu))
+        st.session_state.use_gpu = 0
+    torch.cuda.set_device(st.session_state.use_gpu)
+    st.session_state.cuda_mem = (
+        str(torch.cuda.get_device_properties(st.session_state.use_gpu))
         .split(",")[-2]
         .split("=")[-1]
     )
@@ -3807,7 +3833,7 @@ class _SessionState:
         # Ensure to rerun only once to avoid infinite loops
         # caused by a constantly changing state value at each run.
         #
-        # Example: state.value += 1
+        # Example: st.session_state.value += 1
         if self._state["is_rerun"]:
             self._state["is_rerun"] = False
 
