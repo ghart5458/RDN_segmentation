@@ -47,7 +47,7 @@ supported_file_types = ["mhd", "nii", "tif", "png", "jpg", "bmp", "dcm"]
 slice_types = ["tif", "png", "jpg", "bmp", "dcm"]
 volume_types = ["mhd", "mha", "nii", "vtk"]
 
-@st.cache
+@st.cache_data
 def _load_MARS_logo():
     script_dir = Path(os.path.dirname(os.path.realpath(__file__)))
     logo = Image.open(str(script_dir.joinpath('Mars_Logo_small.png')))

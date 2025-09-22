@@ -6,8 +6,10 @@ import torch.nn.functional as F
 from torch import nn
 from torch.utils.data import DataLoader
 
-script_dir = Path.cwd().parent()
-sys.path.append(script_dir)
+# Add project root to Python path for imports
+project_root = Path(__file__).resolve().parent.parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
 import utils.dataprocess as dp
 from utils.losses import Accuracy, DiceOverlap, DomainEnrichLoss, dice_loss
 

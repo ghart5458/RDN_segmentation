@@ -28,22 +28,15 @@ from tqdm import tqdm
 # Image dimension constants
 IMAGE_2D_DIMS = 2
 
-if platform.system() == "Windows":
-    if socket.gethostname() == 'L2ANTH-WT0023':
-        sys.path.append(r"Z:\RyanLab\Projects\NStephens\git_repo")
-    else:
-        sys.path.append(r"D:\Desktop\git_repo")
-if platform.system().lower() == 'linux':
-    if 'redhat' in platform.platform():
-        sys.path.append(r"/gpfs/group/LiberalArts/default/tmr21_collab/RyanLab/Projects/NStephens/git_repo")
-    else:
-        sys.path.append(r"/mnt/ics/RyanLab/Projects/NStephens/git_repo")
+# Add project root to Python path for imports
+project_root = Path(__file__).resolve().parent.parent.parent.parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
 
-# Provide the location of the net folder. This will work until packaged.
-script_dir = Path(os.path.dirname(os.path.realpath(__file__)))
-sys.path.append(str(script_dir))
-#sys.path.append(r"Z:\RyanLab\Projects\NStephens\git_repo\MARS\morphology\segmentation\pytorch_segmentation")
-#sys.path.append(r"D:\Desktop\git_repo\MARS\morphology\segmentation\pytorch_segmentation")
+# Add current directory for relative imports
+script_dir = Path(__file__).resolve().parent
+if str(script_dir) not in sys.path:
+    sys.path.insert(0, str(script_dir))
 
 class ReportPosition(sitk.Command):
     """class object to report progress in a consistent way.

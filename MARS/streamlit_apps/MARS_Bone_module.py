@@ -6,8 +6,10 @@ from pathlib import Path
 import SimpleITK as sitk
 import streamlit as st
 
-script_dir = Path(os.path.dirname(os.path.realpath(__file__)))
-sys.path.append(str(script_dir.parent.parent))
+# Add project root to Python path for imports
+project_root = Path(__file__).resolve().parent.parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
 from MARS.morphology.segmentation.pytorch_segmentation.execute_3_class_seg import (
     read_image,
     rescale_8,

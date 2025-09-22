@@ -4,16 +4,10 @@ import sys
 from pathlib import Path
 from subprocess import PIPE, Popen
 
-if platform.system() == "Windows":
-    if socket.gethostname() == 'L2ANTH-WT0023':
-        sys.path.append(r"Z:\RyanLab\Projects\NStephens\git_repo")
-    else:
-        sys.path.append(r"D:\Desktop\git_repo")
-if platform.system().lower() == 'linux':
-    if 'redhat' in platform.platform():
-        sys.path.append(r"/gpfs/group/LiberalArts/default/tmr21_collab/RyanLab/Projects/NStephens/git_repo")
-    else:
-        sys.path.append(r"/mnt/ics/RyanLab/Projects/NStephens/git_repo")
+# Add project root to Python path for imports
+project_root = Path(__file__).resolve().parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
 
 from MARS.utils.check_environments import check_environment_location, write_temp_bat_windows
 

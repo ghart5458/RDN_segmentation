@@ -11,12 +11,13 @@ import SimpleITK as sitk
 import streamlit as st
 import torch
 from PIL import Image
-from streamlit.hashing import _CodeHasher
-from streamlit.ReportThread import get_report_ctx
-from streamlit.server.Server import Server
+# Removed deprecated streamlit internal imports
 
 #script_dir = Path(os.path.dirname(os.path.realpath(__file__)))
-sys.path.append(r"D:\Desktop\git_repo")
+# Add project root to Python path for imports
+project_root = Path(__file__).resolve().parent.parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
 from MARS.morphology.segmentation.pytorch_segmentation.execute_3_class_seg import (
     _get_outDir,
     _return_predictors,
@@ -608,7 +609,7 @@ def three_class_segmentation(input_image, outDir, outType, network=""):
     st.write('\n\nSegmentations are done!\n\n')
     _end_timer(start_timer=start, message="Segmentations")
 
-@st.cache(allow_output_mutation=True)
+@st.cache_resource
 def load_MARS_loggo(self):
     logo = {}
     logo['MARS'] = Image.open(r'D:/Desktop/git_repo/Setup/mars_icon.bmp')

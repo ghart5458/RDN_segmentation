@@ -4,8 +4,10 @@ from pathlib import Path
 
 import cv2
 
-script_dir = Path(os.path.dirname(os.path.realpath(__file__))).parent
-sys.path.append(str(script_dir))
+# Add project root to Python path for imports
+project_root = Path(__file__).resolve().parent.parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
 
 import base64
 import concurrent.futures
@@ -40,9 +42,7 @@ from adabelief_pytorch import AdaBelief
 from net import UNet_Light_RDN
 from PIL import Image, ImageColor
 from sklearn.utils import shuffle as sk_shuffle
-from streamlit.hashing import _CodeHasher
-from streamlit.report_thread import get_report_ctx
-from streamlit.server.server import Server
+# Removed deprecated streamlit internal imports
 from torch import nn, optim
 from torch.utils.data import DataLoader
 from utils.dataset import HDF52D, load_patches, natural_keys

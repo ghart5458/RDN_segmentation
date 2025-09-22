@@ -45,9 +45,7 @@ import torch
 import vtk
 from PIL import Image, ImageColor
 from streamlit import StreamlitAPIException, caching
-from streamlit.hashing import _CodeHasher
-from streamlit.report_thread import get_report_ctx
-from streamlit.server.server import Server
+# Removed deprecated streamlit internal imports
 
 # TODO only dark mode
 # TODO make portion for comparing model outputs
@@ -59,9 +57,10 @@ from streamlit.server.server import Server
 # TODO add to load a slice and try it out
 # TODO fix the mesher warnings and fail log
 
-# Reads where this script is launched from so you can import all the other functionality
-script_dir = Path(os.path.dirname(os.path.realpath(__file__)))
-sys.path.append(str(script_dir.parent.parent))
+# Add project root to Python path for imports
+project_root = Path(__file__).resolve().parent.parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
 
 from MARS.morphology.segmentation.pytorch_segmentation.execute_3_class_seg import (
     _get_outDir,
@@ -2021,7 +2020,7 @@ def mesh_batch_values(mesh_state):
 ####
 
 
-@st.cache
+@st.cache_data
 def _load_MARS_logo():
     script_dir = Path(os.path.dirname(os.path.realpath(__file__)))
     logo = Image.open(str(script_dir.joinpath("Mars_Logo_small.png")))
@@ -2132,11 +2131,7 @@ def _save_altered_parm(current_state_parm, new_column, column_value, dtype):
         current_df.to_csv(f"{current_state_parm}")
 
 
-@st.cache(
-    allow_output_mutation=True,
-    hash_funcs={builtins.tuple: lambda _: None},
-    suppress_st_warning=True,
-)
+@st.cache_resource
 def generate_vol_data(unseg_vol_file, seg_vol_file):
     unseg_vol = sitk.ReadImage(unseg_vol_file)
     unseg_vol = rescale_8(inputImage=unseg_vol, verbose=False)
@@ -2144,11 +2139,7 @@ def generate_vol_data(unseg_vol_file, seg_vol_file):
     return unseg_vol, seg_vol
 
 
-@st.cache(
-    allow_output_mutation=True,
-    hash_funcs={builtins.tuple: lambda _: None},
-    suppress_st_warning=True,
-)
+@st.cache_resource
 def generate_single_vol_data(vol_file):
     vol_file = read_image(vol_file, verbose=False)
     vol_file = rescale_8(inputImage=vol_file, verbose=False)

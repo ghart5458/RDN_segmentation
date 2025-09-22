@@ -8,20 +8,10 @@ from pathlib import Path
 import pandas as pd
 import torch
 
-# Provide the location of the net folder. This will work until packaged.
-sys.path.append(r"D:\Desktop\git_repo\MARS\morphology\segmentation\pytorch_segmentation")
-
-if platform.system() == "Windows":
-    if socket.gethostname() == 'L2ANTH-WT0023':
-        sys.path.append(r"Z:\RyanLab\Projects\NStephens\git_repo")
-        sys.path.append(r"Z:\RyanLab\Projects\NStephens\git_repo\MARS\morphology\segmentation\pytorch_segmentation")
-    else:
-        sys.path.append(r"D:\Desktop\git_repo")
-if platform.system().lower() == 'linux':
-    if 'redhat' in platform.platform():
-        sys.path.append(r"/gpfs/group/LiberalArts/default/tmr21_collab/RyanLab/Projects/NStephens/git_repo")
-    else:
-        sys.path.append(r"/mnt/ics/RyanLab/Projects/NStephens/git_repo")
+# Add project root to Python path for imports
+project_root = Path(__file__).resolve().parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
 
 from MARS.morphology.segmentation.pytorch_segmentation.execute_3_class_seg import *
 from MARS.morphology.segmentation.pytorch_segmentation.net.unet_light_rdn import UNet_Light_RDN

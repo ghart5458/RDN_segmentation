@@ -12,12 +12,12 @@ import streamlit as st
 import tetgen
 from pymeshfix import _meshfix
 from pymeshfix import meshfix as mf
-from streamlit.hashing import _CodeHasher
-from streamlit.report_thread import get_report_ctx
-from streamlit.server.server import Server
+# Removed deprecated streamlit internal imports
 
-script_dir = Path(os.path.dirname(os.path.realpath(__file__)))
-sys.path.append(str(script_dir.parent.parent))
+# Add project root to Python path for imports
+project_root = Path(__file__).resolve().parent.parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
 from MARS.registration.Meshlab_tools import *
 
 from MARS.streamlit_apps.streamlit_utils import _get_user, _load_MARS_logo, file_selector
@@ -31,7 +31,7 @@ script_dir = Path(os.path.dirname(os.path.realpath(__file__)))
 tab_logo = Image.open(str(script_dir.joinpath('mars_square.jpg')))
 
 # This is a beta feature to control the default elements of the app
-st.beta_set_page_config(page_title="Meshlab batch",
+st.set_page_config(page_title="Meshlab batch",
                         page_icon=tab_logo,
                         layout='wide',
                         initial_sidebar_state='auto')
