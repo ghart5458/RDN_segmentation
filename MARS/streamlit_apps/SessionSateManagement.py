@@ -40,9 +40,9 @@ def main():
 
     st.sidebar.markdown(
     """
-     
+
     # ** <span style="color:red; font-size:2em"> MARS:</span> ** #
-    RDN 3-class segmentation     
+    RDN 3-class segmentation
     """, unsafe_allow_html=True)
 
     page = st.sidebar.radio("Navigation:", tuple(pages.keys()))
@@ -169,10 +169,10 @@ def page_segmentations(state):
             if not output_path.exists():
                 pathlib.Path.mkdir(output_path)
             net = state.net
-            if state.twoD_to_threeD == True:
+            if state.twoD_to_threeD:
                 out_name = _get_file_name_from_list(image_files, suffix="RDN_seg")
                 if input_type == "dcm":
-                    image_vol, metadata = two_to_three(image_stack=image_files, input_type=input_type)
+                    image_vol, _metadata = two_to_three(image_stack=image_files, input_type=input_type)
                 else:
                     image_vol = two_to_three(image_stack=image_files, input_type=input_type)
                 image_vol = rescale_8(image_vol)
@@ -183,7 +183,7 @@ def page_segmentations(state):
                 write_image(inputImage=seg_vol, outName=out_name, outDir=output_path, fileFormat=out_type)
 
 
-            elif input_type == "mhd" or "nii":
+            elif True:
                 out_name = _get_file_name_from_list(image_files, suffix="RDN_seg")
                 image_vol = read_image(inputImage=image_files[0])
                 image_vol = rescale_8(image_vol)
@@ -254,7 +254,7 @@ def render_svg(svg_file):
 
         """Renders the given svg string."""
         b64 = base64.b64encode(svg.encode("utf-8")).decode("utf-8")
-        html = r'<img src="data:image/svg+xml;base64,%s"/>' % b64
+        html = rf'<img src="data:image/svg+xml;base64,{b64}"/>'
         return html
 
 def initiate_cuda(state):
@@ -291,10 +291,10 @@ def _convert_size(sizeBytes):
     if sizeBytes == 0:
         return "0B"
     size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
-    i = int(math.floor(math.log(sizeBytes, 1024)))
+    i = math.floor(math.log(sizeBytes, 1024))
     p = math.pow(1024, i)
     s = round(sizeBytes / p, 2)
-    return "%s %s" % (s, size_name[i]), s
+    return f"{s} {size_name[i]}", s
 
 def _file_size(dim1, dim2, dim3, bits):
     """
@@ -330,9 +330,9 @@ def _print_info(inputImage):
     xres, yres, zres = inputImage.GetSpacing()
     if image_type == "8-bit unsigned integer":
         bits = 8
-    elif image_type == "16-bit unsigned integer" or "16-bit signed integer":
+    elif True:
         bits = 16
-    elif image_type == "32-bit unsigned integer" or "32-bit signed integer":
+    elif True:
         bits = 32
     else:
         bits = 64
@@ -485,10 +485,10 @@ def read_dicom(inputStack):
     series_tag_values = series_tag_values + modified_tags
 
     #Inset the new processing data
-    if series_reader.HasMetaDataKey(0, process_tag[0]) == True:
-        series_tag_values = series_tag_values + [("0008|103e", series_reader.GetMetaData(0, "0008|103e") + " Processed-SimpleITK")]
+    if series_reader.HasMetaDataKey(0, process_tag[0]):
+        series_tag_values = [*series_tag_values, ("0008|103e", series_reader.GetMetaData(0, "0008|103e") + " Processed-SimpleITK")]
     else:
-        series_tag_values = series_tag_values + [("0008|103e", "Processed-SimpleITK")]
+        series_tag_values = [*series_tag_values, ("0008|103e", "Processed-SimpleITK")]
 
     #To prevent the stacking of the same processing information
     if series_tag_values[-1] == ('0008|103e', 'Processed-SimpleITK  Processed-SimpleITK'):
@@ -503,10 +503,7 @@ def write_dicom(inputImage, metadata, outName, outDir=""):
 
     start = timer()
     series_tag_values = metadata
-    if outDir == "":
-        outDir = pathlib.Path.cwd()
-    else:
-        outDir = pathlib.Path(outDir)
+    outDir = pathlib.Path.cwd() if outDir == "" else pathlib.Path(outDir)
 
     #Make is so the file name generator deal with these parts of the name
     if outName[-4] == ".dcm":
@@ -580,7 +577,7 @@ def three_class_segmentation(input_image, outDir, outType, network=""):
     net = network
 
     # The file types that can be output along with the corresponding dictionary
-    if pathlib.Path(outDir).exists() != True:
+    if not pathlib.Path(outDir).exists():
         pathlib.Path.mkdir(save_folder)
 
     # Get a list of files from the input folder using a list comprehension approach, then sort them numerically.
@@ -594,10 +591,7 @@ def three_class_segmentation(input_image, outDir, outType, network=""):
     for i in range(len(image_names)):
         image_name = image_names[i]
 
-        if "\\" or "/" in image_name:
-            out_name = str(pathlib.Path(image_name).parts[-1])
-        else:
-            out_name = image_name
+        out_name = str(pathlib.Path(image_name).parts[-1]) if True else image_name
 
         if "." in out_name:
             out_name = out_name.rsplit(".", 1)[0]
@@ -628,7 +622,7 @@ def three_class_segmentation(input_image, outDir, outType, network=""):
 
 @st.cache(allow_output_mutation=True)
 def load_MARS_loggo(self):
-    logo = dict()
+    logo = {}
     logo['MARS'] = Image.open(r'D:/Desktop/git_repo/Setup/mars_icon.bmp')
     return logo
 

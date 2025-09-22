@@ -101,7 +101,7 @@ def rdn_val(net, data_set, use_gpu = False, i_epoch = None, class_num = 3):
     data_loader = DataLoader(data_set, batch_size=1, num_workers=0)
     dice_overlap_results = 0.0
 
-    for i_batches, sample_batched in enumerate(data_loader):
+    for _i_batches, sample_batched in enumerate(data_loader):
         mask = sample_batched['mask']
         image = sample_batched['image']
 

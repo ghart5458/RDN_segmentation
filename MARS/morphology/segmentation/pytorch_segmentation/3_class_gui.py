@@ -16,6 +16,9 @@ import wx
 from net.unet_light_rdn import UNet_Light_RDN
 from PIL import Image
 
+# Image dimension constants
+IMAGE_2D_DIMS = 2
+
 #Path where the MARS icon lives. the sys.argv[0] returns the folder where this script is located.
 setup_path = pathlib.Path(os.path.abspath(os.path.dirname(sys.argv[0]))).parent.parent.parent.parent.joinpath("Setup")
 icon_path = setup_path.joinpath('mars_icon.bmp')
@@ -34,7 +37,7 @@ type_dict = {"tif": "TIFF", "png": "PNG", "jpg": "JPEG", "bmp": "BMP"}
 
 class segment_widget(wx.Frame):
     def __init__(self, parent, title):
-        super(segment_widget, self).__init__(parent, title=title, size=(1500, 400))
+        super().__init__(parent, title=title, size=(1500, 400))
 
         #Set up the asthectics for the panel
         self.panel = wx.Panel(self)
@@ -156,7 +159,7 @@ class segment_widget(wx.Frame):
             image = Image.open(os.path.join(data_folder, image_name)).convert('L')
             image = np.array(image)
 
-            if len(image.shape) == 2:
+            if len(image.shape) == IMAGE_2D_DIMS:
                 image = np.expand_dims(image, axis=2)
             image = image.transpose((2, 0, 1))
             image = torch.from_numpy(image)
@@ -169,7 +172,7 @@ class segment_widget(wx.Frame):
 
             pred_img = np.zeros(pred.shape)
             for i in range(len(color_dict)):
-                for j in range(len(color_dict[i])):
+                for _j in range(len(color_dict[i])):
                     pred_img[pred == i] = color_dict[i][0]
 
             pred_img = pred_img.astype(np.uint8)

@@ -22,9 +22,9 @@ def mesh_info(mesh):
     edgemin = mesh_2d.edges_unique_length.min()
     edgemax = mesh_2d.edges_unique_length.max()
     edgemean = mesh_2d.edges_unique_length.mean()
-    if mesh_2d.is_volume == True:
+    if mesh_2d.is_volume:
         st.write("Mesh can be represented as a 3d volume.")
-    elif mesh_2d.is_watertight != True:
+    elif not mesh_2d.is_watertight:
         st.write("Mesh has holes.")
     else:
         st.write("Mesh doesn't have holes, please check for other issues in Meshlab.")
@@ -87,7 +87,7 @@ def inp_to_case(in_name, outname, out_dir):
     # Create a list with the individual range lists
     xyz_range = range_1 + range_2
     element_range = range_3 + range_4
-    set_range = list(range(0, int(sets)))
+    list(range(0, int(sets)))
 
     # Read in individual dataframes for the portions. It isn't efficient, but it is readable.
     xyz_df = pd.read_csv(in_name, header=None, sep=",", skiprows=xyz_range)
@@ -191,7 +191,7 @@ def inp_to_case_2d(in_name, outname):
     # Create a list with the individual range lists
     xyz_range = range_1 + range_2
     element_range = range_3 + range_4
-    set_range = list(range(0, int(sets)))
+    list(range(0, int(sets)))
 
     # Read in individual dataframes for the portions. It isn't efficient, but it is readable.
     xyz_df = pd.read_csv(in_name, header=None, sep=",", skiprows=xyz_range)

@@ -69,7 +69,7 @@ def _get_file_name_from_list(image_files, suffix=""):
     return outName
 
 def _get_file_name_from_input(volume_file, suffix="RDN_seg"):
-    if "\\" or "/" in volume_file:
+    if True:
         outName = pathlib.Path(volume_file).parts[-1]
     outName = outName.split(".")[0]
     if suffix != "":
@@ -78,7 +78,7 @@ def _get_file_name_from_input(volume_file, suffix="RDN_seg"):
 
 def _check_for_slice_to_vol(state, input_type, out_type, slice_types, volume_types, verbose=False):
     if input_type in slice_types and out_type in volume_types:
-        if verbose == True:
+        if verbose:
             st.info(f"Slice input type: {input_type} and volume output type: {out_type} selected.")
             st.info(" This is assumed to be an image stack and the slices will be converted to a volume output.")
         state.twoD_to_threeD = True

@@ -125,9 +125,8 @@ def main():
             open_windows_explorer(directory=state.model_validation_directory, folder_designation="model path")
     st.sidebar.markdown("---")
 
-    if st.sidebar.button("Clear settings"):
-        if st.checkbox("Are you sure?"):
-            state.clear()
+    if st.sidebar.button("Clear settings") and st.checkbox("Are you sure?"):
+        state.clear()
     #### End of sidebar information
 
     #### Start of radio options
@@ -254,7 +253,7 @@ def main():
                     for check in check_list:
                         checking = sitk.ReadImage(str(check))
                         checked = _check_label(inputImage=checking, expected_classes=3)
-                        if checked == False:
+                        if not checked:
                             st.write(f"Rescaling {check} to class labels 0, 128, and 255...")
                             rescale_label_proper(input_image=checking, input_file_name=check)
                         img_count += 1
@@ -273,13 +272,13 @@ def main():
 
             with names_col1:
                 st.header("New unsegmented training data")
-                if str(state.unsegmented_training) != None or ".":
+                if str(state.unsegmented_training) is not None or ".":
                     unsegmented_names = glob.glob(str(state.unsegmented_training.joinpath("*.tif")))
                     st.write(f"Found {len(unsegmented_names)} unsegmented training tif files")
 
             with names_col2:
                 st.header("New segmented training data")
-                if str(state.segmented_training) != None or ".":
+                if str(state.segmented_training) is not None or ".":
                     segmented_names = glob.glob(str(state.segmented_training.joinpath("*.tif")))
                     st.write(f"Found {len(segmented_names)} segmented training tif files")
 
@@ -324,7 +323,7 @@ def main():
                                 else:
                                     possible_match = check_for_match(missing_file=label_name,
                                                                      check_filelist=unsegmented_file_list)
-                                    if possible_match == None:
+                                    if possible_match is None:
                                         unmatched_labels[str(label_name)] = ["None"]
                                     else:
                                         unmatched_labels[str(label_name)] = possible_match
@@ -337,7 +336,7 @@ def main():
                             unmatched_labels.reset_index(drop=False, inplace=True)
                             if unmatched_labels.shape[1] > 2:
                                 columns_names = [f"unsegmented_name_match_{column_num}" for column_num in unmatched_labels.columns[1:]]
-                                columns_names = ["label_name"] + columns_names
+                                columns_names = ["label_name", *columns_names]
                                 unmatched_labels.columns = columns_names
                             else:
                                 unmatched_labels.columns = ["label_name", "unsegmented_name_match"]
@@ -348,7 +347,7 @@ def main():
                     st.balloons()
         #This may be a bad idea but it works for now
         try:
-            if state.unmatched_labels == None:
+            if state.unmatched_labels is None:
                 st.empty()
         except ValueError:
             if not state.unmatched_labels.empty:
@@ -641,7 +640,7 @@ def main():
             state.hdf5 = hdf5_name
         ("---")
 
-        train_col_1, train_col_2, train_col_3, train_col_4 = st.beta_columns([1, 1, 2, 1])
+        train_col_1, train_col_2, train_col_3, _train_col_4 = st.beta_columns([1, 1, 2, 1])
         with train_col_1:
             stride = int(st.text_input("Stride size:", 32))
         with train_col_2:
@@ -665,7 +664,7 @@ def main():
                 st.write(state.val_names)
         ("---")
 
-        ratio_col_1, ratio_col_2, ratio_col_3, ratio_col_4 = st.beta_columns([2, 2, 1, 1])
+        ratio_col_1, ratio_col_2, _ratio_col_3, _ratio_col_4 = st.beta_columns([2, 2, 1, 1])
 
         with ratio_col_2:
             if st.checkbox("Multithreaded calculation (recommended)"):
@@ -737,7 +736,7 @@ def main():
 
             #Data path
             train_data = config["path"]["data_path"]
-            model_output = config["path"]["save_path"]
+            config["path"]["save_path"]
 
             #CSV path
             patch_csv = config["csv_path"]["train"]
@@ -787,7 +786,7 @@ def main():
             save_path = model_save_path.joinpath(sub_save_file)
             state.save_path = save_path
 
-            if model_start != False:
+            if model_start:
                 st.info(f"Starting training from model {model_start}")
             st.info(f"Models will be written to {save_path.as_posix()}")
 
@@ -831,7 +830,7 @@ def main():
                                                                    lr=config['optimizer']['lr'],
                                                                    weight_decay=config['optimizer']['weight_decay'])
                 #learning rate schedule
-                lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=config['period'], gamma=0.1)
+                torch.optim.lr_scheduler.StepLR(optimizer, step_size=config['period'], gamma=0.1)
 
 
 
@@ -849,7 +848,7 @@ def main():
             val_patches = load_patches(config['csv_path']['val'])
             ratios = load_patches(config['csv_path']['ratios'])
             period = config['period']
-            if period == None:
+            if period is None:
                 # This gets used later to ramp up the amount of non-bone that is being thrown into the training.
                 # May have to think of a fancy way to get an equivelant number with Adabelief, but it is being set
                 # to the default Adam period for now.
@@ -1066,7 +1065,7 @@ def main():
 
         #Save the model so people can name it whatever they want
         if state.validated_models:
-            model_col_1, model_col_2, model_col_3 = st.beta_columns([1, 1, 1])
+            model_col_1, model_col_2, _model_col_3 = st.beta_columns([1, 1, 1])
             #Give the top 10 choices, because why not?
             model_list = list(state.class_overlap_df.index[:10])
             with model_col_1:
@@ -1120,7 +1119,7 @@ def main():
         else:
             view_style = st.empty()
         if view_style == "Side by side":
-            gallery_col_1, gallery_col_2, gallery_col_3 = st.beta_columns([1, 1, 1])
+            gallery_col_1, gallery_col_2, _gallery_col_3 = st.beta_columns([1, 1, 1])
             if state.image_set not in [None, "None"]:
                 with gallery_col_1:
                     st.image(state.image_set, width=image_size)
@@ -1199,7 +1198,7 @@ def main():
 #
 ####
 
-def color_overlay(image, overlay_image, overlay_thresh=254, color=[100, 8, 58], alpha=0.5, darkmode=False):
+def color_overlay(image, overlay_image, overlay_thresh=254, color=None, alpha=0.5, darkmode=False):
     """
     Function to read in and overlay two black and white images in open cv2 format.
     :param image: An openCV style image array. Generally grey value data.
@@ -1209,11 +1208,13 @@ def color_overlay(image, overlay_image, overlay_thresh=254, color=[100, 8, 58], 
     :param alpha: float for the opacity
     :return: Return an openCV style image with a colored overlay.
     """
+    if color is None:
+        color = [100, 8, 58]
     img_out = image.copy()
-    if darkmode == True:
+    if darkmode:
         img_out[np.where((img_out == [255, 255, 255]).all(axis=2))] = [53, 51, 49]
     overlay_image = overlay_image.copy()
-    ret, mask = cv2.threshold(src=overlay_image, thresh=int(overlay_thresh), maxval=255, type=cv2.THRESH_BINARY)
+    _ret, mask = cv2.threshold(src=overlay_image, thresh=int(overlay_thresh), maxval=255, type=cv2.THRESH_BINARY)
     mask[np.where((mask == [255, 255, 255]).all(axis=2))] = color
     img_out = cv2.addWeighted(src1=img_out, alpha=1, src2=mask, beta=alpha, gamma=0)
     return img_out
@@ -1300,7 +1301,7 @@ def _view_predictor(pred):
     # Set up a blank numpy array to put the results into according to the values in the color_dict
     pred_img = np.zeros(pred.shape)
     for i in range(len(color_dict)):
-        for j in range(len(color_dict[i])):
+        for _j in range(len(color_dict[i])):
             pred_img[pred == i] = color_dict[i][0]
 
     # Cast the data as unsigned 8 bit and reconstruct the image for writing.
@@ -1355,7 +1356,7 @@ def download_button(object_to_download, download_filename, button_text, pickle_i
     button_uuid = str(uuid.uuid4()).replace('-', '')
     button_id = re.sub(r'\d+', '', button_uuid)
     #Black button with deep pink 1 text
-    custom_css = f""" 
+    custom_css = f"""
         <style>
             #{button_id} {{
                 display: inline-flex;
@@ -1373,7 +1374,7 @@ def download_button(object_to_download, download_filename, button_text, pickle_i
                 border-style: solid;
                 border-color: rgb(0, 0, 0);
                 border-image: initial;
-            }}  
+            }}
             #{button_id}:hover {{
                 border-color: #ff141d;
                 color: rgb(230, 234, 241);
@@ -1655,10 +1656,7 @@ def make_parallel(func):
         # In my system, i have a total of 8 CPUs so i will be generating a maximum of 16 threads in my system.
         number_of_threads_multiple = 2 # You can change this multiple according to you requirement
         number_of_workers = int(os.cpu_count() * number_of_threads_multiple)
-        if len(lst) < number_of_workers:
-            # If the length of the list is low, we would only require those many number of threads.
-            # Here we are avoiding creating unnecessary threads
-            number_of_workers = len(lst)
+        number_of_workers = min(number_of_workers, len(lst))
 
         if number_of_workers:
             if number_of_workers == 1:
@@ -1684,7 +1682,7 @@ def rdn_train(net, optimizer, data_loader, epoch=None, total_epoch=None, use_gpu
     else:
         net.cpu()
     bce_losses = nn.BCEWithLogitsLoss()
-    accuracy = Accuracy()
+    Accuracy()
 
     # set data_loader
     data_loader1 = data_loader[0]
@@ -1789,7 +1787,7 @@ def _custom_logo(image_path, image_text):
                    font-size:27.5px !important;
                    text-align: left !important;
                    color: red !important;
-                   z-index: 1;             
+                   z-index: 1;
         }
         </style>
         """,
@@ -1867,7 +1865,7 @@ def rescale_intensity(inputFilename: str, writeOut: bool=True, file_type: str=""
         rescaleFilt.SetOutputMaximum(255)
     rescaled = rescaleFilt.Execute(inputImage)
     rescaled = sitk.Cast(rescaled, sitk.sitkUInt8)
-    if writeOut == True:
+    if writeOut:
         writer = sitk.ImageFileWriter()
         if outDir != "":
             out_name = pathlib.Path(outDir).joinpath(out_name)
@@ -1927,7 +1925,7 @@ def downscale_intensity(inputFilename, downscale_value=100, writeOut=True, file_
         rescaleFilt.SetOutputMaximum(downscale_value)
         rescaled = rescaleFilt.Execute(inputImage)
         rescaled = sitk.Cast(rescaled, sitk.sitkUInt8)
-        if writeOut == True:
+        if writeOut:
             writer = sitk.ImageFileWriter()
             if outDir != "":
                 out_name = pathlib.Path(outDir).joinpath(out_name)
@@ -1972,10 +1970,7 @@ def clean_image(inputFilename, suffix="", out_name="", out_type="", out_dir="", 
     :param suffix: string that will appear before the out_type
     :return: Returns a 2d image.
     """
-    if out_name == "":
-        out_name = inputFilename.rsplit(".", 1)[0]
-    else:
-        out_name = inputFilename
+    out_name = inputFilename.rsplit(".", 1)[0] if out_name == "" else inputFilename
 
     if out_name == "" and out_type == "":
         out_name = inputFilename.rsplit(".", 1)[0]
@@ -1996,11 +1991,11 @@ def clean_image(inputFilename, suffix="", out_name="", out_type="", out_dir="", 
     if out_dir != "":
         if "\\" in out_name or "/" in out_name:
             out_name = pathlib.Path(out_name).parts[-1]
-            if remove_space == True:
+            if remove_space:
                 out_name = out_name.replace(" ", "")
-            if remove_dblundr == True:
+            if remove_dblundr:
                 out_name = out_name.replace("__", "_")
-            if remove_hyphen == True:
+            if remove_hyphen:
                 out_name = out_name.replace("-", "_")
 
 
@@ -2026,10 +2021,7 @@ def _check_label(inputImage: sitk.Image, expected_classes: int):
         st.write(f"There are {num_classes} instead of {expected_classes} classes in the label!")
         st.write(f"{class_proportion}")
         return None
-    elif np.array_equal(num_classes, np.array([0, 1, 2])):
-        return False
-    else:
-        return True
+    return not np.array_equal(num_classes, np.array([0, 1, 2]))
 
 def check_for_match(missing_file: str, check_filelist: List):
     cases = [(missing_file, check_file) for check_file in check_filelist]
@@ -2038,7 +2030,7 @@ def check_for_match(missing_file: str, check_filelist: List):
         similarity = 0
         too_many = 0
         too_few = 0
-        for i, s in enumerate(difflib.ndiff(checking, file_name)):
+        for _i, s in enumerate(difflib.ndiff(checking, file_name)):
             if s[0] == ' ':
                 similarity += 1
             elif s[0] == '-':
@@ -2094,7 +2086,7 @@ def subtract_images(inputImage1: sitk.Image, inputImage2: sitk.Image):
     :param inputImage2: A SimpleITK image.
     :return: Returns a single SimpleITK image.
     """
-    start = timer()
+    timer()
 
     # Subtract the two images together
     #print("Subtracting...")
@@ -2160,10 +2152,10 @@ def _convert_size(sizeBytes):
     if sizeBytes == 0:
         return "0B"
     size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
-    i = int(math.floor(math.log(sizeBytes, 1024)))
+    i = math.floor(math.log(sizeBytes, 1024))
     p = math.pow(1024, i)
     s = round(sizeBytes / p, 2)
-    return "%s %s" % (s, size_name[i]), s
+    return f"{s} {size_name[i]}", s
 
 
 ####

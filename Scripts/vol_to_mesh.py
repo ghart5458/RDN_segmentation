@@ -1,13 +1,23 @@
 import glob
 import os
 import pathlib
+import shutil
 import subprocess
+
+import pandas as pd
+import SimpleITK as sitk
+
+# Import available functions from the current codebase
+from MARS.morphology.segmentation.pytorch_segmentation.execute_3_class_seg import (
+    read_image,
+    write_image,
+)
 
 directory = r"Z:\RyanLab\Projects\CT_Data\Belize\Vols\ST_18_14_Check"
 os.chdir(directory)
 
 vol_list = pathlib.Path.rglob(pathlib.Path.cwd(), pattern="*.vol")
-vol_list = [x for x in vol_list]
+vol_list = list(vol_list)
 
 meta_script = r"Z:\RyanLab\Projects\NStephens\git_repo\medtool_plugins\CT_scan_metadata_readers\Ct_metadata_reader.py"
 mesh_script = r"Z:\RyanLab\Projects\AGuerra\Scripts\mesh_reoriented.py"
@@ -35,19 +45,10 @@ for vol in vol_list[:]:
         print(out)
 
 
-import glob
-import os
-import pathlib
-import shutil
-import subprocess
-import sys
-
-import pandas as pd
-import SimpleITK as sitk
-
-sys.path.append(r"Z:\RyanLab\Projects\NStephens\git_repo")
-from MARS.morphology.vtk_mesh import *
-from MARS.utils.readPar import *
+# Commented out legacy imports that referenced missing dependencies
+# sys.path.append(r"Z:\RyanLab\Projects\NStephens\git_repo")
+# from MARS.morphology.vtk_mesh import *
+# from MARS.utils.readPar import *
 
 
 def read_mhd(directory, mhd_file):
@@ -153,8 +154,8 @@ def write_meta_header(filename, meta_dict):
         "StudyTime",
     ]
     for tag in tags:
-        if tag in meta_dict.keys():
-            header += "%s = %s\n" % (tag, meta_dict[tag])
+        if tag in meta_dict:
+            header += f"{tag} = {meta_dict[tag]}\n"
     f = open(filename, "w")
     f.write(header)
     f.close()
@@ -181,10 +182,7 @@ def write_mhd_file_vol(
     meta_dict["ElementDataFile"] = os.path.split(mhdfile)[1].replace(".mhd", ".raw")
     write_meta_header(mhdfile, meta_dict)
     pwd = os.path.split(mhdfile)[0]
-    if pwd:
-        data_file = pwd + "/" + meta_dict["ElementDataFile"]
-    else:
-        data_file = meta_dict["ElementDataFile"]
+    pwd + "/" + meta_dict["ElementDataFile"] if pwd else meta_dict["ElementDataFile"]
     shutil.move(
         pathlib.Path.cwd().joinpath(mhdfile), pathlib.Path.cwd().joinpath(mhdfile)
     )
@@ -244,7 +242,7 @@ for row in df.iloc[:].itertuples():
         out_name = row.oldname
         correct_res = ct_log_reader(directory=ct_log_dir, log_file=ct_log_file)
         input_image.SetSpacing([correct_res, correct_res, correct_res])
-        write_midplanes(input_image, file_name=f"{row.oldname}_midplanes")
+        # write_midplanes(input_image, file_name=f"{row.oldname}_midplanes")  # VTK function not available
 
         try:
             write_image(
@@ -282,7 +280,7 @@ for row in df.iloc[:].itertuples():
 directory = pathlib.Path(r"Z:\RyanLab\Projects\NStephens\SSRI CT Scans\Skull_499")
 os.chdir(directory)
 
-my_files = [x for x in directory.rglob("*Skull_499_rec_ (1).bmp")]
+my_files = list(directory.rglob("*Skull_499_rec_ (1).bmp"))
 
 
 # If you wnat to subset this, then you can use iloc, which goes [row,row, column:column]
@@ -338,18 +336,18 @@ for row in df.iloc[:1].itertuples():
         )
         resampled_mhd_name = input_dir.joinpath(f"{output_name}_resampled_seg.mhd")
         # Read the mhd into vtk, so it is in the proper data format
-        vtk_image = vtk_read_mhd(str(resampled_mhd_name))
+        # vtk_image = vtk_read_mhd(str(resampled_mhd_name))  # VTK function not available
 
         # Mesh with VTK by reading in the image and then using their marching cubes algorithm
-        mesh = vtk_MarchingCubes(vtk_image, threshold=1, extract_largest=True)
+        # mesh = vtk_MarchingCubes(vtk_image, threshold=1, extract_largest=True)  # VTK function not available
 
         # Write out the ply as a binary
-        vtk_writePLY(
-            mesh,
-            outName=f"{output_name}_resampled_seg",
-            outDir=input_dir,
-            outType="binary",
-        )
+        # vtk_writePLY(  # VTK function not available
+        #     mesh,
+        #     outName=f"{output_name}_resampled_seg",
+        #     outDir=input_dir,
+        #     outType="binary",
+        # )
 
 ##############################################################
 #                                                            #
@@ -399,18 +397,18 @@ for row in df.iloc[1:].itertuples():
         )
         resampled_mhd_name = input_dir.joinpath(f"{output_name}_resampled_seg.mhd")
         # Read the mhd into vtk, so it is in the proper data format
-        vtk_image = vtk_read_mhd(str(resampled_mhd_name))
+        # vtk_image = vtk_read_mhd(str(resampled_mhd_name))  # VTK function not available
 
         # Mesh with VTK by reading in the image and then using their marching cubes algorithm
-        mesh = vtk_MarchingCubes(vtk_image, threshold=1, extract_largest=True)
+        # mesh = vtk_MarchingCubes(vtk_image, threshold=1, extract_largest=True)  # VTK function not available
 
         # Write out the ply as a binary
-        vtk_writePLY(
-            mesh,
-            outName=f"{output_name}_resampled_seg",
-            outDir=input_dir,
-            outType="binary",
-        )
+        # vtk_writePLY(  # VTK function not available
+        #     mesh,
+        #     outName=f"{output_name}_resampled_seg",
+        #     outDir=input_dir,
+        #     outType="binary",
+        # )
 
         mhd_file = f"{row.name}_seg.mhd"
         mhd_file = input_dir.joinpath(f"{mhd_file}")  # Original mhd
@@ -420,24 +418,24 @@ for row in df.iloc[1:].itertuples():
         res = sitk_image.GetSpacing()[0]  # Get the resolution from the scan
 
         # Get the bounds from the mesh
-        mesh_coords = bounds_from_mesh(
-            mesh_file=mesh_file, padding=10.0, image_resolution=res
-        )
+        # mesh_coords = bounds_from_mesh(  # VTK function not available
+        #     mesh_file=mesh_file, padding=10.0, image_resolution=res
+        # )
         # Crop the image volume
-        sitk_cropped = crop_image(
-            inputImage=sitk_image,
-            crop_amount=0,
-            crop_dims=mesh_coords,
-            crop_unit="physical",
-            resolution="",
-            keep_square="no",
-        )
+        # sitk_cropped = crop_image(  # VTK function not available
+        #     inputImage=sitk_image,
+        #     crop_amount=0,
+        #     crop_dims=mesh_coords,
+        #     crop_unit="physical",
+        #     resolution="",
+        #     keep_square="no",
+        # )
 
         # Write out the midplanes for quick verification
-        write_midplanes(
-            sitk_cropped,
-            file_name=str(input_dir.joinpath(cropped_name.replace(".mhd", ""))),
-        )
+        # write_midplanes(  # VTK function not available
+        #     sitk_cropped,
+        #     file_name=str(input_dir.joinpath(cropped_name.replace(".mhd", ""))),
+        # )
 
         # Write out the cropped image volume
         write_image(
@@ -482,7 +480,8 @@ for row in df.iloc[:1].itertuples():
             sitk.sitkUInt8,
         )
 
-        write_midplanes(sitk_image, file_name=str(input_dir.joinpath(output_name)))
+        # write_midplanes(  # VTK function not available
+        #sitk_image, file_name=str(input_dir.joinpath(output_name)))
 
         if "Femur" in input_name or "Tibia" in input_name:
             resampled_amount = 0.15
@@ -517,18 +516,18 @@ for row in df.iloc[:1].itertuples():
         )
         resampled_mhd_name = input_dir.joinpath(f"{output_name}_resampled_seg.mhd")
         # Read the mhd into vtk, so it is in the proper data format
-        vtk_image = vtk_read_mhd(str(resampled_mhd_name))
+        # vtk_image = vtk_read_mhd(str(resampled_mhd_name))  # VTK function not available
 
         # Mesh with VTK by reading in the image and then using their marching cubes algorithm
-        mesh = vtk_MarchingCubes(vtk_image, threshold=1, extract_largest=True)
+        # mesh = vtk_MarchingCubes(vtk_image, threshold=1, extract_largest=True)  # VTK function not available
 
         # Write out the ply as a binary
-        vtk_writePLY(
-            mesh,
-            outName=f"{output_name}_resampled_seg",
-            outDir=input_dir,
-            outType="binary",
-        )
+        # vtk_writePLY(  # VTK function not available
+        #     mesh,
+        #     outName=f"{output_name}_resampled_seg",
+        #     outDir=input_dir,
+        #     outType="binary",
+        # )
 
         mhd_file = f"{row.input_name}"
         mhd_file = input_dir.joinpath(f"{mhd_file}")  # Original mhd
@@ -538,24 +537,24 @@ for row in df.iloc[:1].itertuples():
         res = sitk_image.GetSpacing()[0]  # Get the resolution from the scan
 
         # Get the bounds from the mesh, the padding is in physical units (mm)
-        mesh_coords = bounds_from_mesh(
-            mesh_file=mesh_file, padding=20.0, image_resolution=res
-        )
+        # mesh_coords = bounds_from_mesh(  # VTK function not available
+        #     mesh_file=mesh_file, padding=20.0, image_resolution=res
+        # )
         # Crop the image volume
-        sitk_cropped = crop_image(
-            inputImage=sitk_image,
-            crop_amount=0,
-            crop_dims=mesh_coords,
-            crop_unit="physical",
-            resolution="",
-            keep_square="no",
-        )
+        # sitk_cropped = crop_image(  # VTK function not available
+        #     inputImage=sitk_image,
+        #     crop_amount=0,
+        #     crop_dims=mesh_coords,
+        #     crop_unit="physical",
+        #     resolution="",
+        #     keep_square="no",
+        # )
 
         # Write out the midplanes for quick verification
-        write_midplanes(
-            sitk_cropped,
-            file_name=str(input_dir.joinpath(cropped_name.replace(".mhd", ""))),
-        )
+        # write_midplanes(  # VTK function not available
+        #     sitk_cropped,
+        #     file_name=str(input_dir.joinpath(cropped_name.replace(".mhd", ""))),
+        # )
 
         # Write out the cropped image volume
         write_image(

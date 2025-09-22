@@ -68,7 +68,7 @@ def main():
     #Saves settings between pages.
     state = _get_state()
 
-    page = st.sidebar.radio("Navigation:", tuple(pages.keys()))
+    st.sidebar.radio("Navigation:", tuple(pages.keys()))
 
     # Button to save state values
     if st.sidebar.button("Save settings"):
@@ -463,7 +463,7 @@ def meshlab_settings(state):
     Empty page for now
 
     """
-    current_user = _get_user()
+    _get_user()
 
 
 def mesh_state_values(state):
@@ -631,7 +631,7 @@ def pymeshfix(in_dir, in_file, out_type, output_directory, write=False):
                    remove_smallest_components=True)
     new_mesh = meshfix.mesh
     st.write("Mesh repaired")
-    if write == True:
+    if write:
         if out_type in ['ply', 'vtp', 'stl', 'vtk']:
             new_mesh.save(str(output))
         else:

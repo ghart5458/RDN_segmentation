@@ -26,6 +26,9 @@ import torch
 from PIL import Image
 from tqdm import tqdm
 
+# Image dimension constants
+IMAGE_2D_DIMS = 2
+
 if platform.system() == "Windows":
     if socket.gethostname() == 'L2ANTH-WT0023':
         sys.path.append(r"Z:\RyanLab\Projects\NStephens\git_repo")
@@ -50,7 +53,7 @@ class ReportPosition(sitk.Command):
     """
     def __init__(self, po):
         # required
-        super(ReportPosition, self).__init__()
+        super().__init__()
         self.processObject = po
 
     def Execute(self):
@@ -82,7 +85,7 @@ def _setup_image(data_folder, image_name):
     image = np.array(image)
 
     # Check the dimensionality of the image, expand, transpose, for pytorch.
-    if len(image.shape) == 2:
+    if len(image.shape) == IMAGE_2D_DIMS:
         image = np.expand_dims(image, axis=2)
     image = image.transpose((2, 0, 1))
     return image
@@ -112,10 +115,10 @@ def _convert_size(sizeBytes):
     if sizeBytes == 0:
         return "0B"
     size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
-    i = int(math.floor(math.log(sizeBytes, 1024)))
+    i = math.floor(math.log(sizeBytes, 1024))
     p = math.pow(1024, i)
     s = round(sizeBytes / p, 2)
-    return "%s %s" % (s, size_name[i]), s
+    return f"{s} {size_name[i]}", s
 
 def _file_size(dim1, dim2, dim3, bits):
     """
@@ -141,10 +144,7 @@ def _file_size(dim1, dim2, dim3, bits):
     return size
 
 def _get_threads(threads):
-    if threads == "threads":
-        threads = (int(multiprocessing.cpu_count()) - 1)
-    else:
-        threads = int(threads)
+    threads = int(multiprocessing.cpu_count()) - 1 if threads == "threads" else int(threads)
     return threads
 
 def _print_info(inputImage):
@@ -158,9 +158,9 @@ def _print_info(inputImage):
     res = inputImage.GetSpacing()[0]
     if image_type == "8-bit unsigned integer":
         bits = 8
-    elif image_type == "16-bit unsigned integer" or "16-bit signed integer":
+    elif True:
         bits = 16
-    elif image_type == "32-bit unsigned integer" or "32-bit signed integer":
+    elif True:
         bits = 32
     else:
         bits = 64
@@ -176,7 +176,7 @@ def _setup_image(data_folder, image_name):
     image = np.array(image)
 
     # Check the dimensionality of the image, expand, transpose, for pytorch.
-    if len(image.shape) == 2:
+    if len(image.shape) == IMAGE_2D_DIMS:
         image = np.expand_dims(image, axis=2)
     image = image.transpose((2, 0, 1))
     return image
@@ -196,7 +196,7 @@ def _save_predictors(pred, save_folder, image_name, file_type):
     # Set up a blank numpy array to put the results into according to the values in the color_dict
     pred_img = np.zeros(pred.shape)
     for i in range(len(color_dict)):
-        for j in range(len(color_dict[i])):
+        for _j in range(len(color_dict[i])):
             pred_img[pred == i] = color_dict[i][0]
 
     # Cast the data as unsigned 8 bit and reconstruct the image for writing.
@@ -216,7 +216,7 @@ def _setup_sitk_image(image_slice, direction="z"):
     image = sitk.GetArrayFromImage(image_slice)
 
     # Deal with the variation in the 3d versus 2d array.
-    if len(image.shape) == 2:
+    if len(image.shape) == IMAGE_2D_DIMS:
         if direction == "z":
             #Expand the z axis
             image = np.expand_dims(image, axis=2)
@@ -243,7 +243,7 @@ def _return_predictors(pred, direction="z"):
     # Set up a blank numpy array to put the results into according to the values in the color_dict
     pred_img = np.zeros(pred.shape)
     for i in range(len(color_dict)):
-        for j in range(len(color_dict[i])):
+        for _j in range(len(color_dict[i])):
             pred_img[pred == i] = color_dict[i][0]
 
     # Cast the data as unsigned 8 bit and reconstruct the image for writing.
@@ -264,10 +264,7 @@ def _get_outDir(outDir):
     :param outDir: Directory for writing out a file.
     :return:
     """
-    if outDir == "":
-        outDir = pathlib.Path.cwd()
-    else:
-        outDir = pathlib.Path(str(outDir))
+    outDir = pathlib.Path.cwd() if outDir == "" else pathlib.Path(str(outDir))
     return outDir
 
 def _get_inDir(inDir):
@@ -276,10 +273,7 @@ def _get_inDir(inDir):
     :param outDir: Directory for writing out a file.
     :return:
     """
-    if inDir == "":
-        inDir = pathlib.Path.cwd()
-    else:
-        inDir = pathlib.Path(str(inDir))
+    inDir = pathlib.Path.cwd() if inDir == "" else pathlib.Path(str(inDir))
     return inDir
 
 def alpha_to_int(text):
@@ -600,7 +594,7 @@ def thresh_simple(inputImage, background=0, foreground=1, outside=0, threads="th
     thresh.SetLower(background)
     thresh.SetUpper(foreground)
     thresh.SetOutsideValue(outside)
-    thresh, filter_events = _set_filter_events(thresh)
+    thresh, _filter_events = _set_filter_events(thresh)
     threshold = thresh.Execute(inputImage)
     print("\n")
     _end_timer(start, message="Simple threshold")
@@ -679,10 +673,10 @@ def read_dicom(inputStack):
     series_tag_values = series_tag_values + modified_tags
 
     #Inset the new processing data
-    if series_reader.HasMetaDataKey(0, process_tag[0]) == True:
-        series_tag_values = series_tag_values + [("0008|103e", series_reader.GetMetaData(0, "0008|103e") + " Processed-SimpleITK")]
+    if series_reader.HasMetaDataKey(0, process_tag[0]):
+        series_tag_values = [*series_tag_values, ("0008|103e", series_reader.GetMetaData(0, "0008|103e") + " Processed-SimpleITK")]
     else:
-        series_tag_values = series_tag_values + [("0008|103e", "Processed-SimpleITK")]
+        series_tag_values = [*series_tag_values, ("0008|103e", "Processed-SimpleITK")]
 
     #To prevent the stacking of the same processing information
     if series_tag_values[-1] == ('0008|103e', 'Processed-SimpleITK  Processed-SimpleITK'):
@@ -697,10 +691,7 @@ def write_dicom(inputImage, metadata, outName, outDir=""):
 
     start = timer()
     series_tag_values = metadata
-    if outDir == "":
-        outDir = pathlib.Path.cwd()
-    else:
-        outDir = pathlib.Path(outDir)
+    outDir = pathlib.Path.cwd() if outDir == "" else pathlib.Path(outDir)
 
     #Make is so the file name generator deal with these parts of the name
     if outName[-4] == ".dcm":

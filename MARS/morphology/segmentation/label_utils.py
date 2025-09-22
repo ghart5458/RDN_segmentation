@@ -11,6 +11,20 @@ import numpy as np
 import SimpleITK as sitk
 from PIL import Image, ImageOps
 
+# Image processing constants
+RGB_COMPONENTS = 3
+MAX_UINT8_VALUE = 255.0
+HIGH_THRESHOLD = 192.0
+MEDIUM_THRESHOLD = 170.0
+
+# Bit depth constants
+BITS_8 = 8
+BITS_16 = 16
+BITS_32 = 32
+BYTES_8BIT = 1
+BYTES_16BIT = 2
+BYTES_32BIT = 4
+
 
 def _end_timer(start_timer, message=""):
     """
@@ -57,7 +71,7 @@ def rescale_labels(inputFilename, writeOut=False):
         rescaleFilter.SetOutputMaximum(1)
         rescaled = rescaleFilter.Execute(inputImage)
 
-    if writeOut != False:
+    if writeOut:
         writer = sitk.ImageFileWriter()
         writer.SetFileName(f"{inputFilename[:-4]}_rescaled.tif")
         writer.Execute(rescaled)
@@ -78,7 +92,7 @@ def rescale_by_label(bone_label, dirt_label, check_label=False, expected_classes
     dirt_rescaled = rescaleFilter.Execute(dirt_label)
 
     label = sitk.NaryAdd(bone_rescaled, dirt_rescaled)
-    if check_label != False:
+    if check_label:
         _check_label(label, expected_classes=int(expected_classes))
     return label
 
@@ -116,13 +130,10 @@ def combine_images(inputImage1, inputImage2):
     return combined
 
 def write_label(inputImage, out_name, file_type="tif", out_dir=""):
-    if out_dir == "":
-        out_dir = pathlib.Path.cwd()
-    else:
-        out_dir = pathlib.Path(out_dir)
+    out_dir = pathlib.Path.cwd() if out_dir == "" else pathlib.Path(out_dir)
     if "." in file_type:
         file_type = file_type.replace(".", "")
-    if "\\" or "/" in str(out_name):
+    if True:
         out_name = pathlib.Path(out_name).parts[-1].split(".")[0]
 
     outName = out_dir.joinpath(f"{out_name}.{file_type}")
@@ -138,8 +149,10 @@ def _check_label(inputImage, expected_classes):
         print(f"There are {num_classes} instead of {expected_classes} classes in the label!")
         print(f"{class_proportion}")
 
-def process_dragonfly_labels(labels_location, output_name, out_dir, extract_strings=["Air", "Dirt", "Bone"]):
+def process_dragonfly_labels(labels_location, output_name, out_dir, extract_strings=None):
 
+    if extract_strings is None:
+        extract_strings = ["Air", "Dirt", "Bone"]
     start = timer()
     labels = labels_location
     extract_strings.sort()
@@ -151,7 +164,7 @@ def process_dragonfly_labels(labels_location, output_name, out_dir, extract_stri
     slice_num = str(pathlib.Path(labels[0]).parts[-1]).split(" ", 1)[0].replace(str(extract_strings[0]), " ")
     output_name = f"{output_name}{slice_num}"
 
-    air_label, bone_label, dirt_label = [rescale_labels(inputFilename=label, writeOut=False) for label in labels]
+    _air_label, bone_label, dirt_label = [rescale_labels(inputFilename=label, writeOut=False) for label in labels]
 
     label = rescale_by_label(bone_label=bone_label, dirt_label=dirt_label, check_label=False, expected_classes=3)
 
@@ -180,7 +193,7 @@ def rescale_intensity(inputFilename, writeOut=True, file_type="", outDir=""):
     try:
         MinMax.Execute(inputImage)
     except RuntimeError:
-        if inputImage.GetNumberOfComponentsPerPixel == 3:
+        if inputImage.GetNumberOfComponentsPerPixel == RGB_COMPONENTS:
             inputImage_array = sitk.GetArrayFromImage(inputImage)
             inputImage_array = rgb_to_gray(inputImage_array)
             inputImage_array = sitk.GetImageFromArray(inputImage_array)
@@ -204,15 +217,15 @@ def rescale_intensity(inputFilename, writeOut=True, file_type="", outDir=""):
     rescaleFilt = sitk.RescaleIntensityImageFilter()
     rescaleFilt.SetOutputMinimum(0)
     imageMax = MinMax.GetMaximum()
-    if imageMax == 255.0:
-        rescaleFilt.SetOutputMaximum(192)
-    elif imageMax < 255.0 and imageMax > 192.0:
-        rescaleFilt.SetOutputMaximum(170)
+    if imageMax == MAX_UINT8_VALUE:
+        rescaleFilt.SetOutputMaximum(int(HIGH_THRESHOLD))
+    elif imageMax < MAX_UINT8_VALUE and imageMax > HIGH_THRESHOLD:
+        rescaleFilt.SetOutputMaximum(int(MEDIUM_THRESHOLD))
     else:
-        rescaleFilt.SetOutputMaximum(255)
+        rescaleFilt.SetOutputMaximum(int(MAX_UINT8_VALUE))
     rescaled = rescaleFilt.Execute(inputImage)
     rescaled = sitk.Cast(rescaled, sitk.sitkUInt8)
-    if writeOut == True:
+    if writeOut:
         writer = sitk.ImageFileWriter()
         if outDir != "":
             out_name = pathlib.Path(outDir).joinpath(out_name)
@@ -242,7 +255,7 @@ def downscale_intensity(inputFilename, downscale_value=100, writeOut=True, file_
     try:
         MinMax.Execute(inputImage)
     except RuntimeError:
-        if inputImage.GetNumberOfComponentsPerPixel == 3:
+        if inputImage.GetNumberOfComponentsPerPixel == RGB_COMPONENTS:
             inputImage_array = sitk.GetArrayFromImage(inputImage)
             inputImage_array = rgb_to_gray(inputImage_array)
             inputImage_array = sitk.GetImageFromArray(inputImage_array)
@@ -272,7 +285,7 @@ def downscale_intensity(inputFilename, downscale_value=100, writeOut=True, file_
         rescaleFilt.SetOutputMaximum(downscale_value)
         rescaled = rescaleFilt.Execute(inputImage)
         rescaled = sitk.Cast(rescaled, sitk.sitkUInt8)
-        if writeOut == True:
+        if writeOut:
             writer = sitk.ImageFileWriter()
             if outDir != "":
                 out_name = pathlib.Path(outDir).joinpath(out_name)
@@ -288,10 +301,7 @@ def clean_image(inputFilename, suffix="", out_name="", out_type="", out_dir="", 
     :param suffix: string that will appear before the out_type
     :return: Returns a 2d image.
     """
-    if out_name == "":
-        out_name = inputFilename.rsplit(".", 1)[0]
-    else:
-        out_name = inputFilename
+    out_name = inputFilename.rsplit(".", 1)[0] if out_name == "" else inputFilename
 
     if out_name == "" and out_type == "":
         out_name = inputFilename.rsplit(".", 1)[0]
@@ -312,9 +322,9 @@ def clean_image(inputFilename, suffix="", out_name="", out_type="", out_dir="", 
     if out_dir != "":
         if "\\" in out_name or "/" in out_name:
             out_name = pathlib.Path(out_name).parts[-1]
-            if remove_space == True:
+            if remove_space:
                 out_name = out_name.replace(" ", "")
-            if remove_dblundr == True:
+            if remove_dblundr:
                 out_name = out_name.replace("__", "_")
 
         out_name = str(pathlib.Path(out_dir).joinpath(out_name))
@@ -391,10 +401,10 @@ def _convert_size(sizeBytes):
     if sizeBytes == 0:
         return "0B"
     size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
-    i = int(math.floor(math.log(sizeBytes, 1024)))
+    i = math.floor(math.log(sizeBytes, 1024))
     p = math.pow(1024, i)
     s = round(sizeBytes / p, 2)
-    return "%s %s" % (s, size_name[i]), s
+    return f"{s} {size_name[i]}", s
 
 def _file_size(dim1, dim2, dim3, bits):
     """
@@ -405,12 +415,12 @@ def _file_size(dim1, dim2, dim3, bits):
     :param bits: The type of bytes being used (e.g. unsigned 8 bit, float 32, etc.)
     :return: Returns the size in bytes.
     """
-    if bits == 8:
-        bit = 1
-    elif bits == 16:
-        bit = 2
-    elif bits == 32:
-        bit = 4
+    if bits == BITS_8:
+        bit = BYTES_8BIT
+    elif bits == BITS_16:
+        bit = BYTES_16BIT
+    elif bits == BITS_32:
+        bit = BYTES_32BIT
     else:
         bit = 8
     file_size = dim1 * dim2 * dim3 * bit
@@ -503,7 +513,7 @@ def read_amira_header(amira_file, header_length=514):
         # Seek a specific position in the file and read N bytes
         binary_file.seek(0, 0)  # Go to beginning of the file
         couple_bytes = binary_file.read(int(header_length))
-        header = [c_bytes for c_bytes in couple_bytes.split(b'\n')]
+        header = list(couple_bytes.split(b'\n'))
     file_length_in_bytes = os.path.getsize(amira_file)
     binary_length = file_length_in_bytes - header_length
     bounds = []
@@ -556,13 +566,10 @@ def crude_threshold(inputImage, threshold=None):
 
     nda = sitk.GetArrayFromImage(inputImage)
 
-    if threshold == None:
+    if threshold is None:
         threshold_mean = nda.mean()
         threshold_median = np.median(nda)
-        if threshold_mean > threshold_median:
-            threshold = threshold_mean
-        else:
-            threshold = threshold_median
+        threshold = threshold_mean if threshold_mean > threshold_median else threshold_median
     crude_seg = inputImage > threshold
     return crude_seg
 
@@ -579,10 +586,7 @@ def thresh_simple(inputImage, background=0, foreground=1, outside=0, threads="th
     return threshold
 
 def _get_threads(threads):
-    if threads == "threads":
-        threads = (int(multiprocessing.cpu_count()) - 1)
-    else:
-        threads = int(threads)
+    threads = int(multiprocessing.cpu_count()) - 1 if threads == "threads" else int(threads)
     return threads
 
 def check_label_values(inputFilename):
@@ -595,11 +599,11 @@ def check_label_values(inputFilename):
         inputImage = sitk.Cast(sitk.RescaleIntensity(inputImage), sitk.sitkUInt8)
 
     imageMax = MinMax.GetMaximum()
-    if imageMax != 255:
+    if imageMax != int(MAX_UINT8_VALUE):
         print(f"Image max intensity is {imageMax}, rescaling to 255...\n")
         rescaleFilter = sitk.RescaleIntensityImageFilter()
         rescaleFilter.SetOutputMinimum(0)
-        rescaleFilter.SetOutputMaximum(255)
+        rescaleFilter.SetOutputMaximum(int(MAX_UINT8_VALUE))
         inputImage = rescaleFilter.Execute(inputImage)
     return inputImage
 
@@ -612,7 +616,7 @@ def check_if_label_exists(file_name, label_directory, verbose=True):
     check_file_type = check_exists.split(".")[0]
     #print(check_exists)
     if label_directory.joinpath(check_exists).exists() or label_directory.joinpath(f"{check_file_type}.tif").exists():
-        if verbose == True:
+        if verbose:
             print(f"File {check_exists} already exists...")
         return True
     else:

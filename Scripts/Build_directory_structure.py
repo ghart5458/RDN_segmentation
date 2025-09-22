@@ -280,8 +280,6 @@ def setup_bone_columns(pandas_df, match_location="File_name", shafts=False):
         "tib": "Tibia",
         "rtibia": "Tibia",
         "ltibia": "Tibia",
-        "ltibia": "Tibia",
-        "rtibia": "Tibia",
         "fem": "Femur",
         "fumer": "Femur",
         "_df_": "Femur",
@@ -299,7 +297,7 @@ def setup_bone_columns(pandas_df, match_location="File_name", shafts=False):
     }
     df["Bone"] = df["Bone"].map(bone_replace)
 
-    if shafts == True:
+    if shafts:
         portion_replace = {
             "body": "Whole",
             "whole": "Whole",
@@ -316,7 +314,6 @@ def setup_bone_columns(pandas_df, match_location="File_name", shafts=False):
             "lfemurmid": "ShaftMid",
             "ltibiamid": "ShaftMid",
             "rtibiamid": "ShaftMid",
-            "ltibiamid": "ShaftMid",
             "dist": "ShaftDist",
             "base": "ShaftDist",
             "humerud": "ShaftDist",
@@ -393,10 +390,7 @@ def remove_unwanted_in_column(pandas_df, df_column="", match_list=""):
     df = pandas_df.copy()
     print(f"\n\nInitial dataframe had {df} rows.\n")
     before = len(df)
-    if df_column == "":
-        df_column = "Location"
-    else:
-        df_column = str(df_column)
+    df_column = "Location" if df_column == "" else str(df_column)
     if match_list == "":
         match_list = ["VOI", "IMJ", "CentreSlice", "Sinograms"]
     else:
@@ -615,9 +609,10 @@ def linuxify_par(par_file, base_folder, linux_base_folder):
     )
 
     # Use a lamda function to map a pathlib object onto the column of the dataframe
-    folder_replace = lambda x: pathlib.Path(
-        str(x).replace(str(base_folder), str(linux_base_folder))
-    ).as_posix()
+    def folder_replace(x):
+        return pathlib.Path(
+            str(x).replace(str(base_folder), str(linux_base_folder))
+        ).as_posix()
     par_file = par_file.applymap(folder_replace)
 
     return par_file
@@ -662,16 +657,13 @@ def isolate_shafts(pandas_df, search_column="Location"):
     :return:
     """
     df = pandas_df.copy()
-    if search_column != "Location":
-        search_column = str(search_column)
-    else:
-        search_column = "Location"
+    search_column = str(search_column) if search_column != "Location" else "Location"
     string_match = "diaphysis|Diaphysis|shaft|Shaft"
     df2 = df[df[str(search_column)].str.contains(string_match)]
     return df2
 
 
-def remove_projections(pandas_df, fldr_substring=["_01", "_02", "_03"]):
+def remove_projections(pandas_df, fldr_substring=None):
     """
     Function to remove the projection folders and retain only the nested recontructed folders from a dataframe.
     :param pandas_df: pandas dataframs
@@ -679,6 +671,8 @@ def remove_projections(pandas_df, fldr_substring=["_01", "_02", "_03"]):
     :return:
     """
 
+    if fldr_substring is None:
+        fldr_substring = ["_01", "_02", "_03"]
     df = pandas_df.copy()
 
     if len(fldr_substring) != 3:
@@ -710,7 +704,7 @@ def setup_temp(pandas_df):
 
 
 def set_print_size_max():
-    columns, rows = shutil.get_terminal_size()
+    columns, _rows = shutil.get_terminal_size()
     columns = int(columns) - 6
     pd.options.display.max_colwidth = int(columns)
     print(f"Pandas print size width set to {columns}")

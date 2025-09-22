@@ -27,7 +27,7 @@ def dice_loss(pred, target, smooth=1.0, if_mean=True):
     intersection = (pred * target).sum(dim=2).sum(dim=2)
 
     loss = ((2. * intersection + smooth) / (pred.sum(dim=2).sum(dim=2) + target.sum(dim=2).sum(dim=2) + smooth))
-    if if_mean == True:
+    if if_mean:
         # loss = 0.1*loss[:,0] + 0.7*loss[:,1] + 0.2*loss[:,2]
         # loss = 0.04205177**loss[:,0] + 0.73025561*loss[:,1] + 0.22769263*loss[:,2]
         return (1 - loss).mean()

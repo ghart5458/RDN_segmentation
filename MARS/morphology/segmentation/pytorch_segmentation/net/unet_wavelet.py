@@ -9,7 +9,7 @@ from .unet_parts import DoubleConv, Down, OutConv, Up
 
 class UNet_Wavelet(nn.Module):
     def __init__(self, n_channels, n_classes, bilinear=True, wave_conv_channels = 64):
-        super(UNet_Wavelet, self).__init__()
+        super().__init__()
         self.n_channels = n_channels
         self.n_classes = n_classes
         self.bilinear = bilinear

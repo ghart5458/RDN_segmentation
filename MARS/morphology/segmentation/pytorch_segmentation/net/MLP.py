@@ -5,7 +5,7 @@ from .unet_parts import *
 
 class MLP(nn.Module):
     def __init__(self, n_channels, n_classes, bilinear=True):
-        super(MLP, self).__init__()
+        super().__init__()
         self.n_channels = n_channels
         self.n_classes = n_classes
         self.bilinear = bilinear

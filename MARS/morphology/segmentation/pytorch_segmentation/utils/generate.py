@@ -63,10 +63,7 @@ def generate_hdf5(data_dir: str | pathlib.Path, label_dir: str | pathlib.Path, s
             sample_img.create_dataset('label', data=load_img(os.path.join(label_dir, name['label'])))
 
 def separate_names(names, train=0.7):
-    if train > 1.0:
-        train = round(train)
-    else:
-        train = round(len(names)*train)
+    train = round(train) if train > 1.0 else round(len(names) * train)
     train = min(train, len(names))
 
     #The shuffle method was not randomizing the names
@@ -203,7 +200,7 @@ def random_patches(dirt_choose_threshold: float, dirt_rate: float, patches: np.a
     dirt_patches_idx = dirt_idx[0:last_idx]
     rest_idx = dirt_idx[last_idx:-1]
 
-    if not (dirt_rate == 0):
+    if dirt_rate != 0:
         rest_num = round(((last_idx - 1) / dirt_rate) * (1 - dirt_rate))
         rest_num = min(rest_num, rest_idx.shape[0])
     else:

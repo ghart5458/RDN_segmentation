@@ -22,6 +22,7 @@ python -m torch.utils.collect_env
 
 import base64
 import builtins
+import contextlib
 import glob
 import math
 import multiprocessing
@@ -62,6 +63,7 @@ from streamlit.server.server import Server
 # Reads where this script is launched from so you can import all the other functionality
 script_dir = pathlib.Path(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(str(script_dir.parent.parent))
+
 from MARS.morphology.segmentation.pytorch_segmentation.execute_3_class_seg import (
     _get_outDir,
     _get_threads,
@@ -244,7 +246,7 @@ def page_settings(state):
     #    st.markdown("3) Paste the location of the parameter file and select the csv")
 
     # Writes and info cell with the graphics card infromation.
-    if state.cuda_mem == None:
+    if state.cuda_mem is None:
         st.error("GPU not initialized!")
     else:
         st.write(
@@ -615,7 +617,7 @@ def page_segmentations(state):
             "buttons :frowning: :exclamation:"
         )
         net = state.net
-        if net == None:
+        if net is None:
             st.error("You forgot to hit load model!")
             st.info(
                 ":face_palm: Yes, this could be done automatically, but this step exists to make sure you are working "
@@ -636,7 +638,7 @@ def page_segmentations(state):
             st.write(
                 f"Processing {len(individual_seg_list)} image files for segmentation in {input_path}..."
             )
-            if bool(state.twoD_to_threeD) == False:
+            if not bool(state.twoD_to_threeD):
                 three_class_segmentation(
                     input_image=individual_seg_list,
                     outDir=output_path,
@@ -651,7 +653,7 @@ def page_segmentations(state):
                     individual_seg_list, suffix="RDN_seg"
                 )
                 if input_type == "dcm":
-                    image_vol, metadata = two_to_three(
+                    image_vol, _metadata = two_to_three(
                         image_stack=individual_seg_list, input_type=input_type
                     )
                 else:
@@ -660,8 +662,8 @@ def page_segmentations(state):
                     )
                 image_vol = rescale_8(image_vol)
 
-                if state.rescale_prior == True:
-                    if state.check_for_metal == False:
+                if state.rescale_prior:
+                    if not state.check_for_metal:
                         image_vol = rescale_before_seg(inputImage=image_vol)
                     else:
                         image_vol = rescale_before_seg(
@@ -790,7 +792,7 @@ def page_batch_segmentations(state):
                         volume_types=volume_types,
                     )
 
-                    if state.twoD_to_threeD == True:
+                    if state.twoD_to_threeD:
                         image_files = gather_image_files(
                             input_path=input_path, input_type=input_type
                         )
@@ -798,7 +800,7 @@ def page_batch_segmentations(state):
                             image_files, suffix="RDN_seg"
                         )
                         if input_type == "dcm":
-                            image_vol, metadata = two_to_three(
+                            image_vol, _metadata = two_to_three(
                                 image_stack=image_files, input_type=input_type
                             )
                         else:
@@ -894,7 +896,7 @@ def page_batch_segmentations(state):
 
 
 def page_midslice_viewer(state):
-    current_user = _get_user()
+    _get_user()
     temp_state = _get_state()
     temp_state.compare_selected = "False"
     st.title("RDN segmentation viewer")
@@ -968,7 +970,7 @@ def page_midslice_viewer(state):
 
     if midslice_settings_activity == "Compare from batch file":
         if st.button("Load parameter file"):
-            if state.parm_file == None:
+            if state.parm_file is None:
                 pass
             else:
                 temp_state.parm_file = state.parm_file
@@ -1035,7 +1037,7 @@ def page_midslice_viewer(state):
 
     ##
     image_zoom = st.sidebar.text_input("Image scale:", 1.0)
-    if temp_state.unseg_type == None:
+    if temp_state.unseg_type is None:
         pass
 
     elif temp_state.unseg_type in slice_types:
@@ -1047,7 +1049,7 @@ def page_midslice_viewer(state):
     else:
         temp_state.unseg_vol_file = temp_state.unseg_location
 
-    if (temp_state.unseg_type == None and temp_state.seg_type == None) or temp_state.unseg_type == None or temp_state.seg_type == None:
+    if (temp_state.unseg_type is None and temp_state.seg_type is None) or temp_state.unseg_type is None or temp_state.seg_type is None:
         st.write("Please choose your unsegmented and segmented files to compare")
     elif str(temp_state.unseg_type) != "nan":
         st.write(temp_state.unseg_vol_file)
@@ -1082,7 +1084,7 @@ def page_midslice_viewer(state):
                     )
 
                     if temp_state.unseg_type == "dcm":
-                        unseg_vol, metadata = two_to_three(
+                        unseg_vol, _metadata = two_to_three(
                             image_stack=stack_list, input_type=temp_state.unseg_type
                         )
                     else:
@@ -1513,7 +1515,7 @@ def page_midslice_viewer(state):
 
 def page_batch_meshing(state):
     st.title("Batch RDN Meshing")
-    current_user = _get_user()
+    _get_user()
     mesh_state = _get_state()
     if st.sidebar.button("Reload parameter file", key="99991194"):
         mesh_state.parms = read_parameter_file(state.parm_file)
@@ -1716,7 +1718,7 @@ def page_batch_meshing(state):
                         input_path = pathlib.Path(row.output_path)
                         out_type = row.output_type
 
-                        if mesh_state.resample_column == False:
+                        if not mesh_state.resample_column:
                             resample_amount = mesh_state.resample_amount
                         else:
                             resample_amount = row.resample_amount
@@ -1850,14 +1852,10 @@ def page_batch_meshing(state):
                             file_clean_up = pathlib.Path(
                                 str(temp_mhd_dir.joinpath("temp_mhd.mhd"))
                             )
-                            try:
+                            with contextlib.suppress(builtins.BaseException):
                                 file_clean_up.unlink(missing_ok=True)
-                            except:
-                                pass
-                            try:
+                            with contextlib.suppress(builtins.BaseException):
                                 temp_isolated.unlink(missing_ok=True)
-                            except:
-                                pass
 
                         vtk_mesh = vtk_MarchingCubes(
                             inputImage=vtk_image,
@@ -1943,7 +1941,7 @@ def segmentation_state_values(state):
         slice_types=slice_types,
         volume_types=volume_types,
     )
-    if bool(state.twoD_to_three) == True:
+    if bool(state.twoD_to_three):
         st.info(
             f"{state.input_type} is assumed to be slices and will be converted to 3d output type: {state.out_type}"
         )
@@ -2070,7 +2068,7 @@ def _get_file_name_from_list(image_files, suffix=""):
 
 
 def _get_file_name_from_input(volume_file, suffix="RDN_seg"):
-    if "\\" or "/" in volume_file:
+    if True:
         outName = pathlib.Path(volume_file).parts[-1]
     outName = outName.split(".")[0]
     if suffix != "":
@@ -2082,7 +2080,7 @@ def _check_for_slice_to_vol(
     state, input_type, out_type, slice_types, volume_types, verbose=False
 ):
     if input_type in slice_types and out_type in volume_types:
-        if verbose == True:
+        if verbose:
             st.info(
                 f"Slice input type: {input_type} and volume output type: {out_type} selected."
             )
@@ -2411,10 +2409,7 @@ def view_midplane(image_slice, slice_res, use_resolution=False, zoom_scale=1):
     else:
         seg_dims = image_slice.shape[0]
 
-    if use_resolution:
-        image_zoom = int((seg_dims * slice_res) * float(zoom_scale)) * 5
-    else:
-        image_zoom = None
+    image_zoom = int(seg_dims * slice_res * float(zoom_scale)) * 5 if use_resolution else None
     st.image(image_slice, clamp=True, width=image_zoom, use_column_width=False)
 
 
@@ -2454,7 +2449,7 @@ def get_plotly_hist(image_array):
         showlegend=False,
         paper_bgcolor="Black",
         template="plotly_dark",
-        margin=dict(l=10, r=10, t=10, b=10),
+        margin={"l": 10, "r": 10, "t": 10, "b": 10},
         xaxis_title_text=None,
         yaxis_title_text=None,
     )
@@ -2529,22 +2524,22 @@ def get_midplane_histogram(image_volume, log=False):
     plotly_hist.update_layout(
         showlegend=True,
         template="plotly_dark",
-        margin=dict(l=10, r=10, t=10, b=10),
+        margin={"l": 10, "r": 10, "t": 10, "b": 10},
         xaxis_title_text=None,
         yaxis_title_text=None,
     )
 
     plotly_hist.update_layout(
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.02,
-            xanchor="right",
-            x=1,
-            font=dict(family="Courier", size=16, color="black"),
-            bgcolor="LightSteelBlue",
-            bordercolor="Black",
-        )
+        legend={
+            "orientation": "h",
+            "yanchor": "bottom",
+            "y": 1.02,
+            "xanchor": "right",
+            "x": 1,
+            "font": {"family": "Courier", "size": 16, "color": "black"},
+            "bgcolor": "LightSteelBlue",
+            "bordercolor": "Black",
+        }
     )
     st.plotly_chart(plotly_hist, use_container_width=False)
 
@@ -2555,7 +2550,7 @@ def render_svg(svg_file):
         svg = "".join(lines)
         """Renders the given svg string."""
         b64 = base64.b64encode(svg.encode("utf-8")).decode("utf-8")
-        html = r'<img src="data:image/svg+xml;base64,%s"/>' % b64
+        html = rf'<img src="data:image/svg+xml;base64,{b64}"/>'
         return html
 
 
@@ -2603,10 +2598,10 @@ def _convert_size(sizeBytes):
     if sizeBytes == 0:
         return "0B"
     size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
-    i = int(math.floor(math.log(sizeBytes, 1024)))
+    i = math.floor(math.log(sizeBytes, 1024))
     p = math.pow(1024, i)
     s = round(sizeBytes / p, 2)
-    return "%s %s" % (s, size_name[i]), s
+    return f"{s} {size_name[i]}", s
 
 
 def _file_size(dim1, dim2, dim3, bits):
@@ -2644,9 +2639,9 @@ def _print_info(inputImage):
     xres, yres, zres = inputImage.GetSpacing()
     if image_type == "8-bit unsigned integer":
         bits = 8
-    elif image_type == "16-bit unsigned integer" or "16-bit signed integer":
+    elif True:
         bits = 16
-    elif image_type == "32-bit unsigned integer" or "32-bit signed integer":
+    elif True:
         bits = 32
     else:
         bits = 64
@@ -2700,10 +2695,7 @@ def _end_timer(start_timer, message=""):
 
 
 def _get_threads(threads):
-    if threads == "threads":
-        threads = int(multiprocessing.cpu_count()) - 1
-    else:
-        threads = int(threads)
+    threads = int(multiprocessing.cpu_count()) - 1 if threads == "threads" else int(threads)
     return threads
 
 
@@ -2858,15 +2850,10 @@ def read_dicom(inputStack):
     series_tag_values = series_tag_values + modified_tags
 
     # Inset the new processing data
-    if series_reader.HasMetaDataKey(0, process_tag[0]) == True:
-        series_tag_values = series_tag_values + [
-            (
-                "0008|103e",
-                series_reader.GetMetaData(0, "0008|103e") + " Processed-SimpleITK",
-            )
-        ]
+    if series_reader.HasMetaDataKey(0, process_tag[0]):
+        series_tag_values = [*series_tag_values, ("0008|103e", series_reader.GetMetaData(0, "0008|103e") + " Processed-SimpleITK")]
     else:
-        series_tag_values = series_tag_values + [("0008|103e", "Processed-SimpleITK")]
+        series_tag_values = [*series_tag_values, ("0008|103e", "Processed-SimpleITK")]
 
     # To prevent the stacking of the same processing information
     if series_tag_values[-1] == (
@@ -2949,10 +2936,7 @@ def write_dicom(inputImage, metadata, outName, outDir=""):
 
     start = timer()
     series_tag_values = metadata
-    if outDir == "":
-        outDir = pathlib.Path.cwd()
-    else:
-        outDir = pathlib.Path(outDir)
+    outDir = pathlib.Path.cwd() if outDir == "" else pathlib.Path(outDir)
 
     # Make is so the file name generator deal with these parts of the name
     if outName[-4] == ".dcm":
@@ -3239,7 +3223,7 @@ def resample_sitk_image(inputImage, spacing=None, interpolator=None, fill_value=
     orig_spacing = np.array(inputImage.GetSpacing())
 
     # Set up the interpolator type.
-    if interpolator == None:
+    if interpolator is None:
         pixelid = inputImage.GetPixelIDValue()
         if pixelid not in (1, 3, 8):
             raise NotImplementedError(
@@ -3256,7 +3240,7 @@ def resample_sitk_image(inputImage, spacing=None, interpolator=None, fill_value=
     sitk_interpolator = SITK_INTERPOLATOR_DICT[interpolator]
 
     # Get the spacing to use from the minimum value if it isn't set.
-    if spacing == None:
+    if spacing is None:
         min_spacing = orig_spacing.min()
         st.write(f"No spacing set, using the minimum spacing of {min_spacing}...")
         new_spacing = [min_spacing] * num_dim
@@ -3530,7 +3514,7 @@ def color_overlay(
     image,
     overlay_image,
     overlay_thresh=254,
-    color=[100, 8, 58],
+    color=None,
     alpha=0.5,
     darkmode=False,
 ):
@@ -3543,11 +3527,13 @@ def color_overlay(
     :param alpha: float for the opacity
     :return: Return an openCV style image with a colored overlay.
     """
+    if color is None:
+        color = [100, 8, 58]
     img_out = image.copy()
-    if darkmode == True:
+    if darkmode:
         img_out[np.where((img_out == [255, 255, 255]).all(axis=2))] = [53, 51, 49]
     overlay_image = overlay_image.copy()
-    ret, mask = cv2.threshold(
+    _ret, mask = cv2.threshold(
         src=overlay_image,
         thresh=int(overlay_thresh),
         maxval=255,
@@ -3581,7 +3567,7 @@ def three_class_segmentation(input_image, outDir, outType, network=""):
     net = network
 
     # The file types that can be output along with the corresponding dictionary
-    if pathlib.Path(outDir).exists() != True:
+    if not pathlib.Path(outDir).exists():
         pathlib.Path.mkdir(save_folder)
 
     # Get a list of files from the input folder using a list comprehension approach, then sort them numerically.
@@ -3594,10 +3580,7 @@ def three_class_segmentation(input_image, outDir, outType, network=""):
     # Loop through the images in the folder and use the image name for the output name
     for i in range(len(image_names)):
         image_name = image_names[i]
-        if "\\" or "/" in image_name:
-            out_name = str(pathlib.Path(image_name).parts[-1])
-        else:
-            out_name = image_name
+        out_name = str(pathlib.Path(image_name).parts[-1]) if True else image_name
         if "." in out_name:
             out_name = out_name.rsplit(".", 1)[0]
 
@@ -3650,7 +3633,7 @@ def _save_predictors(pred, save_folder, image_name, file_type):
     # Set up a blank numpy array to put the results into according to the values in the color_dict
     pred_img = np.zeros(pred.shape)
     for i in range(len(color_dict)):
-        for j in range(len(color_dict[i])):
+        for _j in range(len(color_dict[i])):
             pred_img[pred == i] = color_dict[i][0]
 
     # Cast the data as unsigned 8 bit and reconstruct the image for writing.
