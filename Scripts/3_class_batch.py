@@ -1,7 +1,5 @@
 import glob
 import os
-import platform
-import socket
 import sys
 from pathlib import Path
 

@@ -11,9 +11,7 @@ python -m pip install -U prompt-toolkit~=2.0
 import math
 import multiprocessing
 import os
-import platform
 import re
-import socket
 import sys
 import time
 from pathlib import Path

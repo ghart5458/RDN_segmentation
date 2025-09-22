@@ -12,6 +12,7 @@ import streamlit as st
 import tetgen
 from pymeshfix import _meshfix
 from pymeshfix import meshfix as mf
+
 # Removed deprecated streamlit internal imports
 
 # Add project root to Python path for imports

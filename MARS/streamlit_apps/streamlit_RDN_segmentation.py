@@ -45,6 +45,7 @@ import torch
 import vtk
 from PIL import Image, ImageColor
 from streamlit import StreamlitAPIException, caching
+
 # Removed deprecated streamlit internal imports
 
 # TODO only dark mode

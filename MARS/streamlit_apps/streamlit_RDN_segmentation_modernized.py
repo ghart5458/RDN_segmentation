@@ -7,16 +7,11 @@ GUI and functionality by NB Stephens (github.com/NBStephens) nbs49@psu.edu
 Based on RDN segmentation work by Yazdani et al., 2020 Asilomar Conference.
 """
 
-import base64
 import glob
-import math
 import os
 import sys
-import time
 from pathlib import Path
-from timeit import default_timer as timer
 
-import SimpleITK as sitk
 import streamlit as st
 import torch
 from PIL import Image
@@ -27,9 +22,6 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 from MARS.morphology.segmentation.pytorch_segmentation.execute_3_class_seg import (
-    _get_outDir,
-    _return_predictors,
-    _save_predictors,
     natural_keys,
     read_image,
     rescale_8,
@@ -298,7 +290,6 @@ def display_segmentation_info():
 
 def save_settings():
     """Save current settings to JSON file."""
-    import json
     import pandas as pd
 
     script_dir = Path(__file__).parent
