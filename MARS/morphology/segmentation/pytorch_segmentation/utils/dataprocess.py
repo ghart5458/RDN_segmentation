@@ -146,18 +146,18 @@ class Normalize:
     commonly used to normalize images to [0, 1] or [-1, 1] ranges.
     """
 
-    def __init__(self, max=255.0, min=0.0, tg_max=1.0, tg_min=0.0):
+    def __init__(self, input_max=255.0, input_min=0.0, tg_max=1.0, tg_min=0.0):
         """Initialize normalization transform.
 
         Args:
-            max (float): Maximum input intensity value
-            min (float): Minimum input intensity value
+            input_max (float): Maximum input intensity value
+            input_min (float): Minimum input intensity value
             tg_max (float): Target maximum intensity value
             tg_min (float): Target minimum intensity value
 
         """
-        self.max = max
-        self.min = min
+        self.max = input_max
+        self.min = input_min
         self.tg_max = tg_max
         self.tg_min = tg_min
 

@@ -426,12 +426,12 @@ def write_image(inputImage, outName, outDir="", fileFormat="mhd"):
     sitk.WriteImage(inputImage, str(outputImage))
     _end_timer(start, message="Writing the image")
 
-def feed_slice(inputImage, slice, direction="Z"):
+def feed_slice(inputImage, slice_num, direction="Z"):
     """Extract a single slice from a SimpleITK volume.
 
     Args:
         inputImage (sitk.Image): SimpleITK formatted image volume
-        slice (int): Slice number to extract
+        slice_num (int): Slice number to extract
         direction (str): Slice direction - "Z", "Y", or "X" (default: "Z")
 
     Returns:
@@ -441,11 +441,11 @@ def feed_slice(inputImage, slice, direction="Z"):
     direction = str(direction).lower()
 
     if direction == "z":
-        image_slice = inputImage[:, :, slice]
+        image_slice = inputImage[:, :, slice_num]
     elif direction == "y":
-        image_slice = inputImage[:, slice,:]
+        image_slice = inputImage[:, slice_num,:]
     else:
-        image_slice = inputImage[slice, :, :]
+        image_slice = inputImage[slice_num, :, :]
     return image_slice
 
 def three_class_segmentation(inDir, outDir, outType, network=""):
@@ -544,7 +544,7 @@ def three_class_segmentation_volume(inputImage, direction="z", network=""):
 
     # Loop through the images in the folder and use the image name for the output name
     for i in tqdm(range(seg_count), unit=" slices", desc=f" Segmenting {direction}"):
-        image = feed_slice(inputImage, slice=i, direction=str(direction))
+        image = feed_slice(inputImage, slice_num=i, direction=str(direction))
 
         #Read the image in with pillow and set it as a numpy array for pytorch
         image = _setup_sitk_image(image_slice=image, direction=direction)

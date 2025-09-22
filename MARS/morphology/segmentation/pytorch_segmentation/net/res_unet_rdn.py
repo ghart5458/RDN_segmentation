@@ -79,21 +79,21 @@ class ResNetUNet_RDN(nn.Module):
 
         self.conv_last = nn.Conv2d(64, n_classes, 1)
 
-    def forward(self, input):
+    def forward(self, x):
         """Forward pass through ResNetUNet_RDN.
 
         Processes input through dual RDN paths, then through ResNet encoder
         and U-Net decoder with skip connections.
 
         Args:
-            input (torch.Tensor): Input tensor of shape (batch, channels, height, width)
+            x (torch.Tensor): Input tensor of shape (batch, channels, height, width)
 
         Returns:
             torch.Tensor: Output segmentation logits
 
         """
-        self.x_rdn1 = self.rdn1(input)
-        self.x_rdn2 = self.rdn2(input)
+        self.x_rdn1 = self.rdn1(x)
+        self.x_rdn2 = self.rdn2(x)
 
         # self.x_rdn2 = self.rdn2(self.x_rdn1)
 

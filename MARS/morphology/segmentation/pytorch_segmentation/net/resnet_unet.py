@@ -43,10 +43,10 @@ class ResNetUNet(nn.Module):
 
         self.conv_last = nn.Conv2d(64, n_classes, 1)
 
-    def forward(self, input):
-        x_original = self.conv_original_size0(input)
+    def forward(self, x_input):
+        x_original = self.conv_original_size0(x_input)
         x_original = self.conv_original_size1(x_original)
-        inp=self.first_conv(input)
+        inp=self.first_conv(x_input)
         layer0 = self.layer0(inp)
         layer1 = self.layer1(layer0)
         layer2 = self.layer2(layer1)

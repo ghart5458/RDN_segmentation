@@ -1193,10 +1193,10 @@ def page_midslice_viewer(state):
                     key="99999000",
                 )
                 unseg_x = feed_slice(
-                    inputImage=unseg_vol, slice=compare_slice_x, direction="x"
+                    inputImage=unseg_vol, slice_num=compare_slice_x, direction="x"
                 )
                 seg_x = feed_slice(
-                    inputImage=seg_vol, slice=compare_slice_x, direction="x"
+                    inputImage=seg_vol, slice_num=compare_slice_x, direction="x"
                 )
 
                 d_index_y = _direction_index("y")
@@ -1208,10 +1208,10 @@ def page_midslice_viewer(state):
                     key="99999001",
                 )
                 unseg_y = feed_slice(
-                    inputImage=unseg_vol, slice=compare_slice_y, direction="y"
+                    inputImage=unseg_vol, slice_num=compare_slice_y, direction="y"
                 )
                 seg_y = feed_slice(
-                    inputImage=seg_vol, slice=compare_slice_y, direction="y"
+                    inputImage=seg_vol, slice_num=compare_slice_y, direction="y"
                 )
 
                 d_index_z = _direction_index("z")
@@ -1223,10 +1223,10 @@ def page_midslice_viewer(state):
                     key="99999002",
                 )
                 unseg_z = feed_slice(
-                    inputImage=unseg_vol, slice=compare_slice_z, direction="z"
+                    inputImage=unseg_vol, slice_num=compare_slice_z, direction="z"
                 )
                 seg_z = feed_slice(
-                    inputImage=seg_vol, slice=compare_slice_z, direction="z"
+                    inputImage=seg_vol, slice_num=compare_slice_z, direction="z"
                 )
 
                 unseg_array_x = sitk.GetArrayFromImage(unseg_x).astype(np.uint8)
@@ -1481,7 +1481,7 @@ def page_midslice_viewer(state):
                     dims = unseg_vol.GetSize()
                     unseg_slice_num = st.slider("Unseg Position", 0, dims[2])
                     unseg_image = feed_slice(
-                        inputImage=unseg_vol, slice=unseg_slice_num, direction="z"
+                        inputImage=unseg_vol, slice_num=unseg_slice_num, direction="z"
                     )
                     unseg = Image.fromarray(sitk.GetArrayFromImage(unseg_image))
                     st.image(unseg, caption=f"{unseg_name}", use_column_width=False)
@@ -1503,7 +1503,7 @@ def page_midslice_viewer(state):
                 dims = image_vol.GetSize()
                 seg_slice_num = st.slider("Seg Position", 0, dims[2])
                 seg_image = feed_slice(
-                    inputImage=image_vol, slice=seg_slice_num, direction="z"
+                    inputImage=image_vol, slice_num=seg_slice_num, direction="z"
                 )
                 seg = Image.fromarray(sitk.GetArrayFromImage(seg_image))
                 st.image(seg, caption=f"{seg_name}", use_column_width=False)
@@ -2389,7 +2389,7 @@ def model_initiation(model_path, cuda_index):
 
 def get_midplane(image_volume, slice_num, direction="x"):
     image_slice = feed_slice(
-        inputImage=image_volume, slice=slice_num, direction=direction
+        inputImage=image_volume, slice_num=slice_num, direction=direction
     )
     image_array = sitk.GetArrayFromImage(image_slice).astype(np.uint8)
     image_slice = Image.fromarray(image_array)
@@ -2457,13 +2457,13 @@ def get_xyz_midplanes(image_volume):
     image_mids = [int(dim * 0.5) for dim in image_volume.GetSize()]
     compare_slice_num_x, compare_slice_num_y, compare_slice_num_z = image_mids
     image_x = feed_slice(
-        inputImage=image_volume, slice=compare_slice_num_x, direction="x"
+        inputImage=image_volume, slice_num=compare_slice_num_x, direction="x"
     )
     image_y = feed_slice(
-        inputImage=image_volume, slice=compare_slice_num_y, direction="y"
+        inputImage=image_volume, slice_num=compare_slice_num_y, direction="y"
     )
     image_z = feed_slice(
-        inputImage=image_volume, slice=compare_slice_num_z, direction="z"
+        inputImage=image_volume, slice_num=compare_slice_num_z, direction="z"
     )
     array_x = sitk.GetArrayFromImage(image_x).astype(np.uint8)
     array_y = sitk.GetArrayFromImage(image_y).astype(np.uint8)
@@ -2481,13 +2481,13 @@ def get_midplane_histogram(image_volume, log=False):
     image_mids = [int(dim * 0.5) for dim in image_volume.GetSize()]
     compare_slice_num_x, compare_slice_num_y, compare_slice_num_z = image_mids
     image_x = feed_slice(
-        inputImage=image_volume, slice=compare_slice_num_x, direction="x"
+        inputImage=image_volume, slice_num=compare_slice_num_x, direction="x"
     )
     image_y = feed_slice(
-        inputImage=image_volume, slice=compare_slice_num_y, direction="y"
+        inputImage=image_volume, slice_num=compare_slice_num_y, direction="y"
     )
     image_z = feed_slice(
-        inputImage=image_volume, slice=compare_slice_num_z, direction="z"
+        inputImage=image_volume, slice_num=compare_slice_num_z, direction="z"
     )
     array_x = sitk.GetArrayFromImage(image_x).flatten()
     array_y = sitk.GetArrayFromImage(image_y).flatten()
@@ -2958,7 +2958,7 @@ def write_dicom(inputImage, metadata, outName, outDir=""):
     _end_timer(start, message="Writing DICOM slices")
 
 
-def feed_slice(inputImage, slice, direction="Z"):
+def feed_slice(inputImage, slice_num, direction="Z"):
     """Function to write out a single slice from a SimpleITK volume.
     :param inputImage: SimpleITK formatted image.
     :param outName: The resulting image file name along with the file format.
@@ -2968,11 +2968,11 @@ def feed_slice(inputImage, slice, direction="Z"):
     direction = str(direction).lower()
 
     if direction == "z":
-        image_slice = inputImage[:, :, slice]
+        image_slice = inputImage[:, :, slice_num]
     elif direction == "y":
-        image_slice = inputImage[:, slice, :]
+        image_slice = inputImage[:, slice_num, :]
     else:
-        image_slice = inputImage[slice, :, :]
+        image_slice = inputImage[slice_num, :, :]
     return image_slice
 
 
@@ -3660,7 +3660,7 @@ def three_class_segmentation_volume(inputImage, direction="z", network=""):
 
     # Loop through the images in the folder and use the image name for the output name
     for i in range(seg_count):
-        image = feed_slice(inputImage, slice=i, direction=str(direction))
+        image = feed_slice(inputImage, slice_num=i, direction=str(direction))
 
         # Read the image in with pillow and set it as a numpy array for pytorch
         image = _setup_sitk_image(image_slice=image, direction=direction)

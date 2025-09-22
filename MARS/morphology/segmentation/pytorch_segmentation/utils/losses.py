@@ -10,11 +10,11 @@ class Accuracy:
     with ground truth labels.
     """
 
-    def __call__(self, input, target, **kwargs):
+    def __call__(self, predictions, target, **kwargs):
         """Calculate accuracy between predictions and targets.
 
         Args:
-            input (torch.Tensor): Predicted logits of shape (batch_size, n_classes, H, W)
+            predictions (torch.Tensor): Predicted logits of shape (batch_size, n_classes, H, W)
             target (torch.Tensor): Ground truth labels of shape (batch_size, H, W)
             **kwargs: Additional keyword arguments (unused)
 
@@ -22,11 +22,11 @@ class Accuracy:
             float: Pixel-wise accuracy as a fraction between 0 and 1
 
         """
-        input = torch.max(input, 1)[1]
+        predictions = torch.max(predictions, 1)[1]
         size = 1
-        for i in range(len(input.shape)):
-            size = size * input.shape[i]
-        return torch.sum(input == target).float() / size
+        for i in range(len(predictions.shape)):
+            size = size * predictions.shape[i]
+        return torch.sum(predictions == target).float() / size
 
 def get_size_of_tensor(a_tensor):
     """Calculate the total number of elements in a tensor.
@@ -133,23 +133,23 @@ class DiceOverlap:
     def __init__(self, class_num):
         self.len = class_num
 
-    def __call__(self, input, target):
+    def __call__(self, predictions, target):
 
-        input = torch.max(input, 1)[1]
+        predictions = torch.max(predictions, 1)[1]
 
         dice = []
 
         for i in range(self.len):
             sub_target = torch.zeros(target.shape).cuda()
             sub_target[target == i] = 1
-            sub_input = torch.zeros(input.shape).cuda()
-            sub_input[input == i] = 1
+            sub_predictions = torch.zeros(predictions.shape).cuda()
+            sub_predictions[predictions == i] = 1
 
             tp_idx = target == i
 
             eps = 0.0001
-            tp = torch.sum(sub_input[tp_idx] == sub_target[tp_idx])
-            fn = torch.sum(sub_input != sub_target)
+            tp = torch.sum(sub_predictions[tp_idx] == sub_target[tp_idx])
+            fn = torch.sum(sub_predictions != sub_target)
             tp = tp.float()
             fn = fn.float()
             result = (2*tp + eps) / (2*tp + fn + eps)

@@ -46,17 +46,17 @@ directory = file_selector(in_directory, extension="mhd", selectbox_text="Select 
 os.chdir(in_directory)
 
 #Give the input file name
-#file = "NF_27_819941_Humerus_Prox_R_UnSeg_reoriented_sphereVOI_RDN_seg.mhd"
-file = Path(directory).parts[-1]
+#filename = "NF_27_819941_Humerus_Prox_R_UnSeg_reoriented_sphereVOI_RDN_seg.mhd"
+filename = Path(directory).parts[-1]
 
 #Define the output namer
-seg_name = file.replace("_RDN_seg.mhd", "_seg")
+seg_name = filename.replace("_RDN_seg.mhd", "_seg")
 
 #Since we used the bounds of the VOI and shrank it by 15% we do the same here to make the composite image
 shrink = 0.15
 
 #Get the full directory
-input_file = Path(in_directory).joinpath(file)
+input_file = Path(in_directory).joinpath(filename)
 
 if st.button("Analyze!"):
     #Read in the image

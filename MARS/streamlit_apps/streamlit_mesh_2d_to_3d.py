@@ -252,18 +252,18 @@ st.title('2d to 3d mesh')
 
 directory = Path(st.sidebar.text_input('What directory is the mesh file in?', ""))
 output = Path(st.sidebar.text_input("What is the output directory?", ""))
-file = file_selector(directory)
+mesh_file = file_selector(directory)
 bone = st.sidebar.text_input("What bone is it?",
                              "example: canonical_Ovis_Ast")
 
 #write_format = st.sidebar.checkbox("Write out with scientific notation?")
-mesh_input = Path(directory).joinpath(file)
+mesh_input = Path(directory).joinpath(mesh_file)
 
 if output == "":
     output = Path(directory)
 
 if st.button('Load mesh'):
-    st.write("mesh file is:", file)
+    st.write("mesh file is:", mesh_file)
     st.write('The input is set to', mesh_input)
     st.write('The output is set  to', output)
     with st.spinner('Loading data...'):
@@ -274,16 +274,16 @@ if st.button('Load mesh'):
     #result = subprocess.run('python'
     #                        ' "' + str(external_script) + '" '
     #                        + '"' + str(mesh_input) + '"', shell=True)
-    with st.spinner(f"Converting {file} to inp..."):
+    with st.spinner(f"Converting {mesh_file} to inp..."):
         result = subprocess.Popen(['python',
                                     str(external_script),
                                     str(directory),
-                                    str(file),
+                                    str(mesh_file),
                                     str(output)],
                                   shell=True)
 
 if st.button('Process inp'):
-    inp_name = Path(output).joinpath(file)
+    inp_name = Path(output).joinpath(mesh_file)
     st.write("reading in ", inp_name)
     inp_name = str(inp_name)[:-4]
     st.write("Name_before_add", inp_name)

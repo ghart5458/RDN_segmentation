@@ -641,7 +641,7 @@ def three_class_segmentation_volume(inputImage, direction="z", network=""):
     progress_bar = st.progress(0)
     # Loop through the images in the folder and use the image name for the output name
     for i in range(seg_count):
-        image = feed_slice(inputImage, slice=i, direction=str(direction))
+        image = feed_slice(inputImage, slice_num=i, direction=str(direction))
 
         #Read the image in with pillow and set it as a numpy array for pytorch
         image = _setup_sitk_image(image_slice=image, direction=direction)
