@@ -81,8 +81,7 @@ if version_check == "above":
 
 
 def main():
-    """
-    Streamlit GUI to perform data cleaning prior to training. Reading and writing of values is predominantly
+    """Streamlit GUI to perform data cleaning prior to training. Reading and writing of values is predominantly
     handled with SimpleITK.
     """
     #Get user settings and set up the state
@@ -1199,8 +1198,7 @@ def main():
 ####
 
 def color_overlay(image, overlay_image, overlay_thresh=254, color=None, alpha=0.5, darkmode=False):
-    """
-    Function to read in and overlay two black and white images in open cv2 format.
+    """Function to read in and overlay two black and white images in open cv2 format.
     :param image: An openCV style image array. Generally grey value data.
     :param overlay_image: An openCV style image array. Generally grey value data.
     :param overlay_thresh: Integer threshold value for the overlay.
@@ -1229,8 +1227,7 @@ def model_initiation(model_path, cuda_index):
     return (net)
 
 def three_class_segmentation(input_image, network=""):
-    """
-    Function to segment a directory of 2d images using a pytorch model
+    """Function to segment a directory of 2d images using a pytorch model
     Images must be in a SimpleITK readable format (e.g. "tif", "png", "jpg", "bmp", "mhd", "nii", etc.)
     :param input_image: A list of images to be segmented.
     :param outDir: The output directory. If this doesn't exist it will be created.
@@ -1265,8 +1262,7 @@ def three_class_segmentation(input_image, network=""):
     return seg_image
 
 def _setup_sitk_image(image_slice, direction="z"):
-    """
-    Internal function to read in an image and setup for classification by pytorch.
+    """Internal function to read in an image and setup for classification by pytorch.
     """
     # Open the image using pillow and ensure it is grey scale ('L'), then turn it into a numpy array
 
@@ -1291,8 +1287,7 @@ def _setup_sitk_image(image_slice, direction="z"):
 
 
 def _view_predictor(pred):
-    """
-    Internal function to convert predictions to an image for viewing in stremlit.
+    """Internal function to convert predictions to an image for viewing in stremlit.
     """
     # The dictionary for the grey value means for each class.
     # This will results in 0 for air, 128 for dirt, and 255 for bone.
@@ -1310,8 +1305,7 @@ def _view_predictor(pred):
     return pred_img
 
 def download_button(object_to_download, download_filename, button_text, pickle_it=False):
-    """
-    Generates a link to download the given object_to_download.
+    """Generates a link to download the given object_to_download.
     Params:
     ------
     object_to_download:  The object to be downloaded.
@@ -1320,13 +1314,16 @@ def download_button(object_to_download, download_filename, button_text, pickle_i
     link.
     button_text (str): Text to display on download button (e.g. 'click here to download file')
     pickle_it (bool): If True, pickle file.
-    Returns:
+
+    Returns
     -------
     (str): the anchor tag to download object_to_download
-    Examples:
+
+    Examples
     --------
     download_link(your_df, 'YOUR_DF.csv', 'Click to download data!')
     download_link(your_str, 'YOUR_STRING.txt', 'Click to download text!')
+
     """
     #https://gist.github.com/chad-m/6be98ed6cf1c4f17d09b7f6e5ca2978f
     if pickle_it:
@@ -1391,8 +1388,7 @@ def download_button(object_to_download, download_filename, button_text, pickle_i
     return dl_link
 
 def _end_timer(start_timer, message : str =""):
-    """
-    Simple function to print the end of a timer in a single line instead of being repeated.
+    """Simple function to print the end of a timer in a single line instead of being repeated.
     :param start_timer: timer start called using timer() after importing: from time import time as timer.
     :param message: String that makes the timing of what event more clear (e.g. "segmenting", "meshing").
     :return: Returns a sring mesuraing the end of a timed event in seconds.
@@ -1413,8 +1409,7 @@ def _end_timer(start_timer, message : str =""):
         st.text(f"{message} took: {time_formatted} {time_unit}")
 
 def _end_timer_sidebar(start_timer, message=""):
-    """
-    Simple function to print the end of a timer in a single line instead of being repeated.
+    """Simple function to print the end of a timer in a single line instead of being repeated.
     :param start_timer: timer start called using timer() after importing: from time import time as timer.
     :param message: String that makes the timing of what event more clear (e.g. "segmenting", "meshing").
     :return: Returns a sring mesuraing the end of a timed event in seconds.
@@ -1621,32 +1616,29 @@ def generate_ratios_streamlit_multi(hdf5_file: Union[str, Path], patches_csv: pd
 
 
 def make_parallel(func):
-    """
-        Decorator used to decorate any function which needs to be parallized.
-        After the input of the function should be a list in which each element is a instance of input fot the normal function.
-        You can also pass in keyword arguements seperatley.
-        https://medium.com/analytics-vidhya/python-decorator-to-parallelize-any-function-23e5036fb6a
-        :param func: function
-            The instance of the function that needs to be parallelized.
-        :return: function
-        : example:
-        list_of_post_ids = list(range(1, 20))
+    """Decorator used to decorate any function which needs to be parallized.
+    After the input of the function should be a list in which each element is a instance of input fot the normal function.
+    You can also pass in keyword arguements seperatley.
+    https://medium.com/analytics-vidhya/python-decorator-to-parallelize-any-function-23e5036fb6a
+    :param func: function
+        The instance of the function that needs to be parallelized.
+    :return: function
+    : example:
+    list_of_post_ids = list(range(1, 20))
 
-        # Serial way of calling the function
-        results = []
-        for post_id in list_of_post_ids:
-        res = sample_function(post_id)
-        results.append(res)
+    # Serial way of calling the function
+    results = []
+    for post_id in list_of_post_ids:
+    res = sample_function(post_id)
+    results.append(res)
 
-        # Paralleized way of calling the function
-        results = make_parallel(sample_function)(list_of_post_ids)
+    # Paralleized way of calling the function
+    results = make_parallel(sample_function)(list_of_post_ids)
     """
 
     @wraps(func)
     def wrapper(lst):
-        """
-
-        :param lst:
+        """:param lst:
             The inputs of the function in a list.
         :return:
         """
@@ -1758,9 +1750,7 @@ def rdn_train(net, optimizer, data_loader, epoch=None, total_epoch=None, use_gpu
 
 
 def download_model(model, model_name):
-    """
-
-    : param model:
+    """: param model:
     : param model_name:
     : return:
     """
@@ -1811,13 +1801,11 @@ def rescale_label_proper(input_image, input_file_name: str):
     writer.Execute(rescaled)
 
 def rescale_intensity(inputFilename: str, writeOut: bool=True, file_type: str="", outDir: Union[str, Path]=""):
-    """
-    Load in a 2d image file and rescale for data augmentation.
+    """Load in a 2d image file and rescale for data augmentation.
     :param inputFilename: Name of file to be resclaed. Can be anything that SimpleITK reads.
     :return: Returns a rescaled tif image.
     @rtype: object
     """
-
     out_name = str(inputFilename).rsplit(".", 1)[0]
     if file_type == "":
         file_type = str(inputFilename).rsplit(".", 1)[-1]
@@ -1875,12 +1863,10 @@ def rescale_intensity(inputFilename: str, writeOut: bool=True, file_type: str=""
         return rescaled
 
 def downscale_intensity(inputFilename, downscale_value=100, writeOut=True, file_type="", outDir=""):
-    """
-    Load in a 2d image file and rescale for data augmentation.
+    """Load in a 2d image file and rescale for data augmentation.
     :param inputFilename: Name of file to be resclaed. Can be anything that SimpleITK reads.
     :return: Returns a rescaled tif image.
     """
-
     out_name = str(inputFilename).rsplit(".", 1)[0]
     if file_type == "":
         file_type = str(inputFilename).rsplit(".", 1)[-1]
@@ -1964,8 +1950,7 @@ def file_selector(folder_path='.', extension="", selectbox_text="", unique_key="
 
 
 def clean_image(inputFilename, suffix="", out_name="", out_type="", out_dir="", remove_space=True, remove_dblundr=True, remove_hyphen=True, to_streamlit=False):
-    """
-    Function to read in and write out a 2d image. Useful for file type conversion and renaming.
+    """Function to read in and write out a 2d image. Useful for file type conversion and renaming.
     :param inputFilename: Name of file to be resclaed. Can be anything that SimpleITK reads.
     :param suffix: string that will appear before the out_type
     :return: Returns a 2d image.
@@ -2079,8 +2064,7 @@ def color_print(text: str, color: str):
 
 
 def subtract_images(inputImage1: sitk.Image, inputImage2: sitk.Image):
-    """
-    Function to subtract two SimpleITK images using the Subtract filter.
+    """Function to subtract two SimpleITK images using the Subtract filter.
 
     :param inputImage1: A SimpleITK image.
     :param inputImage2: A SimpleITK image.
@@ -2144,8 +2128,7 @@ def setup_gpu(device_num, state):
 
 
 def _convert_size(sizeBytes):
-    """
-    Function to return file size in a human readable manner.
+    """Function to return file size in a human readable manner.
     :param sizeBytes: bytes calculated with file_size
     :return:
     """
@@ -2205,7 +2188,6 @@ class _SessionState:
 
     def sync(self):
         """Rerun the app with all state values up to date from the beginning to fix rollbacks."""
-
         # Ensure to rerun only once to avoid infinite loops
         # caused by a constantly changing state value at each run.
         #

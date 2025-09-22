@@ -77,7 +77,7 @@ def rdn_train(net, optimizer, data_loader, epoch=None, total_epoch=None, use_gpu
 
         print(f'\nAverage, loss1: {(loss1_sum / (last_batches + 1)):.6f}, loss2: {(loss2_sum/ (last_batches + 1)):.6f}.')
 
-    ...
+
 
 def rdn_val(net, data_set, use_gpu = False, i_epoch = None, class_num = 3):
 

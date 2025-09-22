@@ -1,5 +1,4 @@
-"""
-Script to run the 3_class model in the command line. This should be executed using the pytorch_seg conda environment
+"""Script to run the 3_class model in the command line. This should be executed using the pytorch_seg conda environment
 
 Author: Sun, Yung-Chen yzs5463@psu.edu
 Author: Yazdani, Amirsaeed auy200@psu.edu
@@ -47,26 +46,33 @@ sys.path.append(str(script_dir))
 #sys.path.append(r"D:\Desktop\git_repo\MARS\morphology\segmentation\pytorch_segmentation")
 
 class ReportPosition(sitk.Command):
-    """
-    class object to report progress in a consistent way.
+    """class object to report progress in a consistent way.
     #Taken from https://simpleitk.readthedocs.io/en/master/link_FilterProgressReporting_docs.html
     """
+
     def __init__(self, po):
         # required
         super().__init__()
         self.processObject = po
 
     def Execute(self):
-        """
-        :return: Prints a string with the progress to the console
+        """Print progress information to the console.
+
+        Returns:
+            None: Prints progress percentage to console
+
         """
         print(f"\r           Progress:    {100 * self.processObject.GetProgress():03.1f}%", end='')
 
     def filterPosition(self, startorstop=""):
-        """
-        Function to print either start or stop within a filter.
-        :param startorstop:
-        :return:
+        """Print filter start or stop message.
+
+        Args:
+            startorstop (str): Either "start" or "stop" to indicate filter state
+
+        Returns:
+            None: Prints status message to console
+
         """
         if startorstop == 'start':
             print(f"\n{self.processObject.GetName()} executing....\nPlease stand by...")
@@ -77,8 +83,7 @@ class ReportPosition(sitk.Command):
 
 
 def _setup_image(data_folder, image_name):
-    """
-    Internal function to read in an image and setup for classification by pytorch.
+    """Internal function to read in an image and setup for classification by pytorch.
     """
     # Open the image using pillow and ensure it is grey scale ('L'), then turn it into a numpy array
     image = Image.open(os.path.join(data_folder, image_name)).convert('L')
@@ -91,11 +96,15 @@ def _setup_image(data_folder, image_name):
     return image
 
 def _end_timer(start_timer, message=""):
-    """
-    Simple function to print the end of a timer in a single line instead of being repeated.
-    :param start_timer: timer start called using timer() after importing: from time import time as timer.
-    :param message: String that makes the timing of what event more clear (e.g. "segmenting", "meshing").
-    :return: Returns a sring mesuraing the end of a timed event in seconds.
+    """Print elapsed time for a timed operation.
+
+    Args:
+        start_timer (float): Timer start value from timer() function
+        message (str): Optional description of the timed operation
+
+    Returns:
+        None: Prints elapsed time to console
+
     """
     start = start_timer
     message = str(message)
@@ -107,10 +116,14 @@ def _end_timer(start_timer, message=""):
         print(f"{message} took: {float(elapsed):10.4f} seconds")
 
 def _convert_size(sizeBytes):
-    """
-    Function to return file size in a human readable manner.
-    :param sizeBytes: bytes calculated with file_size
-    :return:
+    """Convert file size from bytes to human-readable format.
+
+    Args:
+        sizeBytes (int): File size in bytes
+
+    Returns:
+        tuple: (formatted_size_string, numeric_value) in appropriate units
+
     """
     if sizeBytes == 0:
         return "0B"
@@ -121,13 +134,17 @@ def _convert_size(sizeBytes):
     return f"{s} {size_name[i]}", s
 
 def _file_size(dim1, dim2, dim3, bits):
-    """
-    Get the file size of an image volume from the x, y, and z dimensions.
-    :param dim1: The x dimension of an image file.
-    :param dim2: The y dimension of an image file.
-    :param dim3: The z dimension of an image file.
-    :param bits: The type of bytes being used (e.g. unsigned 8 bit, float 32, etc.)
-    :return: Returns the size in bytes.
+    """Calculate file size of an image volume from its dimensions.
+
+    Args:
+        dim1 (int): X dimension of the image
+        dim2 (int): Y dimension of the image
+        dim3 (int): Z dimension of the image
+        bits (int): Bit depth (8, 16, 32, or 64)
+
+    Returns:
+        int: Estimated file size in appropriate units
+
     """
     if bits == 8:
         bit = 1
@@ -144,13 +161,27 @@ def _file_size(dim1, dim2, dim3, bits):
     return size
 
 def _get_threads(threads):
+    """Get thread count for parallel processing.
+
+    Args:
+        threads (str or int): Either "threads" for auto-detection or specific count
+
+    Returns:
+        int: Number of threads to use (CPU count - 1 for auto, otherwise specified value)
+
+    """
     threads = int(multiprocessing.cpu_count()) - 1 if threads == "threads" else int(threads)
     return threads
 
 def _print_info(inputImage):
-    """
-    Function to return the basic information of an image volume.
-    :param inputImage: A SimpleITK formated image volume.
+    """Print basic information about an image volume.
+
+    Args:
+        inputImage (sitk.Image): SimpleITK formatted image volume
+
+    Returns:
+        None: Prints image information to console
+
     """
     image_type = inputImage.GetPixelIDTypeAsString()
     size = inputImage.GetSize()
@@ -168,8 +199,7 @@ def _print_info(inputImage):
     print(f"{image_type}\nx:{xdim} y:{ydim} z:{zdim}\nResolution:{res}\n")
 
 def _setup_image(data_folder, image_name):
-    """
-    Internal function to read in an image and setup for classification by pytorch.
+    """Internal function to read in an image and setup for classification by pytorch.
     """
     # Open the image using pillow and ensure it is grey scale ('L'), then turn it into a numpy array
     image = Image.open(os.path.join(data_folder, image_name)).convert('L')
@@ -182,8 +212,7 @@ def _setup_image(data_folder, image_name):
     return image
 
 def _save_predictors(pred, save_folder, image_name, file_type):
-    """
-    Internal function to convert predictions to an image and save in an output folder.
+    """Internal function to convert predictions to an image and save in an output folder.
     """
     # The dictionary for the grey value means for each class.
     # This will results in 0 for air, 128 for dirt, and 255 for bone.
@@ -205,8 +234,7 @@ def _save_predictors(pred, save_folder, image_name, file_type):
     pred_img.save(os.path.join(save_folder, f"{image_name[:-3]}.{file_type!s}"), str(f_type))
 
 def _setup_sitk_image(image_slice, direction="z"):
-    """
-    Internal function to read in an image and setup for classification by pytorch.
+    """Internal function to read in an image and setup for classification by pytorch.
     """
     # Open the image using pillow and ensure it is grey scale ('L'), then turn it into a numpy array
 
@@ -231,8 +259,7 @@ def _setup_sitk_image(image_slice, direction="z"):
     return image
 
 def _return_predictors(pred, direction="z"):
-    """
-    Internal function to convert predictions to an image and save in an output folder.
+    """Internal function to convert predictions to an image and save in an output folder.
     """
     direction = str(direction).lower()
 
@@ -259,28 +286,54 @@ def _return_predictors(pred, direction="z"):
 
 
 def _get_outDir(outDir):
-    """
-    Simple function to wrap an output directory using pathlib.
-    :param outDir: Directory for writing out a file.
-    :return:
+    """Validate and format output directory path using pathlib.
+
+    Args:
+        outDir (str): Output directory path (empty string uses current directory)
+
+    Returns:
+        Path: Pathlib Path object for the output directory
+
     """
     outDir = Path.cwd() if outDir == "" else Path(str(outDir))
     return outDir
 
 def _get_inDir(inDir):
-    """
-    Simple function to wrap an input directory using pathlib.
-    :param outDir: Directory for writing out a file.
-    :return:
+    """Validate and format input directory path using pathlib.
+
+    Args:
+        inDir (str): Input directory path (empty string uses current directory)
+
+    Returns:
+        Path: Pathlib Path object for the input directory
+
     """
     inDir = Path.cwd() if inDir == "" else Path(str(inDir))
     return inDir
 
 def alpha_to_int(text):
+    """Convert text to integer if it represents a digit, otherwise return as-is.
+
+    Args:
+        text (str): Input text that may represent an integer
+
+    Returns:
+        int or str: Integer value if text is numeric, otherwise original text
+
+    """
     clean_text = int(text) if text.isdigit() else text
     return clean_text
 
 def alpha_to_float(text):
+    """Convert text to float if possible, otherwise return as-is.
+
+    Args:
+        text (str): Input text that may represent a float
+
+    Returns:
+        float or str: Float value if text is numeric, otherwise original text
+
+    """
     try:
         retval = float(text)
     except ValueError:
@@ -288,27 +341,53 @@ def alpha_to_float(text):
     return retval
 
 def natural_keys(text):
-    '''
-    alist.sort(key=natural_keys) sorts in human order
-    http://nedbatchelder.com/blog/200712/human_sorting.html
-    (See Toothy's implementation in the comments)
-    '''
+    """Generate keys for natural sorting of strings with embedded numbers.
+
+    Enables human-friendly sorting (e.g., ['file1', 'file2', 'file10'] instead
+    of ['file1', 'file10', 'file2']).
+
+    Args:
+        text (str): Input string to generate sorting key for
+
+    Returns:
+        list: List of mixed integers and strings for natural sorting
+
+    Reference:
+        http://nedbatchelder.com/blog/200712/human_sorting.html
+
+    """
     return [alpha_to_int(c) for c in re.split(r'(\d+)', text)]
 
 def natural_keys_float(text):
-    '''
-    alist.sort(key=natural_keys) sorts in human order
-    http://nedbatchelder.com/blog/200712/human_sorting.html
-    (See Toothy's implementation in the comments)
-    float regex comes from https://stackoverflow.com/a/12643073/190597
-    '''
+    """Generate keys for natural sorting of strings with embedded floating point numbers.
+
+    Similar to natural_keys but handles floating point numbers in addition to integers.
+
+    Args:
+        text (str): Input string to generate sorting key for
+
+    Returns:
+        list: List of mixed floats and strings for natural sorting
+
+    References:
+        http://nedbatchelder.com/blog/200712/human_sorting.html
+        Float regex from https://stackoverflow.com/a/12643073/190597
+
+    """
     return [alpha_to_float(c) for c in re.split(r'[+-]?([0-9]+(?:[.][0-9]*)?|[.][0-9]+)', text)]
 
 def read_image(inputImage):
-    """
-    Reads in various image file formats (mha, mhd, nia, nii, vtk, etc.) and places them into a SimpleITK volume format.
-    :param inputImage: Either a volume (mhd, nii, vtk, etc.).
-    :return: Returns a SimpleITK formatted image object.
+    """Read various image file formats into SimpleITK format.
+
+    Supports medical imaging formats including mha, mhd, nii, vtk, and others.
+    Prints timing and basic image information during processing.
+
+    Args:
+        inputImage (str or Path): Path to image file to read
+
+    Returns:
+        sitk.Image: SimpleITK formatted image object
+
     """
     print(f"Reading in {inputImage}.")
     start = timer()
@@ -319,14 +398,20 @@ def read_image(inputImage):
     return inputImage
 
 def write_image(inputImage, outName, outDir="", fileFormat="mhd"):
-    """
-    Writes out a SimpleITK image in any supported file format (mha, mhd, nii, dcm, tif, vtk, etc.).
-    :param inputImage: SimpleITK formated image volume
-    :param outName: The file name
-    :param outDir: The directory where the file should be written to. If not path is provided the current directory will
-    be used.
-    :param fileFormat: The desired file format. If no file format is provided, mhd will be used.
-    :return: Returns an image file written to the hard disk.
+    """Write SimpleITK image to disk in specified format.
+
+    Supports medical imaging formats including mha, mhd, nii, dcm, tif, vtk, and others.
+    Prints timing and file information during writing.
+
+    Args:
+        inputImage (sitk.Image): SimpleITK formatted image volume
+        outName (str): Output filename without extension
+        outDir (str): Output directory (defaults to current directory if empty)
+        fileFormat (str): File format extension (defaults to "mhd")
+
+    Returns:
+        None: Writes image file to disk
+
     """
     start = timer()
     outName = str(outName)
@@ -342,12 +427,16 @@ def write_image(inputImage, outName, outDir="", fileFormat="mhd"):
     _end_timer(start, message="Writing the image")
 
 def feed_slice(inputImage, slice, direction="Z"):
-    """
-    Function to write out a single slice from a SimpleITK volume.
-    :param inputImage: SimpleITK formatted image.
-    :param outName: The resulting image file name along with the file format.
-    :param slice: The slice number along the Z dimension.
-    :return: An image written into memoryy.
+    """Extract a single slice from a SimpleITK volume.
+
+    Args:
+        inputImage (sitk.Image): SimpleITK formatted image volume
+        slice (int): Slice number to extract
+        direction (str): Slice direction - "Z", "Y", or "X" (default: "Z")
+
+    Returns:
+        sitk.Image: 2D image slice in memory
+
     """
     direction = str(direction).lower()
 
@@ -360,13 +449,20 @@ def feed_slice(inputImage, slice, direction="Z"):
     return image_slice
 
 def three_class_segmentation(inDir, outDir, outType, network=""):
-    """
-    Function to segment a directory of 2d images using a pytorch model
-    Images must be in a pillow readable format (e.g. "tif", "png", "jpg", "bmp")
-    :param inDir: The input directory where the images are located
-    :param outDir: The output directory. If this doesn't exist it will be created.
-    :param outType: The output file type. Supported type are tif, png, jpg, and bmp.
-    :return: Returns a segmented 2d image with grey values representing air, dirt, and bone.
+    """Segment a directory of 2D images using PyTorch model.
+
+    Processes all images in input directory and generates 3-class segmentation
+    with gray values representing air, dirt/tissue, and bone classes.
+
+    Args:
+        inDir (str): Input directory containing images to segment
+        outDir (str): Output directory for segmented images (created if needed)
+        outType (str): Output file format ("tif", "png", "jpg", "bmp")
+        network: PyTorch neural network model for segmentation
+
+    Returns:
+        None: Saves segmented images to output directory
+
     """
     # Check to make sure the output folder exists, and if it doesn't make it
     data_folder = inDir
@@ -416,13 +512,19 @@ def three_class_segmentation(inDir, outDir, outType, network=""):
     print('\n\nSegmentations are done!\n\n')
 
 def three_class_segmentation_volume(inputImage, direction="z", network=""):
-    """
-    Function to segment a directory of 2d images using a pytorch model
-    Images must be in a pillow readable format (e.g. "tif", "png", "jpg", "bmp")
-    :param inDir: The input directory where the images are located
-    :param outDir: The output directory. If this doesn't exist it will be created.
-    :param outType: The output file type. Supported type are tif, png, jpg, and bmp.
-    :return: Returns a segmented 2d image with grey values representing air, dirt, and bone.
+    """Segment a 3D volume slice-by-slice using PyTorch model.
+
+    Processes volume along specified direction and generates 3-class segmentation
+    with gray values representing air, dirt/tissue, and bone classes.
+
+    Args:
+        inputImage (sitk.Image): SimpleITK formatted 3D image volume
+        direction (str): Slicing direction - "z", "y", or "x" (default: "z")
+        network: PyTorch neural network model for segmentation
+
+    Returns:
+        sitk.Image: Segmented 3D volume with 3-class labels
+
     """
     net = network
     start = timer()
@@ -476,12 +578,15 @@ def three_class_segmentation_volume(inputImage, direction="z", network=""):
     return vol_image
 
 def rescale_8(inputImage):
-    """
-    Takes in a SimpleITK image and rescales it to 8 bit.
-    :param inputImage: A SimpleITK formatted volume.
-    :return: Returns an unsigned 8-bit SimpleITK formatted volume with gray values scaled between 0-255.
-    """
+    """Rescale SimpleITK image to 8-bit unsigned integer format.
 
+    Args:
+        inputImage (sitk.Image): SimpleITK formatted image volume
+
+    Returns:
+        sitk.Image: Unsigned 8-bit image with values scaled to 0-255 range
+
+    """
     imageType = inputImage.GetPixelID()
 
     #Check to see if it is already unisgned 8 bit.
@@ -499,10 +604,14 @@ def rescale_8(inputImage):
     return scaled_8
 
 def rescale_16(inputImage):
-    """
-    Takes in a SimpleITK image and rescales it to 16 bit.
-    :param inputImage: A SimpleITK formatted volume.
-    :return: Returns an unsigned 16-bit SimpleITK formatted volume with gray values scaled between 0-65,535.
+    """Rescale SimpleITK image to 16-bit unsigned integer format.
+
+    Args:
+        inputImage (sitk.Image): SimpleITK formatted image volume
+
+    Returns:
+        sitk.Image: Unsigned 16-bit image with values scaled to 0-65535 range
+
     """
     imageType = inputImage.GetPixelID()
     if imageType == 3:
@@ -518,10 +627,14 @@ def rescale_16(inputImage):
     return scaled_16
 
 def rescale_32(inputImage):
-    """
-    Takes in a SimpleITK image and rescales it to 32 bit.
-    :param inputImage: A SimpleITK formatted volume.
-    :return: Returns an unsigned 16-bit SimpleITK formatted volume with 2^64 distinct gray values.
+    """Rescale SimpleITK image to 32-bit float format.
+
+    Args:
+        inputImage (sitk.Image): SimpleITK formatted image volume
+
+    Returns:
+        sitk.Image: 32-bit float image with full precision values
+
     """
     imageType = inputImage.GetPixelID()
     if imageType == 8:
@@ -537,12 +650,15 @@ def rescale_32(inputImage):
     return scaled_32
 
 def combine_images(inputImage1, inputImage2):
-    """
-    Function to combine two SimpleITK images using the Add filter.
+    """Combine two SimpleITK images using addition.
 
-    :param inputImage1: SimpleITK image.
-    :param inputImage2: SimpleITK image.
-    :return: Returns a single SimpleITK image.
+    Args:
+        inputImage1 (sitk.Image): First SimpleITK image
+        inputImage2 (sitk.Image): Second SimpleITK image
+
+    Returns:
+        sitk.Image: Combined image result of addition
+
     """
     start = timer()
 
@@ -553,7 +669,20 @@ def combine_images(inputImage1, inputImage2):
     return combined
 
 def three_class_seg_xyz(inputImage, network=""):
-    #Segment the volume from all three directions
+    """Segment 3D volume from all three orthogonal directions and combine results.
+
+    Performs segmentation along X, Y, and Z axes then combines the results
+    for improved segmentation accuracy through multi-directional consensus.
+
+    Args:
+        inputImage (sitk.Image): SimpleITK formatted 3D image volume
+        network: PyTorch neural network model for segmentation
+
+    Returns:
+        sitk.Image: Combined 3-class segmentation result
+
+    """
+    # Segment the volume from all three directions
     seg_z = three_class_segmentation_volume(inputImage=inputImage, direction="z", network=network)
     seg_y = three_class_segmentation_volume(inputImage=inputImage, direction="y", network=network)
     seg_x = three_class_segmentation_volume(inputImage=inputImage, direction="x", network=network)
@@ -575,10 +704,14 @@ def three_class_seg_xyz(inputImage, network=""):
     return seg
 
 def _set_filter_events(sitkfilter):
-    """
-    Internal function to setup the filter events passed to it. Uses the ReportPosition class.
-    :param sitkfilter: A simpleITK filter
-    :return: Returns a filter loaded with event commands.
+    """Configure filter events for progress reporting.
+
+    Args:
+        sitkfilter: SimpleITK filter object
+
+    Returns:
+        tuple: (configured_filter, filter_events) with progress reporting enabled
+
     """
     filter_events = ReportPosition(sitkfilter)
     sitkfilter.AddCommand(sitk.sitkStartEvent, filter_events)
@@ -588,6 +721,19 @@ def _set_filter_events(sitkfilter):
 
 
 def thresh_simple(inputImage, background=0, foreground=1, outside=0, threads="threads"):
+    """Apply simple threshold filter to image.
+
+    Args:
+        inputImage (sitk.Image): SimpleITK image to threshold
+        background (int): Lower threshold value (default: 0)
+        foreground (int): Upper threshold value (default: 1)
+        outside (int): Value for pixels outside threshold range (default: 0)
+        threads (str or int): Thread count for processing (default: "threads")
+
+    Returns:
+        sitk.Image: Thresholded image
+
+    """
     start = timer()
     thresh = sitk.ThresholdImageFilter()
     thresh.SetNumberOfThreads(_get_threads(threads))
@@ -601,12 +747,15 @@ def thresh_simple(inputImage, background=0, foreground=1, outside=0, threads="th
     return threshold
 
 def subtract_images(inputImage1, inputImage2):
-    """
-    Function to subtract two SimpleITK images using the Subtract filter.
+    """Subtract two SimpleITK images.
 
-    :param inputImage1: A SimpleITK image.
-    :param inputImage2: A SimpleITK image.
-    :return: Returns a single SimpleITK image.
+    Args:
+        inputImage1 (sitk.Image): First SimpleITK image (minuend)
+        inputImage2 (sitk.Image): Second SimpleITK image (subtrahend)
+
+    Returns:
+        sitk.Image: Result of image subtraction
+
     """
     start = timer()
 
@@ -617,11 +766,14 @@ def subtract_images(inputImage1, inputImage2):
     return subtracted
 
 def read_stack(inputStack):
-    """
-    Reads in a series of images and then places them into a SimpleITK volume format.
+    """Read a series of images into a SimpleITK volume.
 
-    :param inputStack: A stack of images (e.g. tif, png, etc).
-    :return: Returns a SimpleITK formatted image object.
+    Args:
+        inputStack (list): List of image file paths to combine into volume
+
+    Returns:
+        sitk.Image: 3D SimpleITK volume assembled from image stack
+
     """
     # Read in the other image and recast to float 32
     start = timer()
@@ -634,14 +786,18 @@ def read_stack(inputStack):
     return inputStack
 
 def read_dicom(inputStack):
-    """
-    Specialized DICOM reader that preserves the metadata tags in the dicom files.
-    :param inputStack: Dicom stack.
-    :return: Returns a SimpleITK image and a list containing the metadata.
-    note that tag 0020|000e is a unique identifier that may be modified in the returned metadata. Otherwise the data
-    and time are used.
-    """
+    """Read DICOM image series while preserving metadata.
 
+    Specialized reader that maintains DICOM metadata tags for medical imaging
+    workflows. Tag 0020|000e may be modified with timestamp information.
+
+    Args:
+        inputStack (list): List of DICOM file paths to read
+
+    Returns:
+        tuple: (sitk_image, series_tag_values) containing the volume and metadata
+
+    """
     start = timer()
     print(f"Reading in {len(inputStack)} DICOM images...")
 
@@ -685,7 +841,17 @@ def read_dicom(inputStack):
     return sitk_image, series_tag_values
 
 def write_dicom(inputImage, metadata, outName, outDir=""):
-    """
+    """Write SimpleITK image as DICOM series with preserved metadata.
+
+    Args:
+        inputImage (sitk.Image): SimpleITK formatted image volume
+        metadata (list): Series metadata tags to preserve
+        outName (str): Base output filename (without .dcm extension)
+        outDir (str): Output directory (defaults to current directory if empty)
+
+    Returns:
+        None: Writes DICOM series to disk
+
     """
     #Modified from: https://simpleitk.readthedocs.io/en/master/link_DicomSeriesReadModifyWrite_docs.html
 

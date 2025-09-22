@@ -1,10 +1,9 @@
-'''
-Gui wrapper for the 3 class segmentation
+"""Gui wrapper for the 3 class segmentation
 
 Author: Sun, Yung-Chen yzs5463@psu.edu
 Author: Yazdani, Amirsaeed auy200@psu.edu
 Author: Nick Stephens nbs49@psu.edu
-'''
+"""
 
 import os
 import sys

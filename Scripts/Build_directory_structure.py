@@ -1,5 +1,4 @@
-"""
-Python 3.6+ Script to simplify the process of generating a par file from an existing data structure. Uses glob to
+"""Python 3.6+ Script to simplify the process of generating a par file from an existing data structure. Uses glob to
 recursively find a specific file string in a base folder. It then splits off the file type and the location.
 Thereafter it will attempt to find the bone, portion, and side. If it doesn't work, there may be some manual
 fiddling involved. When formatted properly, you can generate a par file from the inventory.
@@ -30,8 +29,7 @@ import pandas as pd
 #                                      #
 ########################################
 def _end_timer(start_timer, message=""):
-    """
-    Simple function to print the end of a timer in a single line instead of being repeated.
+    """Simple function to print the end of a timer in a single line instead of being repeated.
     :param start_timer: timer start called using timer() after importing: from time import time as timer.
     :param message: String that makes the timing of what event more clear (e.g. "segmenting", "meshing").
     :return: Returns a sring mesuraing the end of a timed event in seconds.
@@ -47,8 +45,7 @@ def _end_timer(start_timer, message=""):
 
 
 def get_initial_dataframe(matching_key, directory=""):
-    """
-    Function to return a pandas dataframe from a file structure using pathlibs recursive glob
+    """Function to return a pandas dataframe from a file structure using pathlibs recursive glob
     :param matching_key:
     :return: Returns a pandas dataframe with the location, file, and file_type
     :usage: df = get_intial_dataframe("*0001.tif")
@@ -110,12 +107,10 @@ def get_initial_dataframe(matching_key, directory=""):
 
 
 def build_from_multiple(file_type_list, directory=""):
-    """
-    If you have multiple file types to match you can loop through a list to build the initial dataframe.
+    """If you have multiple file types to match you can loop through a list to build the initial dataframe.
     :param file_type_list: A list of file types to text match (e.g. ["0001.tif", "0001.dcm", ".vol", ".raw"])
     :return: Returns a dataframe comprised of matching file types.
     """
-
     df = pd.DataFrame()
 
     if directory == "":
@@ -169,14 +164,12 @@ def setup_individual_nf(pandas_df, match_location="temp"):
 
 
 def setup_bone_columns(pandas_df, match_location="File_name", shafts=False):
-    """
-    Function do some initial categorization of bones based on the files names. Be careful, because people have
+    """Function do some initial categorization of bones based on the files names. Be careful, because people have
     many many many different ways of coding bones and anatomical regions.
     :param dataframe: A pandas dataframe with a ["File_name"] column
     :return: Returns a dataframe with the bone, portion, and side if they"re present.
     :useage: df = setup_bone_columns(df)
     """
-
     df = pandas_df.copy()
     # Use a pattern for the various bone names and portions people use
     bone_pattern = "fem|femur|fumer|_df_|_pf_|_dh_|_ph_|tib|tibia|c7|c6|vert|hum|humerus|calc|talus|patella"
@@ -377,8 +370,7 @@ def setup_bone_columns(pandas_df, match_location="File_name", shafts=False):
 
 
 def remove_unwanted_in_column(pandas_df, df_column="", match_list=""):
-    """
-    Fucntion to remove rows in a column using string matching. Accepts a list of case sensitive
+    """Fucntion to remove rows in a column using string matching. Accepts a list of case sensitive
     strings and a column name in a pandas dataframe. If a list isn't provided, this will default
     to a column named 'Location", and use the list  ["VOI", "IMJ", "CentreSlice", "Sinograms"].
 
@@ -416,8 +408,7 @@ def remove_unwanted_in_column(pandas_df, df_column="", match_list=""):
 
 # first define a function: given a Series of string, split each element into a new series
 def split_series(dataframe_series, text_seperator):
-    """
-    Splits a dataframe series and then uses grouby to rebuild it to include all the other information.
+    """Splits a dataframe series and then uses grouby to rebuild it to include all the other information.
     credit eyllansec: https://stackoverflow.com/questions/17116814/pandas-how-do-i-split-text-in-a-column-into-multiple-rows
     :param dataframe_series: series from a pandas dataframe
     :param text_seperator: Portion of the string to split into elements.
@@ -434,8 +425,7 @@ def split_series(dataframe_series, text_seperator):
 
 
 def explode(pandas_df, cols, split_on=","):
-    """
-    Explode dataframe on the given column, split on given delimeter.
+    """Explode dataframe on the given column, split on given delimeter.
     credit (titipata and piRSquared https://stackoverflow.com/questions/38651008/splitting-multiple-columns-into-rows-in-pandas-dataframe)
     :param df: pandas dataframe
     :param cols: columns you would like to split
@@ -470,8 +460,7 @@ def explode(pandas_df, cols, split_on=","):
 
 
 def numpy_concat(*args, join_char="_"):
-    """
-    Function to deal with nan values when concatenating portions of a dataframe.
+    """Function to deal with nan values when concatenating portions of a dataframe.
     :param args:
     :return: Returns an array that can be placed in a dataframe.
     """
@@ -480,8 +469,7 @@ def numpy_concat(*args, join_char="_"):
 
 
 def get_par(pandas_df, root_folder="Z:/RyanLab/Projects/nsf_human_variation/"):
-    """
-    Function to generate an initial par file for Medtool with default values.
+    """Function to generate an initial par file for Medtool with default values.
     :param pandas_df: A pandas dataframe containing the columns needed to generate the correct values.
     :param root_folder: The folder where the project is based. Default set to "Z:/RyanLab/Projects/nsf_human_variation/".
     :return: Returns a dataframe that is ready to be loaded into medtool.
@@ -577,8 +565,7 @@ def get_par(pandas_df, root_folder="Z:/RyanLab/Projects/nsf_human_variation/"):
 
 
 def linuxify_par(par_file, base_folder, linux_base_folder):
-    """
-    Convert a MedTool parameter file in windows format to linux format. Predominantly is concerned with fixing file paths.
+    """Convert a MedTool parameter file in windows format to linux format. Predominantly is concerned with fixing file paths.
     :param par_file: a MedTool formatted parameter file read in as a pandas data frame with the column [$folder]
     :param base_folder: The initial folder you want to replace.
     :param linux_base_folder: The folder naming convention you want to replace the base folder with.
@@ -619,8 +606,7 @@ def linuxify_par(par_file, base_folder, linux_base_folder):
 
 
 def print_df(pandas_df):
-    """
-    Function to quickly print all rows of a dataframe.
+    """Function to quickly print all rows of a dataframe.
     :param pandas_df:pandas dataframe or subset of a dataframe df["Bone], or df[["Individual", "Bone"]], etc.
     :return: Prints the complete dataframe to the console
     """
@@ -632,8 +618,7 @@ def print_df(pandas_df):
 
 
 def clean_temp(pandas_series):
-    """
-    Function to clean up a pandas series prior to splitting.
+    """Function to clean up a pandas series prior to splitting.
     :param pandas_series:
     :return:
     """
@@ -650,8 +635,7 @@ def clean_temp(pandas_series):
 
 
 def isolate_shafts(pandas_df, search_column="Location"):
-    """
-    Function to isolate just the shafts in a datafame. Uses the "location" column by default. Otherwise pass the column
+    """Function to isolate just the shafts in a datafame. Uses the "location" column by default. Otherwise pass the column
     header you wish to use (e.g. "File_name")
     :param pandas_df:
     :return:
@@ -664,13 +648,11 @@ def isolate_shafts(pandas_df, search_column="Location"):
 
 
 def remove_projections(pandas_df, fldr_substring=None):
-    """
-    Function to remove the projection folders and retain only the nested recontructed folders from a dataframe.
+    """Function to remove the projection folders and retain only the nested recontructed folders from a dataframe.
     :param pandas_df: pandas dataframs
     :param fldr_substring: A list of strings to match
     :return:
     """
-
     if fldr_substring is None:
         fldr_substring = ["_01", "_02", "_03"]
     df = pandas_df.copy()
@@ -689,8 +671,7 @@ def remove_projections(pandas_df, fldr_substring=None):
 
 
 def setup_temp(pandas_df):
-    """
-    Funciton to quickly replace some common abbreviations.
+    """Funciton to quickly replace some common abbreviations.
     :param pandas_df:
     :return:
     """
@@ -711,12 +692,10 @@ def set_print_size_max():
 
 
 def pre_explode_stacked(pandas_df):
-    """
-    This is a lazy and messy way to quickly clean up a temp column so it is a format that explode will use.
+    """This is a lazy and messy way to quickly clean up a temp column so it is a format that explode will use.
     :param pandas_df: Pandas dataframe.
     :return:
     """
-
     df = pandas_df.copy()
     df["temp"] = df["temp"].str.lower()
     df["temp"] = df["temp"].str.replace(
@@ -780,8 +759,7 @@ def pre_explode_stacked(pandas_df):
 
 
 def reassign_cell(pandas_df, column_name, location_list, assingment):
-    """
-    Assigns a string to a cell by the index number.
+    """Assigns a string to a cell by the index number.
     :param pandas_df:
     :param column_name:
     :param location_list:

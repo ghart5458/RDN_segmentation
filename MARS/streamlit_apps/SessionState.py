@@ -22,6 +22,7 @@ from streamlit.server.Server import Server
 class SessionState:
     def __init__(self, **kwargs):
         """A new SessionState object.
+
         Parameters
         ----------
         **kwargs : any
@@ -33,6 +34,7 @@ class SessionState:
         ''
         >>> session_state.favorite_color
         'black'
+
         """
         for key, val in kwargs.items():
             setattr(self, key, val)
@@ -41,6 +43,7 @@ class SessionState:
 def get(**kwargs):
     """Gets a SessionState object for the current session.
     Creates a new object if necessary.
+
     Parameters
     ----------
     **kwargs : any
@@ -59,6 +62,7 @@ def get(**kwargs):
     >>> session_state = get(user_name='', favorite_color='black')
     >>> session_state.user_name
     'Mary'
+
     """
     # Hack to get the session object from Streamlit.
 

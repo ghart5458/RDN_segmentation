@@ -1,13 +1,32 @@
-""" Full assembly of the parts to form the complete network """
+"""U-Net with Residual Dense Network (RDN) enhancement.
+
+Combines U-Net architecture with domain enrichment blocks for improved
+segmentation performance in medical imaging applications.
+"""
 
 import torch
+from torch import nn
 
 from .domian_enrich_block import DomainEnrich_Block
 from .unet_parts import DoubleConv, Down, OutConv, Up
 
 
 class UNet_RDN(nn.Module):
+    """U-Net architecture enhanced with Residual Dense Network blocks.
+
+    Implements U-Net segmentation with domain enrichment through parallel
+    RDN processing paths for improved feature extraction and representation.
+    """
+
     def __init__(self, n_channels, n_classes, bilinear=True):
+        """Initialize UNet_RDN model.
+
+        Args:
+            n_channels (int): Number of input channels
+            n_classes (int): Number of output classes
+            bilinear (bool): Use bilinear interpolation for upsampling (default: True)
+
+        """
         super().__init__()
         self.n_channels = n_channels
         self.n_classes = n_classes
@@ -30,6 +49,18 @@ class UNet_RDN(nn.Module):
         self.x_rdn2 = None
 
     def forward(self, x):
+        """Forward pass through UNet_RDN.
+
+        Processes input through dual RDN paths followed by standard U-Net
+        encoder-decoder architecture with skip connections.
+
+        Args:
+            x (torch.Tensor): Input tensor of shape (batch, channels, height, width)
+
+        Returns:
+            torch.Tensor: Output logits for segmentation classes
+
+        """
         self.x_rdn1 = self.rdn1(x)
         self.x_rdn2 = self.rdn2(x)
 

@@ -1,5 +1,6 @@
 """This application experiments with the (grid) layout and some styling
-Can we make a compact dashboard across several columns and with a dark theme?"""
+Can we make a compact dashboard across several columns and with a dark theme?
+"""
 #import gmsh
 import os
 import subprocess
@@ -12,10 +13,9 @@ import trimesh
 
 
 def mesh_info(mesh):
-    '''
-    A function to return basic information about a loaded 2d mesh
+    """A function to return basic information about a loaded 2d mesh
     :param mesh: A 2d mesh loaded through trimesh.load
-    '''
+    """
     mesh_2d = mesh
     triangles = len(mesh_2d.triangles)
     points = len(mesh_2d.vertices)
@@ -33,15 +33,13 @@ def mesh_info(mesh):
 
 #Function to read in an inp and output a case
 def inp_to_case(in_name, outname, out_dir):
-    '''
-    Function to read in an ascii inp file and output a point cloud, for cloud compare, and a case file,
+    """Function to read in an ascii inp file and output a point cloud, for cloud compare, and a case file,
     readable by paraview.
 
     :param in_name: Abaqus Ascii inp file name.
     :param outname: Output file name
     :return:
-    '''
-
+    """
     start = timer()
     file_name = str(outname)
     outname = Path(out_dir).joinpath(outname)
@@ -139,15 +137,13 @@ def inp_to_case(in_name, outname, out_dir):
 
 #Function to read in an inp and output a case
 def inp_to_case_2d(in_name, outname):
-    '''
-    Function to read in an ascii inp file and output a point cloud, for cloud compare, and a case file,
+    """Function to read in an ascii inp file and output a point cloud, for cloud compare, and a case file,
     readable by paraview.
 
     :param in_name: Abaqus Ascii inp file name.
     :param outname: Output file name
     :return:
-    '''
-
+    """
     start = timer()
     # Open the inp and find the diagnostic lines
     with open(in_name) as f:

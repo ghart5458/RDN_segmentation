@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Setup script for installing pytorch_wavelets from source.
+"""Setup script for installing pytorch_wavelets from source.
 This handles the special case dependency that needs to be installed from GitHub.
 """
 import subprocess

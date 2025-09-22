@@ -52,8 +52,7 @@ for vol in vol_list[:]:
 
 
 def read_mhd(directory, mhd_file):
-    """
-    If there are no metadata files, and there are diccoms this function will try to extract hat information.
+    """If there are no metadata files, and there are diccoms this function will try to extract hat information.
     :param directory:
     :return:
     """
@@ -86,8 +85,7 @@ def read_mhd(directory, mhd_file):
 
 
 def ct_log_reader(directory, log_file):
-    """
-    This reads in a skyscan file and extracts the spacing (resolution)
+    """This reads in a skyscan file and extracts the spacing (resolution)
     :param directory: A pathlib formated directory or a directory in string format (e.g. r"Z:/RyanLab").
     :param pcr_file: A pcr file with the same name as the vol file.
     :return: Returns the x,y,z dimensions and resolution.

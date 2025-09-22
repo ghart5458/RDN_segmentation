@@ -14,8 +14,7 @@ from PIL import Image, ImageOps
 
 
 def _end_timer(start_timer, message=""):
-    """
-    Simple function to print the end of a timer in a single line instead of being repeated.
+    """Simple function to print the end of a timer in a single line instead of being repeated.
     :param start_timer: timer start called using timer() after importing: from time import time as timer.
     :param message: String that makes the timing of what event more clear (e.g. "segmenting", "meshing").
     :return: Returns a sring mesuraing the end of a timed event in seconds.
@@ -31,12 +30,10 @@ def _end_timer(start_timer, message=""):
 
 
 def rescale_labels(inputFilename, writeOut=False):
-    """
-    Load in a 2d image file and rescale for label prep.
+    """Load in a 2d image file and rescale for label prep.
     :param inputFilename: Name of file to be rescaled. Can be anything that SimpleITK reads.
     :return: Returns a rescaled tif image.
     """
-
     inputImage = sitk.ReadImage(inputFilename)
     MinMax = sitk.MinimumMaximumImageFilter()
     MinMax.Execute(inputImage)
@@ -85,8 +82,7 @@ def rescale_by_label(bone_label, dirt_label, check_label=False, expected_classes
 
 
 def subtract_images(inputImage1, inputImage2):
-    """
-    Function to subtract two SimpleITK images using the Subtract filter.
+    """Function to subtract two SimpleITK images using the Subtract filter.
 
     :param inputImage1: A SimpleITK image.
     :param inputImage2: A SimpleITK image.
@@ -101,8 +97,7 @@ def subtract_images(inputImage1, inputImage2):
     return subtracted
 
 def combine_images(inputImage1, inputImage2):
-    """
-    Function to combine two SimpleITK images using the Add filter.
+    """Function to combine two SimpleITK images using the Add filter.
 
     :param inputImage1: SimpleITK image.
     :param inputImage2: SimpleITK image.
@@ -160,13 +155,11 @@ def process_dragonfly_labels(labels_location, output_name, out_dir, extract_stri
     _end_timer(start_timer=start, message="Composing labels")
 
 def rescale_intensity(inputFilename, writeOut=True, file_type="", outDir=""):
-    """
-    Load in a 2d image file and rescale for data augmentation.
+    """Load in a 2d image file and rescale for data augmentation.
     :param inputFilename: Name of file to be resclaed. Can be anything that SimpleITK reads.
     :return: Returns a rescaled tif image.
     @rtype: object
     """
-
     out_name = str(inputFilename).rsplit(".", 1)[0]
     if file_type == "":
         file_type = str(inputFilename).rsplit(".", 1)[-1]
@@ -223,12 +216,10 @@ def rescale_intensity(inputFilename, writeOut=True, file_type="", outDir=""):
         return rescaled
 
 def downscale_intensity(inputFilename, downscale_value=100, writeOut=True, file_type="", outDir=""):
-    """
-    Load in a 2d image file and rescale for data augmentation.
+    """Load in a 2d image file and rescale for data augmentation.
     :param inputFilename: Name of file to be resclaed. Can be anything that SimpleITK reads.
     :return: Returns a rescaled tif image.
     """
-
     out_name = str(inputFilename).rsplit(".", 1)[0]
     if file_type == "":
         file_type = str(inputFilename).rsplit(".", 1)[-1]
@@ -283,8 +274,7 @@ def downscale_intensity(inputFilename, downscale_value=100, writeOut=True, file_
             return rescaled
 
 def clean_image(inputFilename, suffix="", out_name="", out_type="", out_dir="", remove_space=True, remove_dblundr=True, to_streamlit=False):
-    """
-    Function to read in and write out a 2d image. Useful for file type conversion and renaming.
+    """Function to read in and write out a 2d image. Useful for file type conversion and renaming.
     :param inputFilename: Name of file to be resclaed. Can be anything that SimpleITK reads.
     :param suffix: string that will appear before the out_type
     :return: Returns a 2d image.
@@ -384,8 +374,7 @@ def gray_print(text):
     print(f'\033[90m{text}\033[0m', sep="")
 
 def _convert_size(sizeBytes):
-    """
-    Function to return file size in a human readable manner.
+    """Function to return file size in a human readable manner.
     :param sizeBytes: bytes calculated with file_size
     :return:
     """
@@ -398,8 +387,7 @@ def _convert_size(sizeBytes):
     return f"{s} {size_name[i]}", s
 
 def _file_size(dim1, dim2, dim3, bits):
-    """
-    Get the file size of an image volume from the x, y, and z dimensions.
+    """Get the file size of an image volume from the x, y, and z dimensions.
     :param dim1: The x dimension of an image file.
     :param dim2: The y dimension of an image file.
     :param dim3: The z dimension of an image file.
@@ -422,8 +410,7 @@ def _file_size(dim1, dim2, dim3, bits):
 
 def read_raw(binary_file_name, image_size, sitk_pixel_type, image_spacing=None,
              image_origin=None, big_endian=False):
-    """
-    Read a raw binary scalar image.
+    """Read a raw binary scalar image.
 
     Parameters
     ----------
@@ -441,8 +428,8 @@ def read_raw(binary_file_name, image_size, sitk_pixel_type, image_spacing=None,
     Returns
     -------
     SimpleITK image or None if fails.
-    """
 
+    """
     pixel_dict = {sitk.sitkUInt8: 'MET_UCHAR',
                   sitk.sitkInt8: 'MET_CHAR',
                   sitk.sitkUInt16: 'MET_USHORT',
@@ -544,15 +531,13 @@ def write_amira_raw(amira_binary, out_name, out_dir=""):
 
 
 def crude_threshold(inputImage, threshold=None):
-    """
-    Function to get a crude threshold based on the mean or median grey value of an image. If no value is passed, an
+    """Function to get a crude threshold based on the mean or median grey value of an image. If no value is passed, an
     estimate will be made using the mean and median of the intensity values.
 
     :param inputImage: A SimpleITK image.
     :param threshold: A value to threshold the image by.
     :return: Returns a thresholded SimpleITK image.
     """
-
     threshold = threshold
 
     nda = sitk.GetArrayFromImage(inputImage)
@@ -616,12 +601,10 @@ def check_if_label_exists(file_name, label_directory, verbose=True):
 
 
 def rescale_8(inputImage):
-    """
-    Takes in a SimpleITK image and rescales it to 8 bit.
+    """Takes in a SimpleITK image and rescales it to 8 bit.
     :param inputImage: A SimpleITK formatted volume.
     :return: Returns an unsigned 8-bit SimpleITK formatted volume with gray values scaled between 0-255.
     """
-
     imageType = inputImage.GetPixelID()
 
     #Check to see if it is already unisgned 8 bit.

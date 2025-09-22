@@ -1,3 +1,9 @@
+"""ResNet U-Net with Residual Dense Network enhancement.
+
+Combines ResNet backbone with U-Net decoder and RDN domain enrichment
+for robust medical image segmentation.
+"""
+
 import torch
 from torch import nn
 from torchvision import models
@@ -6,6 +12,18 @@ from .unet_parts import DomainEnrich
 
 
 def convrelu(in_channels, out_channels, kernel, padding):
+    """Create convolution followed by ReLU activation.
+
+    Args:
+        in_channels (int): Number of input channels
+        out_channels (int): Number of output channels
+        kernel (int): Kernel size for convolution
+        padding (int): Padding for convolution
+
+    Returns:
+        nn.Sequential: Conv2d + ReLU sequential module
+
+    """
     return nn.Sequential(
         nn.Conv2d(in_channels, out_channels, kernel, padding=padding),
         nn.ReLU(inplace=True),
@@ -13,7 +31,20 @@ def convrelu(in_channels, out_channels, kernel, padding):
 
 
 class ResNetUNet_RDN(nn.Module):
+    """ResNet-based U-Net with RDN domain enrichment.
+
+    Uses pretrained ResNet18 as encoder backbone with U-Net decoder architecture,
+    enhanced with dual domain enrichment paths for improved segmentation.
+    """
+
     def __init__(self, n_channels=1, n_classes=3):
+        """Initialize ResNetUNet_RDN model.
+
+        Args:
+            n_channels (int): Number of input channels (default: 1)
+            n_classes (int): Number of output classes (default: 3)
+
+        """
         super().__init__()
         self.rdn1 = DomainEnrich(n_channels, 32)
         self.rdn2 = DomainEnrich(n_channels, 32)
@@ -49,6 +80,18 @@ class ResNetUNet_RDN(nn.Module):
         self.conv_last = nn.Conv2d(64, n_classes, 1)
 
     def forward(self, input):
+        """Forward pass through ResNetUNet_RDN.
+
+        Processes input through dual RDN paths, then through ResNet encoder
+        and U-Net decoder with skip connections.
+
+        Args:
+            input (torch.Tensor): Input tensor of shape (batch, channels, height, width)
+
+        Returns:
+            torch.Tensor: Output segmentation logits
+
+        """
         self.x_rdn1 = self.rdn1(input)
         self.x_rdn2 = self.rdn2(input)
 

@@ -283,8 +283,7 @@ def model_initiation(model_path, cuda_index):
     return(net)
 
 def _convert_size(sizeBytes):
-    """
-    Function to return file size in a human readable manner.
+    """Function to return file size in a human readable manner.
     :param sizeBytes: bytes calculated with file_size
     :return:
     """
@@ -297,8 +296,7 @@ def _convert_size(sizeBytes):
     return f"{s} {size_name[i]}", s
 
 def _file_size(dim1, dim2, dim3, bits):
-    """
-    Get the file size of an image volume from the x, y, and z dimensions.
+    """Get the file size of an image volume from the x, y, and z dimensions.
     :param dim1: The x dimension of an image file.
     :param dim2: The y dimension of an image file.
     :param dim3: The z dimension of an image file.
@@ -320,8 +318,7 @@ def _file_size(dim1, dim2, dim3, bits):
     return size
 
 def _print_info(inputImage):
-    """
-    Function to return the basic information of an image volume.
+    """Function to return the basic information of an image volume.
     :param inputImage: A SimpleITK formated image volume.
     """
     image_type = inputImage.GetPixelIDTypeAsString()
@@ -342,8 +339,7 @@ def _print_info(inputImage):
     st.text(f"Resolution, x:{xres:5}, {yres:5}, {zres:5}")
 
 def _setup_sitk_image(image_slice, direction="z"):
-    """
-    Internal function to read in an image and setup for classification by pytorch.
+    """Internal function to read in an image and setup for classification by pytorch.
     """
     # Open the image using pillow and ensure it is grey scale ('L'), then turn it into a numpy array
 
@@ -368,8 +364,7 @@ def _setup_sitk_image(image_slice, direction="z"):
 
 
 def read_image(inputImage):
-    """
-    Reads in various image file formats (mha, mhd, nia, nii, vtk, etc.) and places them into a SimpleITK volume format.
+    """Reads in various image file formats (mha, mhd, nia, nii, vtk, etc.) and places them into a SimpleITK volume format.
     :param inputImage: Either a volume (mhd, nii, vtk, etc.).
     :return: Returns a SimpleITK formatted image object.
     """
@@ -382,12 +377,10 @@ def read_image(inputImage):
     return inputImage
 
 def rescale_8(inputImage):
-    """
-    Takes in a SimpleITK image and rescales it to 8 bit.
+    """Takes in a SimpleITK image and rescales it to 8 bit.
     :param inputImage: A SimpleITK formatted volume.
     :return: Returns an unsigned 8-bit SimpleITK formatted volume with gray values scaled between 0-255.
     """
-
     # Check to see if it is already unisgned 8 bit.
     imageType = inputImage.GetPixelID()
     if imageType == 1:
@@ -404,8 +397,7 @@ def rescale_8(inputImage):
     return scaled_8
 
 def write_image(inputImage, outName, outDir="", fileFormat="mhd"):
-    """
-    Writes out a SimpleITK image in any supported file format (mha, mhd, nii, dcm, tif, vtk, etc.).
+    """Writes out a SimpleITK image in any supported file format (mha, mhd, nii, dcm, tif, vtk, etc.).
     :param inputImage: SimpleITK formated image volume
     :param outName: The file name
     :param outDir: The directory where the file should be written to. If not path is provided the current directory will
@@ -427,8 +419,7 @@ def write_image(inputImage, outName, outDir="", fileFormat="mhd"):
     _end_timer(start, message="Writing the image")
 
 def read_stack(inputStack):
-    """
-    Reads in a series of images and then places them into a SimpleITK volume format.
+    """Reads in a series of images and then places them into a SimpleITK volume format.
 
     :param inputStack: A stack of images (e.g. tif, png, etc).
     :return: Returns a SimpleITK formatted image object.
@@ -445,14 +436,12 @@ def read_stack(inputStack):
 
 
 def read_dicom(inputStack):
-    """
-    Specialized DICOM reader that preserves the metadata tags in the dicom files.
+    """Specialized DICOM reader that preserves the metadata tags in the dicom files.
     :param inputStack: Dicom stack.
     :return: Returns a SimpleITK image and a list containing the metadata.
     note that tag 0020|000e is a unique identifier that may be modified in the returned metadata. Otherwise the data
     and time are used.
     """
-
     start = timer()
     st.write(f"Reading in {len(inputStack)} DICOM images...")
 
@@ -563,8 +552,7 @@ def two_to_three(image_stack, input_type):
         st.markdown(f"Input type {input_type} not supported :frowning:")
 
 def three_class_segmentation(input_image, outDir, outType, network=""):
-    """
-    Function to segment a directory of 2d images using a pytorch model
+    """Function to segment a directory of 2d images using a pytorch model
     Images must be in a pillow readable format (e.g. "tif", "png", "jpg", "bmp")
     :param inDir: The input directory where the images are located
     :param outDir: The output directory. If this doesn't exist it will be created.
@@ -627,8 +615,7 @@ def load_MARS_loggo(self):
     return logo
 
 def three_class_segmentation_volume(inputImage, direction="z", network=""):
-    """
-    Function to segment a directory of 2d images using a pytorch model
+    """Function to segment a directory of 2d images using a pytorch model
     Images must be in a pillow readable format (e.g. "tif", "png", "jpg", "bmp")
     :param inDir: The input directory where the images are located
     :param outDir: The output directory. If this doesn't exist it will be created.
@@ -736,8 +723,7 @@ def three_class_seg_xyz(inputImage, network=""):
     return seg
 
 def _end_timer(start_timer, message=""):
-    """
-    Simple function to print the end of a timer in a single line instead of being repeated.
+    """Simple function to print the end of a timer in a single line instead of being repeated.
     :param start_timer: timer start called using timer() after importing: from time import time as timer.
     :param message: String that makes the timing of what event more clear (e.g. "segmenting", "meshing").
     :return: Returns a sring mesuraing the end of a timed event in seconds.
@@ -792,7 +778,6 @@ class _SessionState:
 
     def sync(self):
         """Rerun the app with all state values up to date from the beginning to fix rollbacks."""
-
         # Ensure to rerun only once to avoid infinite loops
         # caused by a constantly changing state value at each run.
         #

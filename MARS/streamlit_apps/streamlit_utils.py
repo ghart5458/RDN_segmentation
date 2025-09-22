@@ -19,20 +19,18 @@ def alpha_to_float(text):
     return retval
 
 def natural_keys(text):
-    '''
-    alist.sort(key=natural_keys) sorts in human order
+    """alist.sort(key=natural_keys) sorts in human order
     http://nedbatchelder.com/blog/200712/human_sorting.html
     (See Toothy's implementation in the comments)
-    '''
+    """
     return [alpha_to_int(c) for c in re.split(r'(\d+)', text)]
 
 def natural_keys_float(text):
-    '''
-    alist.sort(key=natural_keys) sorts in human order
+    """alist.sort(key=natural_keys) sorts in human order
     http://nedbatchelder.com/blog/200712/human_sorting.html
     (See Toothy's implementation in the comments)
     float regex comes from https://stackoverflow.com/a/12643073/190597
-    '''
+    """
     return [alpha_to_float(c) for c in re.split(r'[+-]?([0-9]+(?:[.][0-9]*)?|[.][0-9]+)', text)]
 
 
@@ -89,8 +87,7 @@ def _check_for_slice_to_vol(state, input_type, out_type, slice_types, volume_typ
 
 
 def _get_user():
-    """
-    Internal function to get the username for saving the settings.
+    """Internal function to get the username for saving the settings.
     :return: Returns the operating system username using os.environ
     """
     #We can't always count on this being launchde from a C: on windows

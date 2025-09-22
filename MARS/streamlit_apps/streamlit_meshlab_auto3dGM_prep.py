@@ -50,8 +50,7 @@ if streamlit_minor < 65:
 
 #Defines the body of the gui
 def main():
-    """
-    Streamlit GUI to perform segmentation of grey value images using a trained RDN 3-class segmentation network
+    """Streamlit GUI to perform segmentation of grey value images using a trained RDN 3-class segmentation network
     implemented in pytorch. Reading and writing of values is predominantly handled with SimpleITK.
     """
     current_user = _get_user()
@@ -459,8 +458,7 @@ def main():
 
 
 def meshlab_settings(state):
-    """
-    Empty page for now
+    """Empty page for now
 
     """
     _get_user()
@@ -503,8 +501,7 @@ def _get_citation(bibtext_key):
     return bibtext_key
 
 def direct_pymeshfix(in_dir, in_file, out_type, output_directory):
-    """
-    Cite: M. Attene. A lightweight approach to repairing digitized polygon meshes.
+    """Cite: M. Attene. A lightweight approach to repairing digitized polygon meshes.
     The Visual Computer, 2010. (c) Springer. DOI: 10.1007/s00371-010-0416-3
     :param:
     :return:
@@ -527,8 +524,7 @@ def direct_pymeshfix(in_dir, in_file, out_type, output_directory):
 
 def TetWild_tetrahedralize(input_path, in_file, output_path, out_name="", edge_length="", target_verts="",
                          laplacian=False):
-    """
-    Tetrahedralize from a 2d .off, .obj, .stl, or .ply file. Output is in .msh/.mesh format. The .msh is then converted to an inp using gmsh.
+    """Tetrahedralize from a 2d .off, .obj, .stl, or .ply file. Output is in .msh/.mesh format. The .msh is then converted to an inp using gmsh.
     It is assumed that gmsh is installed and on the system path.
     See Hu Yixin, et al. 2018 (http://doi.acm.org/10.1145/3197517.3201353) and https://github.com/Yixin-Hu/TetWild for further information.
     :param input_path:
@@ -601,8 +597,7 @@ def TetWild_tetrahedralize(input_path, in_file, output_path, out_name="", edge_l
 
 
 def pymeshfix(in_dir, in_file, out_type, output_directory, write=False):
-    """
-    Cite: M. Attene. A lightweight approach to repairing digitized polygon meshes.
+    """Cite: M. Attene. A lightweight approach to repairing digitized polygon meshes.
     The Visual Computer, 2010. (c) Springer. DOI: 10.1007/s00371-010-0416-3
     :param:
     :return:
@@ -642,8 +637,7 @@ def pymeshfix(in_dir, in_file, out_type, output_directory, write=False):
 
 
 def isolate_external_surface(in_dir, in_file, out_type, output_directory, write_mesh=True):
-    """
-    Function that uses brute force to get the outside surface of a mesh by filling holes, tetrahedralizing, then
+    """Function that uses brute force to get the outside surface of a mesh by filling holes, tetrahedralizing, then
     extracting the resulting surface of the mesh. Depening on the complexity of the initial mesh, this may fail or take
     a long time.
     Cite: M. Attene. A lightweight approach to repairing digitized polygon meshes.
@@ -793,7 +787,6 @@ class _SessionState:
 
     def sync(self):
         """Rerun the app with all state values up to date from the beginning to fix rollbacks."""
-
         # Ensure to rerun only once to avoid infinite loops
         # caused by a constantly changing state value at each run.
         #

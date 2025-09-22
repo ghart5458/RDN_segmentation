@@ -8,7 +8,24 @@ from utils.losses import Accuracy, DiceOverlap, DomainEnrichLoss, dice_loss
 
 bce_losses = nn.BCEWithLogitsLoss()
 accuracy = Accuracy()
-def rdn_train(net, optimizer, data_loader, epoch=None, total_epoch=None, use_gpu = False):
+def rdn_train(net, optimizer, data_loader, epoch=None, total_epoch=None, use_gpu=False):
+    """Train RDN (Residual Dense Network) model for one epoch.
+
+    Performs training on the network using domain enrichment and segmentation losses.
+    Handles dual data loaders for different training phases and includes GPU support.
+
+    Args:
+        net: PyTorch neural network model to train
+        optimizer: PyTorch optimizer for parameter updates
+        data_loader: Tuple of two DataLoader objects for different training phases
+        epoch (int, optional): Current epoch number for progress display
+        total_epoch (int, optional): Total number of epochs for progress display
+        use_gpu (bool): Whether to use GPU acceleration (default: False)
+
+    Returns:
+        tuple: (average_loss1, average_loss2, network) training losses and updated network
+
+    """
     if use_gpu:
         net.cuda()
     else:
@@ -74,8 +91,23 @@ def rdn_train(net, optimizer, data_loader, epoch=None, total_epoch=None, use_gpu
 
     ...
 
-def rdn_val(net, data_set, use_gpu = False, i_epoch = None, class_num = 3):
+def rdn_val(net, data_set, use_gpu=False, i_epoch=None, class_num=3):
+    """Validate RDN (Residual Dense Network) model performance.
 
+    Evaluates the trained model on validation data without gradient updates.
+    Computes validation metrics including Dice overlap and accuracy.
+
+    Args:
+        net: PyTorch neural network model to validate
+        data_set: Validation dataset (should be in val mode)
+        use_gpu (bool): Whether to use GPU acceleration (default: False)
+        i_epoch (int, optional): Current epoch number for logging
+        class_num (int): Number of segmentation classes (default: 3)
+
+    Returns:
+        tuple: (dice_scores, accuracy_score) validation metrics
+
+    """
     dice_overlap = DiceOverlap(class_num)
     if use_gpu:
         net.cuda()

@@ -1,5 +1,4 @@
-"""
-Streamlit app to utilize the RDN segmentation Yazdani et al., 2020 2019 54th Asilomar Conference on Signals, Systems,
+"""Streamlit app to utilize the RDN segmentation Yazdani et al., 2020 2019 54th Asilomar Conference on Signals, Systems,
 and Computers.
 
 GUI and additional functionality written by NB Stephens (github.com/NBStephens) nbs49@psu.edu
@@ -15,8 +14,8 @@ https://github.com/pyvista/pyvista
 
 # Check pytorch env
 python -m torch.utils.collect_env
-#TODO fix first run issues with input/output path, thinks previous input is nan
-#TODO Make it so the generated par file can be in table format
+# TODO fix first run issues with input/output path, thinks previous input is nan
+# TODO Make it so the generated par file can be in table format
 """
 
 
@@ -140,8 +139,7 @@ with st.beta_expander("View warnings", expanded=True):
 
 # Defines the body of the gui
 def main():
-    """
-    Streamlit GUI to perform segmentation of grey value images using a trained RDN 3-class segmentation network
+    """Streamlit GUI to perform segmentation of grey value images using a trained RDN 3-class segmentation network
     implemented in pytorch. Reading and writing of values is predominantly handled with SimpleITK.
     """
     current_user = _get_user()
@@ -221,8 +219,7 @@ def main():
 
 
 def page_settings(state):
-    """
-    Page to define the settings for the segmentation. If using batch mode, a parameter file is needed.
+    """Page to define the settings for the segmentation. If using batch mode, a parameter file is needed.
 
     """
     current_user = _get_user()
@@ -420,8 +417,7 @@ def page_settings(state):
 
 # Rescale to prevent overflow
 def page_segmentations(state):
-    """
-    Sets up the single segmentation page
+    """Sets up the single segmentation page
     """
     current_user = _get_user()
     state.twoD_to_threeD = False
@@ -2039,8 +2035,7 @@ def _get_tab_logo():
 
 
 def _get_user():
-    """
-    Internal function to get the username for saving the settings.
+    """Internal function to get the username for saving the settings.
     :return: Returns the operating system username using os.environ
     """
     # We can't always count on this being launchde from a C: on windows
@@ -2161,8 +2156,7 @@ def generate_single_vol_data(vol_file):
 
 
 def is_state_value_empty(state_value, verbose=False):
-    """
-    Small function to check if a state value is empty, None, nan, or other non-sense
+    """Small function to check if a state value is empty, None, nan, or other non-sense
     :param state_value:
     :param verbose:
     :return:
@@ -2180,8 +2174,7 @@ def is_state_value_empty(state_value, verbose=False):
 
 
 def get_state_path(current_state, current_user, key, message=""):
-    """
-    WIP. Should be a small function to deal with a lot of redundancy
+    """WIP. Should be a small function to deal with a lot of redundancy
     :param state_value:
     :param key:
     :param message:
@@ -2457,8 +2450,7 @@ def get_plotly_hist(image_array):
 
 
 def get_xyz_midplanes(image_volume):
-    """
-    Function to get the midplanes of an image volume for streamlit.
+    """Function to get the midplanes of an image volume for streamlit.
     :param image_volume:
     :return:
     """
@@ -2590,8 +2582,7 @@ def br(n):
 
 
 def _convert_size(sizeBytes):
-    """
-    Function to return file size in a human readable manner.
+    """Function to return file size in a human readable manner.
     :param sizeBytes: bytes calculated with file_size
     :return:
     """
@@ -2605,8 +2596,7 @@ def _convert_size(sizeBytes):
 
 
 def _file_size(dim1, dim2, dim3, bits):
-    """
-    Get the file size of an image volume from the x, y, and z dimensions.
+    """Get the file size of an image volume from the x, y, and z dimensions.
     :param dim1: The x dimension of an image file.
     :param dim2: The y dimension of an image file.
     :param dim3: The z dimension of an image file.
@@ -2629,8 +2619,7 @@ def _file_size(dim1, dim2, dim3, bits):
 
 
 def _print_info(inputImage):
-    """
-    Function to return the basic information of an image volume.
+    """Function to return the basic information of an image volume.
     :param inputImage: A SimpleITK formated image volume.
     """
     image_type = inputImage.GetPixelIDTypeAsString()
@@ -2652,8 +2641,7 @@ def _print_info(inputImage):
 
 
 def _setup_sitk_image(image_slice, direction="z"):
-    """
-    Internal function to read in an image and setup for classification by pytorch.
+    """Internal function to read in an image and setup for classification by pytorch.
     """
     # Open the image using pillow and ensure it is grey scale ('L'), then turn it into a numpy array
 
@@ -2678,8 +2666,7 @@ def _setup_sitk_image(image_slice, direction="z"):
 
 
 def _end_timer(start_timer, message=""):
-    """
-    Simple function to print the end of a timer in a single line instead of being repeated.
+    """Simple function to print the end of a timer in a single line instead of being repeated.
     :param start_timer: timer start called using timer() after importing: from time import time as timer.
     :param message: String that makes the timing of what event more clear (e.g. "segmenting", "meshing").
     :return: Returns a sring mesuraing the end of a timed event in seconds.
@@ -2760,8 +2747,7 @@ def _check_for_metal(inputImage, cut_off=220):
 
 
 def read_stack(inputStack):
-    """
-    Reads in a series of images and then places them into a SimpleITK volume format.
+    """Reads in a series of images and then places them into a SimpleITK volume format.
     :param inputStack: A stack of images (e.g. tif, png, etc).
     :return: Returns a SimpleITK formatted image object.
     """
@@ -2779,14 +2765,12 @@ def read_stack(inputStack):
 
 
 def read_dicom(inputStack):
-    """
-    Specialized DICOM reader that preserves the metadata tags in the dicom files.
+    """Specialized DICOM reader that preserves the metadata tags in the dicom files.
     :param inputStack: Dicom stack.
     :return: Returns a SimpleITK image and a list containing the metadata.
     note that tag 0020|000e is a unique identifier that may be modified in the returned metadata. Otherwise the data
     and time are used.
     """
-
     start = timer()
     st.write(f"Reading in {len(inputStack)} DICOM images...")
 
@@ -2866,8 +2850,7 @@ def read_dicom(inputStack):
 
 
 def read_image(inputImage, verbose=True):
-    """
-    Reads in various image file formats (mha, mhd, nia, nii, vtk, etc.) and places them into a SimpleITK volume format.
+    """Reads in various image file formats (mha, mhd, nia, nii, vtk, etc.) and places them into a SimpleITK volume format.
     :param inputImage: Either a volume (mhd, nii, vtk, etc.).
     :return: Returns a SimpleITK formatted image object.
     """
@@ -2883,9 +2866,7 @@ def read_image(inputImage, verbose=True):
 
 
 def vtk_read_mhd(inputImage):
-    """
-
-    :param inputImage:
+    """:param inputImage:
     :return:
     """
     start = timer()
@@ -2898,8 +2879,7 @@ def vtk_read_mhd(inputImage):
 
 
 def write_image(inputImage, outName, outDir="", fileFormat="mhd", verbose=True):
-    """
-    Writes out a SimpleITK image in any supported file format (mha, mhd, nii, dcm, tif, vtk, etc.).
+    """Writes out a SimpleITK image in any supported file format (mha, mhd, nii, dcm, tif, vtk, etc.).
     :param inputImage: SimpleITK formated image volume
     :param outName: The file name
     :param outDir: The directory where the file should be written to. If not path is provided the current directory will
@@ -2922,8 +2902,7 @@ def write_image(inputImage, outName, outDir="", fileFormat="mhd", verbose=True):
 
 
 def write_dicom(inputImage, metadata, outName, outDir=""):
-    """
-    Function to write out dicoms using SimpleITK.
+    """Function to write out dicoms using SimpleITK.
     :param inputImage: SimpleITK image to be wrriten in DICOM format.
     :param metadata: Tagged metadata for DICOM format. Should be a dictionary in the form of (tag: value).
     :param outName: Output name for the dcm images.
@@ -2931,7 +2910,6 @@ def write_dicom(inputImage, metadata, outName, outDir=""):
     be used.
     :return: A DICOM stack written to the hard disk.
     """
-
     # Modified from: https://simpleitk.readthedocs.io/en/master/link_DicomSeriesReadModifyWrite_docs.html
 
     start = timer()
@@ -2981,8 +2959,7 @@ def write_dicom(inputImage, metadata, outName, outDir=""):
 
 
 def feed_slice(inputImage, slice, direction="Z"):
-    """
-    Function to write out a single slice from a SimpleITK volume.
+    """Function to write out a single slice from a SimpleITK volume.
     :param inputImage: SimpleITK formatted image.
     :param outName: The resulting image file name along with the file format.
     :param slice: The slice number along the Z dimension.
@@ -3000,12 +2977,10 @@ def feed_slice(inputImage, slice, direction="Z"):
 
 
 def rescale_8(inputImage, verbose=True):
-    """
-    Takes in a SimpleITK image and rescales it to 8 bit.
+    """Takes in a SimpleITK image and rescales it to 8 bit.
     :param inputImage: A SimpleITK formatted volume.
     :return: Returns an unsigned 8-bit SimpleITK formatted volume with gray values scaled between 0-255.
     """
-
     # Check to see if it is already unisgned 8 bit.
     imageType = inputImage.GetPixelID()
     if imageType == 1:
@@ -3025,8 +3000,7 @@ def rescale_8(inputImage, verbose=True):
 
 
 def rescale_16(inputImage):
-    """
-    Takes in a SimpleITK image and rescales it to 16 bit.
+    """Takes in a SimpleITK image and rescales it to 16 bit.
     :param inputImage: A SimpleITK formatted volume.
     :return: Returns an unsigned 16-bit SimpleITK formatted volume with gray values scaled between 0-65,535.
     """
@@ -3040,8 +3014,7 @@ def rescale_16(inputImage):
 
 
 def rescale_32(inputImage):
-    """
-    Takes in a SimpleITK image and rescales it to 32 bit.
+    """Takes in a SimpleITK image and rescales it to 32 bit.
     :param inputImage: A SimpleITK formatted volume.
     :return: Returns an unsigned 16-bit SimpleITK formatted volume with 2^64 distinct gray values.
     """
@@ -3058,8 +3031,7 @@ def rescale_32(inputImage):
 def rescale_intensity(
     inputImage, old_min, old_max, new_min, new_max, threads="threads", verbose=False
 ):
-    """
-    Rescales the intensity values of the inputImage. Reads the values between the old_min and old_max then rescales
+    """Rescales the intensity values of the inputImage. Reads the values between the old_min and old_max then rescales
     anything above that to the the new_min and new_max.
 
     :param inputImage:
@@ -3109,12 +3081,10 @@ def rescale_intensity(
 
 
 def rescale_before_seg(inputImage, check_for_metal=False, cut_off=220):
-    """
-    Load in an 8-bit 3d image file volume with lower intensity values and rescales them to 255  max prior to segmentation.
+    """Load in an 8-bit 3d image file volume with lower intensity values and rescales them to 255  max prior to segmentation.
     :param inputImage: SimpleITK volume.
     :return: Returns a rescaled volume.
     """
-
     if check_for_metal is True:
         checked = _check_for_metal(inputImage, cut_off=int(cut_off))
     else:
@@ -3145,8 +3115,7 @@ def rescale_before_seg(inputImage, check_for_metal=False, cut_off=220):
 
 
 def vtk_MarchingCubes(inputImage, threshold=1, extract_largest=True):
-    """
-    http://www.vtk.org/Wiki/VTK/Examples/Cxx/Modelling/ExtractLargestIsosurface
+    """http://www.vtk.org/Wiki/VTK/Examples/Cxx/Modelling/ExtractLargestIsosurface
     """
     start = timer()
     st.write("Running marching cubes...")
@@ -3174,8 +3143,7 @@ def vtk_MarchingCubes(inputImage, threshold=1, extract_largest=True):
 
 
 def resample_sitk_image(inputImage, spacing=None, interpolator=None, fill_value=0):
-    """
-    Resamples an ITK image to a new grid. If no spacing is given, the resampling is done isotropically to the smallest
+    """Resamples an ITK image to a new grid. If no spacing is given, the resampling is done isotropically to the smallest
     value in the current spacing. This is usually the in-plane resolution. If not given, the interpolation is derived
     from the input data type. Binary input (e.g., masks) are resampled with a specified interpolator.
     Modified from (https://github.com/SimpleITK/SlicerSimpleFilters/blob/master/SimpleFilters/SimpleFilters.py)
@@ -3297,8 +3265,7 @@ def resample_sitk_image(inputImage, spacing=None, interpolator=None, fill_value=
 
 
 def simpleitk_to_vtk(inputImage, outVol=None):
-    """
-    https://github.com/dave3d/dicom2stl/blob/master/sitk2vtk.py
+    """https://github.com/dave3d/dicom2stl/blob/master/sitk2vtk.py
 
     :param inputImage:
     :return:
@@ -3391,8 +3358,7 @@ def simpleitk_to_vtk(inputImage, outVol=None):
 
 
 def combine_images(inputImage1, inputImage2):
-    """
-    Function to combine two SimpleITK images using the Add filter.
+    """Function to combine two SimpleITK images using the Add filter.
     :param inputImage1: SimpleITK image.
     :param inputImage2: SimpleITK image.
     :return: Returns a single SimpleITK image.
@@ -3408,8 +3374,7 @@ def closing_morph(
     kernel_type="Sphere",
     threads="threads",
 ):
-    """
-    Function for the morphological closing of a binary image.
+    """Function for the morphological closing of a binary image.
 
     :param inputImage: A SimpleITK image.
     :param closing_kernel: The size in voxels for the closing kernel.
@@ -3440,8 +3405,7 @@ def binary_voting_fill_iterative(
     majority=2,
     threads="threads",
 ):
-    """
-    Function to apply a binary voting operation to a segmented image. This will repeat until there are no changes or the
+    """Function to apply a binary voting operation to a segmented image. This will repeat until there are no changes or the
     maximum number of times, set by te user with the "iterations" argument.
 
     :param inputImage: A SimpleITK image.
@@ -3518,8 +3482,7 @@ def color_overlay(
     alpha=0.5,
     darkmode=False,
 ):
-    """
-    Function to read in and overlay two black and white images in open cv2 format.
+    """Function to read in and overlay two black and white images in open cv2 format.
     :param image: An openCV style image array. Generally grey value data.
     :param overlay_image: An openCV style image array. Generally grey value data.
     :param overlay_thresh: Integer threshold value for the overlay.
@@ -3552,8 +3515,7 @@ def color_overlay(
 
 
 def three_class_segmentation(input_image, outDir, outType, network=""):
-    """
-    Function to segment a directory of 2d images using a pytorch model
+    """Function to segment a directory of 2d images using a pytorch model
     Images must be in a SimpleITK readable format (e.g. "tif", "png", "jpg", "bmp", "mhd", "nii", etc.)
     :param input_image: A list of images to be segmented.
     :param outDir: The output directory. If this doesn't exist it will be created.
@@ -3619,8 +3581,7 @@ def three_class_segmentation(input_image, outDir, outType, network=""):
 
 
 def _save_predictors(pred, save_folder, image_name, file_type):
-    """
-    Internal function to convert predictions to an image and save in an output folder.
+    """Internal function to convert predictions to an image and save in an output folder.
     """
     # The dictionary for the grey value means for each class.
     # This will results in 0 for air, 128 for dirt, and 255 for bone.
@@ -3646,8 +3607,7 @@ def _save_predictors(pred, save_folder, image_name, file_type):
 
 
 def execute_xyz_RDN_seg(input_vol, network, output_path, out_name, out_type):
-    """
-    Helper function for input and output to the three_class_seg_xyz function. Checks the input type is correct, and
+    """Helper function for input and output to the three_class_seg_xyz function. Checks the input type is correct, and
     copies over the metadata from the input prior to writing out the segmented volume.
     :param input_vol: SimpleITK image volume
     :param network: Pytorch segmentation network.
@@ -3672,8 +3632,7 @@ def execute_xyz_RDN_seg(input_vol, network, output_path, out_name, out_type):
 
 
 def three_class_segmentation_volume(inputImage, direction="z", network=""):
-    """
-    Function to segment a SimpleITK volume using a pytorch model
+    """Function to segment a SimpleITK volume using a pytorch model
     :param inputImage: The SimpleITK image volume
     :param direction: The image plane that you want the segmentation to be performed along.
     :param network: The Pytorch nueral network.
@@ -3742,8 +3701,7 @@ def three_class_segmentation_volume(inputImage, direction="z", network=""):
 
 
 def three_class_seg_xyz(inputImage, network=""):
-    """
-    Function to do RDN segmentation along the Z, Y, and X planes.
+    """Function to do RDN segmentation along the Z, Y, and X planes.
     :param inputImage: SimpleITK volume.
     :param network: Pytorch convolutional network.
     :return: Returns a segmented SimpleITK volume with grey values representing air, non-bone, and bone.
@@ -3854,7 +3812,6 @@ class _SessionState:
 
     def sync(self):
         """Rerun the app with all state values up to date from the beginning to fix rollbacks."""
-
         # Ensure to rerun only once to avoid infinite loops
         # caused by a constantly changing state value at each run.
         #

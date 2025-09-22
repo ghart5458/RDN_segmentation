@@ -15,11 +15,31 @@ from utils.dataset import load_patches
 
 
 def load_img(path: str | Path):
+    """Load an image file and convert to grayscale numpy array.
+
+    Args:
+        path (str or Path): Path to image file to load
+
+    Returns:
+        np.ndarray: Grayscale image as numpy array
+
+    """
     path = Path(path)
     inputImage = Image.open(str(path)).convert('L')
     return np.array(inputImage)
 
 def sep_string(string: str, target, n=2):
+    """Separate string by target delimiter, keeping all parts except last n.
+
+    Args:
+        string (str): Input string to separate
+        target (str): Delimiter character or substring
+        n (int): Number of parts to exclude from end (default: 2)
+
+    Returns:
+        str: Reconstructed string without last n parts
+
+    """
     str_list = string.split(target)
     str_result = str_list[0]
     for idx in range(1, len(str_list) - n):
@@ -27,12 +47,36 @@ def sep_string(string: str, target, n=2):
     return str_result
 
 def find_match_index(target: str, str_list: list):
+    """Find index of first string in list that matches target pattern.
+
+    Args:
+        target (str): Regular expression pattern to match
+        str_list (list): List of strings to search through
+
+    Returns:
+        int or None: Index of first match, or None if no match found
+
+    """
     for idx in range(len(str_list)):
         if re.match(target, str_list[idx]):
             return idx
     return None
 
 def generate_hdf5(data_dir: str | Path, label_dir: str | Path, save_name: str):
+    """Generate HDF5 dataset from image data and label directories.
+
+    Matches data images with their corresponding label images and stores
+    them in an HDF5 file for efficient training data loading.
+
+    Args:
+        data_dir (str or Path): Directory containing input images
+        label_dir (str or Path): Directory containing label/mask images
+        save_name (str): Output HDF5 filename
+
+    Returns:
+        None: Creates HDF5 file on disk
+
+    """
     # read the sub file names from a file
     data_dir = Path(data_dir)
     label_dir = Path(label_dir)
@@ -63,6 +107,16 @@ def generate_hdf5(data_dir: str | Path, label_dir: str | Path, save_name: str):
             sample_img.create_dataset('label', data=load_img(os.path.join(label_dir, name['label'])))
 
 def separate_names(names, train=0.7):
+    """Split dataset names into training and validation sets.
+
+    Args:
+        names (list): List of dataset names to split
+        train (float or int): Training set size (as fraction if < 1, count if >= 1)
+
+    Returns:
+        tuple: (train_names, val_names) split according to specified ratio
+
+    """
     train = round(train) if train > 1.0 else round(len(names) * train)
     train = min(train, len(names))
 
@@ -74,6 +128,21 @@ def separate_names(names, train=0.7):
     return train_names, val_names
 
 def slide_windows(name, shape, output_size=128, stride=32):
+    """Generate sliding window patches from an image shape.
+
+    Creates overlapping patches across an image using sliding window approach
+    with specified stride and output size.
+
+    Args:
+        name (str): Name identifier for the image
+        shape (tuple): Image dimensions (height, width)
+        output_size (int): Size of square patches (default: 128)
+        stride (int): Step size between patches (default: 32)
+
+    Returns:
+        list: List of patch specifications [name, top, left, height, width]
+
+    """
     output_size = (output_size, output_size)
     strides = (stride, stride)
 
@@ -106,7 +175,21 @@ def slide_windows(name, shape, output_size=128, stride=32):
     return patches_list
 
 def generate_patches(data_path, names, stride=32, output_size=256):
+    """Generate training patches from HDF5 dataset.
 
+    Creates sliding window patches from specified images in the dataset
+    for training deep learning models.
+
+    Args:
+        data_path (str): Path to HDF5 dataset file
+        names (list): List of image names to process
+        stride (int): Step size between patches (default: 32)
+        output_size (int): Size of square patches (default: 256)
+
+    Returns:
+        list: Shuffled list of patch specifications as strings
+
+    """
     patches = []
     with h5py.File(data_path, 'r') as data_file:
         for name in names:
@@ -120,6 +203,20 @@ def generate_patches(data_path, names, stride=32, output_size=256):
         return patches
 
 def generate_ratios(data_path, patches_path, class_num=3):
+    """Calculate class ratios for each patch in the dataset.
+
+    Computes the proportion of pixels belonging to each class within
+    each patch for class balancing and domain enrichment.
+
+    Args:
+        data_path (str): Path to HDF5 dataset file
+        patches_path (str): Path to patches CSV file or list of patches
+        class_num (int): Number of segmentation classes (default: 3)
+
+    Returns:
+        list: List of class ratio arrays for each patch
+
+    """
     patches = load_patches(patches_path)
     ratios = []
     with h5py.File(data_path, 'r') as data_file:
@@ -139,6 +236,19 @@ def generate_ratios(data_path, patches_path, class_num=3):
     return ratios
 
 def get_dirt_bone_patches(patches, ratios):
+    """Select patches with predominantly dirt or bone content.
+
+    Filters patches based on class ratios to create balanced training sets
+    with clear dirt vs bone distinction for domain enrichment training.
+
+    Args:
+        patches (list): List of patch specifications
+        ratios (list): List of class ratio arrays for each patch
+
+    Returns:
+        tuple: (balanced_patches, domain_indices) for domain enrichment training
+
+    """
     ratios = np.array(ratios)
     ratios_idx = np.argsort(-ratios, axis=0)
 
@@ -183,7 +293,22 @@ def get_dirt_bone_patches(patches, ratios):
 
     return patches, d_index
 
-def random_patches(dirt_choose_threshold: float, dirt_rate: float, patches: np.array, ratios:np.array):
+def random_patches(dirt_choose_threshold: float, dirt_rate: float, patches: np.array, ratios: np.array):
+    """Randomly select patches based on dirt content thresholds.
+
+    Implements patch selection strategy that prioritizes patches with high dirt content
+    while randomly sampling from remaining patches to maintain dataset balance.
+
+    Args:
+        dirt_choose_threshold (float): Minimum dirt ratio to automatically include patch
+        dirt_rate (float): Target proportion of dirt patches in final selection
+        patches (np.array): Array of patch specifications
+        ratios (np.array): Array of class ratios for each patch
+
+    Returns:
+        list: Filtered and shuffled list of selected patches
+
+    """
     # get ratios
     ratios = np.array(ratios)
     ratios_idx = np.argsort(-ratios, axis=0)

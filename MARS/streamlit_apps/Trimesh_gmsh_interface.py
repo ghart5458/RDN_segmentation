@@ -1,5 +1,4 @@
-'''
-Script to take a 2d ply/off and convert it into a 3d volume mesh. It is recommened that the mesh be viewed and fixed
+"""Script to take a 2d ply/off and convert it into a 3d volume mesh. It is recommened that the mesh be viewed and fixed
 (e.g. remove floating vertices, creases, etc.) in meshlab prior to conversion.
 
 If you have not already, you will need to install the following packages:
@@ -8,7 +7,7 @@ pip install gmsh-sdk
 Author: Nicholas Stephens (nbs49@psu.edu)
 Date: 06/21/2019
 
-'''
+"""
 
 import sys
 from pathlib import Path
@@ -18,11 +17,9 @@ import trimesh
 
 
 def mesh_2d_to_mesh_3d(directory, input_name, output_dir):
-    '''
-
-    :param input_name:
+    """:param input_name:
     :return:
-    '''
+    """
     print("\n\n\n\n")
     start = timer()
     # Read in the mesh using trimesh

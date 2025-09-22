@@ -27,11 +27,17 @@ BYTES_32BIT = 4
 
 
 def _end_timer(start_timer, message=""):
-    """
+    """Print elapsed time for a timed operation.
+
     Simple function to print the end of a timer in a single line instead of being repeated.
-    :param start_timer: timer start called using timer() after importing: from time import time as timer.
-    :param message: String that makes the timing of what event more clear (e.g. "segmenting", "meshing").
-    :return: Returns a sring mesuraing the end of a timed event in seconds.
+
+    Args:
+        start_timer (float): Timer start value from timer() function
+        message (str): Description of the timed event (e.g. "segmenting", "meshing")
+
+    Returns:
+        None: Prints timing information to console
+
     """
     start = start_timer
     message = str(message)
@@ -44,12 +50,19 @@ def _end_timer(start_timer, message=""):
 
 
 def rescale_labels(inputFilename, writeOut=False):
-    """
-    Load in a 2d image file and rescale for label prep.
-    :param inputFilename: Name of file to be rescaled. Can be anything that SimpleITK reads.
-    :return: Returns a rescaled tif image.
-    """
+    """Load and rescale a 2D image file for label preparation.
 
+    Reads an image file using SimpleITK and rescales intensity values
+    for consistent label processing across different input formats.
+
+    Args:
+        inputFilename (str): Path to image file (any SimpleITK-supported format)
+        writeOut (bool): Whether to write the rescaled image to disk (default: False)
+
+    Returns:
+        SimpleITK.Image: Rescaled image with normalized intensity values
+
+    """
     inputImage = sitk.ReadImage(inputFilename)
     MinMax = sitk.MinimumMaximumImageFilter()
     MinMax.Execute(inputImage)
@@ -79,6 +92,21 @@ def rescale_labels(inputFilename, writeOut=False):
         return rescaled
 
 def rescale_by_label(bone_label, dirt_label, check_label=False, expected_classes=3):
+    """Combine and rescale bone and dirt labels for multi-class segmentation.
+
+    This function combines bone and dirt labels by subtracting overlaps and
+    optionally validates the resulting label has the expected number of classes.
+
+    Args:
+        bone_label: SimpleITK image containing bone segmentation
+        dirt_label: SimpleITK image containing dirt/background segmentation
+        check_label (bool): Whether to validate the number of classes
+        expected_classes (int): Expected number of segmentation classes
+
+    Returns:
+        SimpleITK.Image: Combined multi-class label image
+
+    """
     dirt_label = subtract_images(inputImage1=bone_label, inputImage2=dirt_label)
 
     rescaleFilter = sitk.RescaleIntensityImageFilter()
@@ -98,12 +126,18 @@ def rescale_by_label(bone_label, dirt_label, check_label=False, expected_classes
 
 
 def subtract_images(inputImage1, inputImage2):
-    """
-    Function to subtract two SimpleITK images using the Subtract filter.
+    """Subtract two SimpleITK images using the Subtract filter.
 
-    :param inputImage1: A SimpleITK image.
-    :param inputImage2: A SimpleITK image.
-    :return: Returns a single SimpleITK image.
+    Performs element-wise subtraction of two images, commonly used
+    for removing overlapping regions in label processing.
+
+    Args:
+        inputImage1 (SimpleITK.Image): First input image (minuend)
+        inputImage2 (SimpleITK.Image): Second input image (subtrahend)
+
+    Returns:
+        SimpleITK.Image: Result of inputImage1 - inputImage2
+
     """
     start = timer()
 
@@ -114,12 +148,22 @@ def subtract_images(inputImage1, inputImage2):
     return subtracted
 
 def combine_images(inputImage1, inputImage2):
-    """
-    Function to combine two SimpleITK images using the Add filter.
+    """Combine two SimpleITK images using element-wise addition.
+
+    Adds two images together, commonly used for merging label regions
+    or combining segmentation masks.
+
+    Args:
+        inputImage1 (SimpleITK.Image): First input image
+        inputImage2 (SimpleITK.Image): Second input image
+
+    Returns:
+        SimpleITK.Image: Combined image (inputImage1 + inputImage2)
 
     :param inputImage1: SimpleITK image.
     :param inputImage2: SimpleITK image.
     :return: Returns a single SimpleITK image.
+
     """
     start = timer()
 
@@ -130,6 +174,15 @@ def combine_images(inputImage1, inputImage2):
     return combined
 
 def write_label(inputImage, out_name, file_type="tif", out_dir=""):
+    """Write a label image to disk in specified format.
+
+    Args:
+        inputImage: SimpleITK image to write
+        out_name (str): Output filename (without extension)
+        file_type (str): File format extension (default: "tif")
+        out_dir (str): Output directory path (default: current directory)
+
+    """
     out_dir = Path.cwd() if out_dir == "" else Path(out_dir)
     if "." in file_type:
         file_type = file_type.replace(".", "")
@@ -142,6 +195,16 @@ def write_label(inputImage, out_name, file_type="tif", out_dir=""):
     writer.Execute(inputImage)
 
 def _check_label(inputImage, expected_classes):
+    """Validate that a label image has the expected number of unique classes.
+
+    Args:
+        inputImage: SimpleITK image to validate
+        expected_classes (int): Expected number of unique label values
+
+    Raises:
+        ValueError: If the number of unique labels doesn't match expected_classes
+
+    """
     nda = sitk.GetArrayFromImage(inputImage)
     num_classes, class_proportion = np.unique(nda, return_counts=True)
     print(num_classes)
@@ -150,7 +213,18 @@ def _check_label(inputImage, expected_classes):
         print(f"{class_proportion}")
 
 def process_dragonfly_labels(labels_location, output_name, out_dir, extract_strings=None):
+    """Process multi-class labels exported from Dragonfly software.
 
+    Combines separate label images for different classes (Air, Dirt, Bone) into
+    a single multi-class segmentation image.
+
+    Args:
+        labels_location: List of label file paths
+        output_name (str): Base name for output file
+        out_dir (str): Output directory path
+        extract_strings (list): List of class names to extract (default: ["Air", "Dirt", "Bone"])
+
+    """
     if extract_strings is None:
         extract_strings = ["Air", "Dirt", "Bone"]
     start = timer()
@@ -173,12 +247,10 @@ def process_dragonfly_labels(labels_location, output_name, out_dir, extract_stri
     _end_timer(start_timer=start, message="Composing labels")
 
 def rescale_intensity(inputFilename, writeOut=True, file_type="", outDir=""):
-    """
-    Load in a 2d image file and rescale for data augmentation.
+    """Load in a 2d image file and rescale for data augmentation.
     :param inputFilename: Name of file to be resclaed. Can be anything that SimpleITK reads.
     :return: Returns a rescaled tif image.
     """
-
     out_name = str(inputFilename).rsplit(".", 1)[0]
     if file_type == "":
         file_type = str(inputFilename).rsplit(".", 1)[-1]
@@ -235,12 +307,10 @@ def rescale_intensity(inputFilename, writeOut=True, file_type="", outDir=""):
         return rescaled
 
 def downscale_intensity(inputFilename, downscale_value=100, writeOut=True, file_type="", outDir=""):
-    """
-    Load in a 2d image file and rescale for data augmentation.
+    """Load in a 2d image file and rescale for data augmentation.
     :param inputFilename: Name of file to be resclaed. Can be anything that SimpleITK reads.
     :return: Returns a rescaled tif image.
     """
-
     out_name = str(inputFilename).rsplit(".", 1)[0]
     if file_type == "":
         file_type = str(inputFilename).rsplit(".", 1)[-1]
@@ -295,8 +365,7 @@ def downscale_intensity(inputFilename, downscale_value=100, writeOut=True, file_
             return rescaled
 
 def clean_image(inputFilename, suffix="", out_name="", out_type="", out_dir="", remove_space=True, remove_dblundr=True):
-    """
-    Function to read in and write out a 2d image. Useful for file type conversion and renaming.
+    """Function to read in and write out a 2d image. Useful for file type conversion and renaming.
     :param inputFilename: Name of file to be resclaed. Can be anything that SimpleITK reads.
     :param suffix: string that will appear before the out_type
     :return: Returns a 2d image.
@@ -393,8 +462,7 @@ def gray_print(text):
     print(f'\033[90m{text}\033[0m', sep="")
 
 def _convert_size(sizeBytes):
-    """
-    Function to return file size in a human readable manner.
+    """Function to return file size in a human readable manner.
     :param sizeBytes: bytes calculated with file_size
     :return:
     """
@@ -407,8 +475,7 @@ def _convert_size(sizeBytes):
     return f"{s} {size_name[i]}", s
 
 def _file_size(dim1, dim2, dim3, bits):
-    """
-    Get the file size of an image volume from the x, y, and z dimensions.
+    """Get the file size of an image volume from the x, y, and z dimensions.
     :param dim1: The x dimension of an image file.
     :param dim2: The y dimension of an image file.
     :param dim3: The z dimension of an image file.
@@ -431,8 +498,7 @@ def _file_size(dim1, dim2, dim3, bits):
 
 def read_raw(binary_file_name, image_size, sitk_pixel_type, image_spacing=None,
              image_origin=None, big_endian=False):
-    """
-    Read a raw binary scalar image.
+    """Read a raw binary scalar image.
 
     Parameters
     ----------
@@ -450,8 +516,8 @@ def read_raw(binary_file_name, image_size, sitk_pixel_type, image_spacing=None,
     Returns
     -------
     SimpleITK image or None if fails.
-    """
 
+    """
     pixel_dict = {sitk.sitkUInt8: 'MET_UCHAR',
                   sitk.sitkInt8: 'MET_CHAR',
                   sitk.sitkUInt16: 'MET_USHORT',
@@ -553,15 +619,13 @@ def write_amira_raw(amira_binary, out_name, out_dir=""):
 
 
 def crude_threshold(inputImage, threshold=None):
-    """
-    Function to get a crude threshold based on the mean or median grey value of an image. If no value is passed, an
+    """Function to get a crude threshold based on the mean or median grey value of an image. If no value is passed, an
     estimate will be made using the mean and median of the intensity values.
 
     :param inputImage: A SimpleITK image.
     :param threshold: A value to threshold the image by.
     :return: Returns a thresholded SimpleITK image.
     """
-
     threshold = threshold
 
     nda = sitk.GetArrayFromImage(inputImage)
@@ -625,12 +689,10 @@ def check_if_label_exists(file_name, label_directory, verbose=True):
 
 
 def rescale_8(inputImage):
-    """
-    Takes in a SimpleITK image and rescales it to 8 bit.
+    """Takes in a SimpleITK image and rescales it to 8 bit.
     :param inputImage: A SimpleITK formatted volume.
     :return: Returns an unsigned 8-bit SimpleITK formatted volume with gray values scaled between 0-255.
     """
-
     imageType = inputImage.GetPixelID()
 
     #Check to see if it is already unisgned 8 bit.

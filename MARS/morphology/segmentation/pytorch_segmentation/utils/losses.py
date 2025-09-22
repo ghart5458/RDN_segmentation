@@ -4,9 +4,24 @@ from torch import nn
 
 
 class Accuracy:
+    """Accuracy metric for segmentation tasks.
+
+    Computes pixel-wise accuracy by comparing predicted class labels
+    with ground truth labels.
+    """
 
     def __call__(self, input, target, **kwargs):
+        """Calculate accuracy between predictions and targets.
 
+        Args:
+            input (torch.Tensor): Predicted logits of shape (batch_size, n_classes, H, W)
+            target (torch.Tensor): Ground truth labels of shape (batch_size, H, W)
+            **kwargs: Additional keyword arguments (unused)
+
+        Returns:
+            float: Pixel-wise accuracy as a fraction between 0 and 1
+
+        """
         input = torch.max(input, 1)[1]
         size = 1
         for i in range(len(input.shape)):
@@ -14,13 +29,37 @@ class Accuracy:
         return torch.sum(input == target).float() / size
 
 def get_size_of_tensor(a_tensor):
+    """Calculate the total number of elements in a tensor.
 
+    Args:
+        a_tensor (torch.Tensor): Input tensor
+
+    Returns:
+        int: Total number of elements in the tensor
+
+    """
     size = 1
     for i in range(len(a_tensor.shape)):
         size = size*a_tensor.shape[i]
     return size
 
 def dice_loss(pred, target, smooth=1.0, if_mean=True):
+    """Compute Dice loss for segmentation.
+
+    The Dice loss is based on the Dice coefficient, which measures overlap
+    between predicted and target segmentation masks. It's particularly useful
+    for segmentation tasks with class imbalance.
+
+    Args:
+        pred (torch.Tensor): Predicted probabilities/logits
+        target (torch.Tensor): Ground truth binary masks
+        smooth (float): Smoothing factor to avoid division by zero
+        if_mean (bool): If True, return mean loss; otherwise return per-sample loss
+
+    Returns:
+        torch.Tensor: Dice loss value(s)
+
+    """
     pred = pred.contiguous()
     target = target.contiguous()
 
@@ -35,8 +74,18 @@ def dice_loss(pred, target, smooth=1.0, if_mean=True):
         return np.squeeze(loss)
 
 class DomainEnrichLoss:
+    """Domain enrichment loss for multi-class segmentation.
+
+    This loss function incorporates domain-specific information to improve
+    segmentation performance, particularly for distinguishing between
+    different tissue types in medical imaging.
+    """
 
     def __init__(self):
+        """Initialize the domain enrichment loss.
+
+        Sets up loss components and hyperparameters for domain-aware training.
+        """
         self.loss = nn.CrossEntropyLoss()
         self.alpha = torch.from_numpy(np.asarray(1e6)).float()
         self.beta = torch.from_numpy(np.asarray(1e6)).float()
@@ -44,7 +93,16 @@ class DomainEnrichLoss:
         self.sigma2 = torch.from_numpy(np.asarray(1e6)).float()
 
     def __call__(self, net, ratio):
+        """Compute domain enrichment loss.
 
+        Args:
+            net: Neural network model
+            ratio (torch.Tensor): Class ratio information for domain adaptation
+
+        Returns:
+            torch.Tensor: Computed domain enrichment loss
+
+        """
         # bone
         idx_bone = ratio == 1
         idx_dirt = ratio == 0
