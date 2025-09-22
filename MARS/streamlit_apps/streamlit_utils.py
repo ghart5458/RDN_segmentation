@@ -1,6 +1,6 @@
 import glob
 import os
-import pathlib
+from pathlib import Path
 
 import pandas as pd
 import streamlit as st
@@ -51,17 +51,17 @@ volume_types = ["mhd", "mha", "nii", "vtk"]
 
 @st.cache
 def _load_MARS_logo():
-    script_dir = pathlib.Path(os.path.dirname(os.path.realpath(__file__)))
+    script_dir = Path(os.path.dirname(os.path.realpath(__file__)))
     logo = Image.open(str(script_dir.joinpath('Mars_Logo_small.png')))
     return logo
 
 def _get_tab_logo():
-    script_dir = pathlib.Path(os.path.dirname(os.path.realpath(__file__)))
+    script_dir = Path(os.path.dirname(os.path.realpath(__file__)))
     tab_logo = Image.open(str(script_dir.joinpath('Mars_square.jpg')))
     return tab_logo
 
 def _get_file_name_from_list(image_files, suffix=""):
-    outName = pathlib.Path(image_files[0]).parts[-1]
+    outName = Path(image_files[0]).parts[-1]
     outName = outName.split(".")[0]
     outName = outName.rsplit("_", 1)[0]
     if suffix != "":
@@ -70,7 +70,7 @@ def _get_file_name_from_list(image_files, suffix=""):
 
 def _get_file_name_from_input(volume_file, suffix="RDN_seg"):
     if True:
-        outName = pathlib.Path(volume_file).parts[-1]
+        outName = Path(volume_file).parts[-1]
     outName = outName.split(".")[0]
     if suffix != "":
         outName = f"{outName}_{suffix}"
@@ -95,7 +95,7 @@ def _get_user():
     """
     #We can't always count on this being launchde from a C: on windows
     #So we get the current working directory, then if there are back slashes we grab the root drive letter.
-    current = pathlib.Path.cwd()
+    current = Path.cwd()
     if "\\" in str(current):
         windows_drive = str(current.parts[0])
     user = [os.environ["USERNAME"] if str(windows_drive) in os.getcwd() else os.environ["USER"]]
@@ -128,7 +128,7 @@ def read_parameter_file(parm_file):
     return parms
 
 def save_state_values(state, user, app_name="RDN"):
-    script_dir = pathlib.Path(os.path.dirname(os.path.realpath(__file__)))
+    script_dir = Path(os.path.dirname(os.path.realpath(__file__)))
     saved_dir = script_dir.joinpath("saved_states").joinpath(f"{user}_{app_name}_saved_state.json")
     session_dict = {"model_path": [str(state.model_path)],
                     "model": [str(state.model)],
@@ -143,7 +143,7 @@ def save_state_values(state, user, app_name="RDN"):
 
 
 def load_state_values(state, user):
-    script_dir = pathlib.Path(os.path.dirname(os.path.realpath(__file__)))
+    script_dir = Path(os.path.dirname(os.path.realpath(__file__)))
     saved_dir = script_dir.joinpath("saved_states").joinpath(f"{user}_RDN_saved_state.json")
     restored_session = pd.read_json(str(saved_dir))
     st.write("Restored previous settings")
@@ -151,14 +151,14 @@ def load_state_values(state, user):
     state.model = restored_session['model'][0]
     state.input_path = restored_session['input_path'][0]
     state.input_type = restored_session['input_type'][0]
-    state.output_path = pathlib.Path(restored_session['output_path'][0])
+    state.output_path = Path(restored_session['output_path'][0])
     state.out_type = restored_session['out_type'][0]
     state.parm_file = restored_session['parm_file'][0]
     return state
 
 def file_selector(folder_path='.', extension="", selectbox_text="", unique_key=""):
     if folder_path == '.' or '':
-        folder_path = pathlib.Path.cwd()
+        folder_path = Path.cwd()
     filenames = os.listdir(folder_path)
     filenames.sort(reverse=True)
     if extension != "":
@@ -173,14 +173,14 @@ def file_selector(folder_path='.', extension="", selectbox_text="", unique_key="
         pass
 
 def gather_image_files(input_path, input_type):
-    image_files = glob.glob(str(pathlib.Path(input_path).joinpath(f"*.{input_type}")))
+    image_files = glob.glob(str(Path(input_path).joinpath(f"*.{input_type}")))
     image_files.sort(key=natural_keys)
     st.write(f"Found {len(image_files)} image files for segmentation in {input_path}...")
     return image_files
 
 def parm_from_directory(input_dir, input_file_type="tif", output_dir="", output_file_type="mhd"):
     # Directory to be scanned
-    input_dir = pathlib.Path(input_dir)
+    input_dir = Path(input_dir)
     if input_file_type in slice_types:
         dir_obj = os.scandir(input_dir)
         dir_list = [str(input_dir.joinpath(entry.name)) for entry in dir_obj if entry.is_dir]
@@ -205,7 +205,7 @@ def parm_from_par(par_file, out_type="mhd", input_type="mhd"):
     parm_file = parm_file[["$path", "$oldname"]]
     parm_file["$oldname"] = parm_file["$oldname"].str.replace("#", "")
     parm_file.columns = ["input_path", "input_name"]
-    parm_file["input_path"] = parm_file["input_path"].map(lambda x: str(pathlib.Path(x).as_posix()))
+    parm_file["input_path"] = parm_file["input_path"].map(lambda x: str(Path(x).as_posix()))
     parm_file["input_path"] = parm_file["input_path"].str.cat("/" + parm_file["input_name"])
     parm_file["input_type"] = str(input_type)
     parm_file["output_path"] = parm_file["input_path"].astype(str).map('{}/01_Seg'.format)

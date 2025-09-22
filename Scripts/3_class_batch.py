@@ -1,6 +1,6 @@
 import glob
 import os
-import pathlib
+from pathlib import Path
 import platform
 import socket
 import sys
@@ -35,7 +35,7 @@ from MARS.morphology.segmentation.pytorch_segmentation.net.unet_light_rdn import
 ###################################################
 
 # The path where the model lives
-model_path = pathlib.Path(r"C:\Users\nbs49\Desktop\pytorch_segmentation\models\model_6.pth")
+model_path = Path(r"C:\Users\nbs49\Desktop\pytorch_segmentation\models\model_6.pth")
 
 
 par_file = pd.read_csv(r"Z:\RyanLab\Projects\nsf_human_variation\Par\Canids_Hum _windows.par", sep=";", comment="#")
@@ -44,7 +44,7 @@ df.columns = [header.replace("$", "") for header in df.columns]
 
 # The path where the data is located
 #To get a list of folders that you can then loop through
-data_folder = pathlib.Path(r"Z:\RyanLab\Projects\For_Adam_G\Reoriented\global\spheres_15")
+data_folder = Path(r"Z:\RyanLab\Projects\For_Adam_G\Reoriented\global\spheres_15")
 os.chdir(data_folder)
 
 # the output folder for the segmentations
@@ -86,7 +86,7 @@ mhd_list.sort()
 mhd_total = len(mhd_list)
 
 current_count = mhd_total
-data_folder = pathlib.Path.cwd()
+data_folder = Path.cwd()
 save_folder = data_folder.joinpath("3_class_segs")
 
 for volume in enumerate(mhd_list[1:]):
@@ -124,7 +124,7 @@ df.columns = [header.replace("$", "") for header in df.columns]
 df["oldname"] = df["oldname"].str.replace("#", "")
 
 #Switch to the base directory where the failed par file will be written to
-working_dir = pathlib.Path(r"Z:\RyanLab\Projects\nsf_human_variation")
+working_dir = Path(r"Z:\RyanLab\Projects\nsf_human_variation")
 os.chdir(working_dir)
 
 #Get the length of the items to process
@@ -145,7 +145,7 @@ for row in df.itertuples():
     inDir = str(row.folder)
 
     # Define the imageFolder by the oldname, which contains the unique identifier
-    imageFolder = pathlib.Path(inDir).joinpath(inName)
+    imageFolder = Path(inDir).joinpath(inName)
 
     # Helpful print message
     print(f"\nWorking on {inName}...\n")
@@ -188,7 +188,7 @@ failed.to_csv("Failed_pytorch_segmentations.par", sep=";")
 
 ###DICOMS
 
-directory = pathlib.Path(r"D:\Desktop\Propithecus_TIFFS")
+directory = Path(r"D:\Desktop\Propithecus_TIFFS")
 os.chdir(directory)
 tif_stack = glob.glob("*.tif")
 

@@ -1,6 +1,6 @@
 import glob
 import os
-import pathlib
+from pathlib import Path
 import sys
 
 import pandas as pd
@@ -11,7 +11,7 @@ from MARS.morphology.vtk_mesh import *
 #from MARS.utils.readPar import *
 
 
-inputdir = pathlib.Path(r"Z:\RyanLab\Projects\nsf_human_variation\Par")
+inputdir = Path(r"Z:\RyanLab\Projects\nsf_human_variation\Par")
 os.chdir(inputdir)
 
 # Read in the first par file. The 0 makes it the first one in the list.
@@ -29,8 +29,8 @@ df.columns = df.columns.str.replace("$", "")
 print(df.columns)
 
 for row in df.iloc[:].itertuples():
-    dir_out = pathlib.Path(str(row.folder)).joinpath(str(row.oldname)).joinpath("01_Seg")
-    #dir_out = pathlib.Path(str(row.output_path))
+    dir_out = Path(str(row.folder)).joinpath(str(row.oldname)).joinpath("01_Seg")
+    #dir_out = Path(str(row.output_path))
     mhd_file = f"{row.oldname!s}_RDN_seg.mhd"
     #mhd_file = f"{str(row.input_name).rpartition('.')[0]}_RDN_seg.mhd"
     seg_name = dir_out.joinpath(mhd_file)
@@ -63,7 +63,7 @@ df = df[~df.oldname.str.contains("#")]
 
 #Check to see if the original file exists
 for row in df.iloc[:].itertuples():
-    dir_out = pathlib.Path(str(row.folder)).joinpath(str(row.oldname)).joinpath("00_Original")
+    dir_out = Path(str(row.folder)).joinpath(str(row.oldname)).joinpath("00_Original")
     mhd_file = f"{row.oldname!s}.mhd"
     mhd_file = dir_out.joinpath(mhd_file)
     if not mhd_file.exists():
@@ -87,7 +87,7 @@ df.to_csv("RDN_done.par", sep=";", index=False)
 
 for row in df.iloc[:].itertuples():
     dir_out = (
-        pathlib.Path(str(row.folder)).joinpath(str(row.oldname)).joinpath("00_Original")
+        Path(str(row.folder)).joinpath(str(row.oldname)).joinpath("00_Original")
     )
     mhd_file = f"{row.oldname!s}.mhd"
     mhd_name = dir_out.joinpath(mhd_file)

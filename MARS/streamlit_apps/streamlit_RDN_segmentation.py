@@ -27,7 +27,7 @@ import glob
 import math
 import multiprocessing
 import os
-import pathlib
+from pathlib import Path
 import socket
 import subprocess
 import sys
@@ -61,7 +61,7 @@ from streamlit.server.server import Server
 # TODO fix the mesher warnings and fail log
 
 # Reads where this script is launched from so you can import all the other functionality
-script_dir = pathlib.Path(os.path.dirname(os.path.realpath(__file__)))
+script_dir = Path(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(str(script_dir.parent.parent))
 
 from MARS.morphology.segmentation.pytorch_segmentation.execute_3_class_seg import (
@@ -88,7 +88,7 @@ slice_types = ["tif", "png", "jpg", "bmp", "dcm"]
 volume_types = ["mhd", "mha", "nii", "vtk"]
 
 # Get the small logo for the tab
-script_dir = pathlib.Path(os.path.dirname(os.path.realpath(__file__)))
+script_dir = Path(os.path.dirname(os.path.realpath(__file__)))
 tab_logo = Image.open(str(script_dir.joinpath("mars_square.jpg")))
 
 # This is a beta feature to control the default elements of the app
@@ -180,16 +180,16 @@ def main():
     # Launch notepad++ on windows.
     if st.sidebar.button("Parameter notepad++"):
         if state.parm_file:
-            parm_file_loc = pathlib.Path(state.parm_file).as_posix()
+            parm_file_loc = Path(state.parm_file).as_posix()
             subprocess.run(f'start notepad++ "{parm_file_loc!s}"', check=False, shell=True)
         else:
             st.warning("No parameter file set, opening notepad++ instead")
             subprocess.run("start notepad++", check=False, shell=True)
 
     if st.sidebar.button("Parameter Sublime Text"):
-        sublime_dir = pathlib.Path(r"C:\Program Files\Sublime Text 3\subl.exe")
+        sublime_dir = Path(r"C:\Program Files\Sublime Text 3\subl.exe")
         if state.parm_file:
-            parm_file_loc = pathlib.Path(state.parm_file).as_posix()
+            parm_file_loc = Path(state.parm_file).as_posix()
             command = subprocess.run(
                 f'"{sublime_dir!s}" "{parm_file_loc!s}"', check=False, shell=True
             )
@@ -284,8 +284,8 @@ def page_settings(state):
                     restored_state = load_state_values(state, user=current_user)
                     state.model_path = restored_state.model_path
                     st.write(state.model_path)
-                    state.model = pathlib.Path(restored_state.model)
-                    st.write(pathlib.Path(state.model).parts[-1])
+                    state.model = Path(restored_state.model)
+                    st.write(Path(state.model).parts[-1])
 
             if model_settings_activity == "Only previous path":
                 restored_state = load_state_values(state, user=current_user)
@@ -294,7 +294,7 @@ def page_settings(state):
                 save_state_values(state, current_user)
 
             if model_settings_activity == "New model settings":
-                state.model_path = pathlib.Path(st.text_input("Model location", ""))
+                state.model_path = Path(st.text_input("Model location", ""))
                 state.model = file_selector(state.model_path, extension="pth")
                 save_state_values(state, current_user)
 
@@ -329,7 +329,7 @@ def page_settings(state):
 
         if parm_settings_activity == "Load from new location":
             state.existing_parm = "defining"
-            parm_file_loc = pathlib.Path(st.text_input("Parameter file location", ""))
+            parm_file_loc = Path(st.text_input("Parameter file location", ""))
             state.parm_file = file_selector(parm_file_loc, extension=".csv")
             if st.checkbox("Load and view parameter file", key="99990287"):
                 loaded_parm = read_parameter_file(state.parm_file)
@@ -338,11 +338,11 @@ def page_settings(state):
 
         if parm_settings_activity == "Build parameters from directory":
             state.existing_parm = "defining"
-            in_dir_loc = pathlib.Path(
+            in_dir_loc = Path(
                 st.text_input("Segmentation input directory ", "")
             )
             in_file_type = st.selectbox("Pick input file type:", file_types)
-            out_dir_loc = pathlib.Path(
+            out_dir_loc = Path(
                 st.text_input("Segmentation output directory ", "")
             )
             out_file_type = st.selectbox("Pick output file type:", file_types)
@@ -356,7 +356,7 @@ def page_settings(state):
                 st.write(new_parm_file)
                 if st.checkbox("Save parameter file"):
                     state.existing_parm = "defining"
-                    parm_file_output = pathlib.Path(st.text_input("Save directory", ""))
+                    parm_file_output = Path(st.text_input("Save directory", ""))
                     parm_file_name = st.text_input(
                         "Save name",
                     )
@@ -370,10 +370,10 @@ def page_settings(state):
                         save_state_values(state=state, user=current_user)
 
         if parm_settings_activity == "Parameters from Medtool par file":
-            in_dir_loc = pathlib.Path(st.text_input("Medtool par input directory ", ""))
+            in_dir_loc = Path(st.text_input("Medtool par input directory ", ""))
             in_file_type = st.selectbox("Image input file types:", file_types)
             medtool_par_file = file_selector(in_dir_loc, extension=".par")
-            out_dir_loc = pathlib.Path(
+            out_dir_loc = Path(
                 st.text_input("RDN par file output directory ", "")
             )
 
@@ -396,7 +396,7 @@ def page_settings(state):
                 restored_state = load_state_values(
                     state, user=current_user, verbose=False
                 )
-                parm_file_loc = pathlib.Path(restored_state.parm_file)
+                parm_file_loc = Path(restored_state.parm_file)
                 state.parm_file = parm_file_loc
                 if str(state.parm_file) == "None":
                     st.warning(
@@ -455,14 +455,14 @@ def page_segmentations(state):
         if st.checkbox("Previous input path", value=True, key="9990363"):
             if is_state_value_empty(restored_state.input_path, verbose=False):
                 st.warning("No saved path found, please enter a new location")
-                state.output_path = pathlib.Path(st.text_input("Output location", ""))
+                state.output_path = Path(st.text_input("Output location", ""))
                 save_state_values(state=state, user=current_user)
             else:
-                state.input_path = pathlib.Path(restored_state.input_path)
+                state.input_path = Path(restored_state.input_path)
                 st.write(state.input_path)
                 save_state_values(state=state, user=current_user)
         else:
-            state.input_path = pathlib.Path(st.text_input("Input location", ""))
+            state.input_path = Path(st.text_input("Input location", ""))
             save_state_values(state=state, user=current_user)
 
         if st.checkbox("Previous input type", value=True, key="9990376"):
@@ -485,7 +485,7 @@ def page_segmentations(state):
         if st.checkbox("Previous output path", value=True, key="9990383"):
             if is_state_value_empty(restored_state.output_path, verbose=False):
                 st.warning("No saved path found, please enter a new location")
-                state.output_path = pathlib.Path(
+                state.output_path = Path(
                     st.text_input("Output location", "", key="9990393")
                 )
                 save_state_values(state=state, user=current_user)
@@ -493,7 +493,7 @@ def page_segmentations(state):
                 st.write(state.output_path)
                 save_state_values(state=state, user=current_user)
         else:
-            state.output_path = pathlib.Path(
+            state.output_path = Path(
                 st.text_input("Output location", "", key="9990420")
             )
             save_state_values(state=state, user=current_user)
@@ -514,7 +514,7 @@ def page_segmentations(state):
             save_state_values(state=state, user=current_user)
 
     if single_settings_activity == "New input/output settings":
-        state.input_path = pathlib.Path(st.text_input("Input location", ""))
+        state.input_path = Path(st.text_input("Input location", ""))
         if str(state.input_type) == "nan":
             state.input_type = st.selectbox(
                 "Input file type", supported_file_types, key="99990420"
@@ -526,7 +526,7 @@ def page_segmentations(state):
                 supported_file_types,
                 supported_file_types.index(state.input_type) if state.input_type else 0,
             )
-        state.output_path = pathlib.Path(st.text_input("Output location", ""))
+        state.output_path = Path(st.text_input("Output location", ""))
 
         if str(state.out_type) == str(None):
             state.out_type = st.selectbox("Output file type", supported_file_types)
@@ -545,7 +545,7 @@ def page_segmentations(state):
         )
         st.info(f"Selected {individual_seg} for segmentation...")
     elif state.input_type in slice_types:
-        search_dir = pathlib.Path(state.input_path)
+        search_dir = Path(state.input_path)
         individual_seg_list = glob.glob(
             str(search_dir.joinpath(f"*.{state.input_type}"))
         )
@@ -567,7 +567,7 @@ def page_segmentations(state):
                         "Please email the author at nbs49@psu.edu if you want me emphasize adding this."
                     )
                 else:
-                    input_path = pathlib.Path(state.input_path)
+                    input_path = Path(state.input_path)
                     input_vol = input_path.joinpath(individual_seg)
                     if st.checkbox("Log scale", key="9990445"):
                         get_midplane_histogram(input_vol, log=True)
@@ -624,14 +624,14 @@ def page_segmentations(state):
                 "with the model you want. Better this than wasting hours segmenting with the wrong thing."
             )
             st.stop()
-        input_path = pathlib.Path(state.input_path)
+        input_path = Path(state.input_path)
         input_type = state.input_type
 
-        output_path = pathlib.Path(state.output_path)
+        output_path = Path(state.output_path)
         out_type = state.out_type
 
         if not output_path.exists():
-            pathlib.Path.mkdir(output_path)
+            Path.mkdir(output_path)
 
         if state.input_type in slice_types:
             individual_seg_list.sort(key=natural_keys)
@@ -776,13 +776,13 @@ def page_batch_segmentations(state):
                     st.sidebar.text(f"{curr_batch} of {batch_len} remaining.")
                     state.twoD_to_threeD = False
                     st.write(row.input_path)
-                    input_path = pathlib.Path(row.input_path)
+                    input_path = Path(row.input_path)
                     input_type = str(row.input_type)
-                    output_path = pathlib.Path(row.output_path)
+                    output_path = Path(row.output_path)
                     out_type = row.output_type
                     if not output_path.exists():
                         st.warning(f"{output_path} doesn't exist and will be created!")
-                        pathlib.Path.mkdir(output_path)
+                        Path.mkdir(output_path)
 
                     _check_for_slice_to_vol(
                         state=state,
@@ -853,7 +853,7 @@ def page_batch_segmentations(state):
             if failed_images:
                 st.write("Failed segmentations:", failed_images)
                 failed_images = pd.DataFrame(failed_images)
-                failed_segs = str(pathlib.Path(state.parm_file).as_posix()).replace(
+                failed_segs = str(Path(state.parm_file).as_posix()).replace(
                     ".csv", "_failed_segmentations.csv"
                 )
                 failed_images.to_csv(failed_segs)
@@ -936,7 +936,7 @@ def page_midslice_viewer(state):
             else:
                 st.error("No saved unsegmented input path found")
         else:
-            temp_state.unseg_path = pathlib.Path(
+            temp_state.unseg_path = Path(
                 st.text_input("Unsegmented input path")
             )
             temp_state.unseg_type = st.selectbox(
@@ -958,7 +958,7 @@ def page_midslice_viewer(state):
                 )
 
         else:
-            temp_state.seg_path = pathlib.Path(st.text_input("Segmented input path"))
+            temp_state.seg_path = Path(st.text_input("Segmented input path"))
             temp_state.seg_type = st.selectbox(
                 "Segmented file type", supported_file_types
             )
@@ -1056,7 +1056,7 @@ def page_midslice_viewer(state):
         temp_state.unseg_type = temp_state.unseg_type
         if str(temp_state.unseg_vol_file) != "None":
             st.info(
-                f"{pathlib.Path(temp_state.unseg_vol_file)} ready to load :smile:"
+                f"{Path(temp_state.unseg_vol_file)} ready to load :smile:"
             )
     st.write("---")
     view_style = st.radio("Views:", ["Comparative", "Single view"])
@@ -1074,7 +1074,7 @@ def page_midslice_viewer(state):
             with st.spinner("Loading volumes..."):
                 if temp_state.unseg_type in slice_types:
                     temp_state.stack_loaded = True
-                    stack_input = pathlib.Path(temp_state.unseg_location)
+                    stack_input = Path(temp_state.unseg_location)
                     stack_list = glob.glob(
                         str(stack_input.joinpath(f"*.{temp_state.unseg_type}"))
                     )
@@ -1322,7 +1322,7 @@ def page_midslice_viewer(state):
         )
         if st.sidebar.checkbox("Setup Sharon's magic mesh button "):
             unseg_file_name = (
-                pathlib.Path(temp_state.unseg_location).parts[-1].split(".")[0]
+                Path(temp_state.unseg_location).parts[-1].split(".")[0]
             )
             suggested_name = _get_file_name_from_input(
                 volume_file=unseg_file_name, suffix="Mesh"
@@ -1332,7 +1332,7 @@ def page_midslice_viewer(state):
                 "Mesh type", ["ply", "off", "vtk", "inp", "stl", "obj"]
             )
             mesh_out_dir = st.sidebar.text_input(
-                "Output directory", str(pathlib.Path(temp_state.seg_path))
+                "Output directory", str(Path(temp_state.seg_path))
             )
             resample_amount = st.sidebar.selectbox("Resample by", list(range(1, 21)))
             try:
@@ -1427,7 +1427,7 @@ def page_midslice_viewer(state):
                             threads="threads",
                         )
 
-                    temp_mhd_dir = pathlib.Path(tempfile.gettempdir())
+                    temp_mhd_dir = Path(tempfile.gettempdir())
                     write_image(
                         resampled,
                         outName="temp_mhd",
@@ -1448,7 +1448,7 @@ def page_midslice_viewer(state):
                         inputImage=vtk_image, threshold=1, extract_largest=False
                     )
                 vtk_mesh = pv.wrap(vtk_mesh)
-                mesh_out = pathlib.Path(mesh_out_dir).joinpath(
+                mesh_out = Path(mesh_out_dir).joinpath(
                     f"{mesh_name}.{mesh_out_type}"
                 )
                 st.write(f"Writing out {mesh_out}")
@@ -1493,7 +1493,7 @@ def page_midslice_viewer(state):
             else:
                 unseg_image = file_selector(folder_path=unseg_input)
                 if st.button("Load unseg"):
-                    unseg_name = pathlib.Path(unseg_image).parts[-1]
+                    unseg_name = Path(unseg_image).parts[-1]
                     unseg = Image.open(unseg_image)
                     st.image(unseg, caption=f"{unseg_name}", use_column_width=False)
 
@@ -1502,7 +1502,7 @@ def page_midslice_viewer(state):
             seg_location = file_selector(folder_path=segmented_input, extension="mhd")
 
             if st.checkbox("Load segmented"):
-                seg_name = pathlib.Path(seg_location).parts[-1]
+                seg_name = Path(seg_location).parts[-1]
                 image_vol = sitk.ReadImage(str(seg_location))
                 dims = image_vol.GetSize()
                 seg_slice_num = st.slider("Seg Position", 0, dims[2])
@@ -1558,10 +1558,10 @@ def page_batch_meshing(state):
             )
             mesh_state.overide_output = True
             mesh_state.mesh_out_dir = st.text_input(
-                "Output directory", str(pathlib.Path(mesh_state.seg_path))
+                "Output directory", str(Path(mesh_state.seg_path))
             )
             try:
-                if not pathlib.Path(str(mesh_state.mesh_out_dir)).exists():
+                if not Path(str(mesh_state.mesh_out_dir)).exists():
                     st.warning(
                         f"{mesh_state.mesh_out_dir} doesn't exist and will be created!"
                     )
@@ -1715,7 +1715,7 @@ def page_batch_meshing(state):
                         st.sidebar.text(f"{remaining_items} of {batch_len} remaining.")
                         st.write(row.output_path)
                         input_name = str(row.input_name).rsplit(".", 1)[0]
-                        input_path = pathlib.Path(row.output_path)
+                        input_path = Path(row.output_path)
                         out_type = row.output_type
 
                         if not mesh_state.resample_column:
@@ -1724,11 +1724,11 @@ def page_batch_meshing(state):
                             resample_amount = row.resample_amount
 
                         if mesh_state.overide_output:
-                            mesh_out_dir = pathlib.Path(mesh_state.mesh_out_dir)
+                            mesh_out_dir = Path(mesh_state.mesh_out_dir)
                             if not mesh_out_dir.exists():
-                                pathlib.Path.mkdir(mesh_out_dir)
+                                Path.mkdir(mesh_out_dir)
                         else:
-                            mesh_out_dir = pathlib.Path(row.output_path)
+                            mesh_out_dir = Path(row.output_path)
 
                         if mesh_state.threshold_column:
                             thresh_amount = row.mesh_threshold
@@ -1835,7 +1835,7 @@ def page_batch_meshing(state):
                                     threads="threads",
                                 )
 
-                            temp_mhd_dir = pathlib.Path(tempfile.gettempdir())
+                            temp_mhd_dir = Path(tempfile.gettempdir())
                             write_image(
                                 resampled,
                                 outName="temp_mhd",
@@ -1849,7 +1849,7 @@ def page_batch_meshing(state):
                             )
 
                             # Clean up files so they don't pile up
-                            file_clean_up = pathlib.Path(
+                            file_clean_up = Path(
                                 str(temp_mhd_dir.joinpath("temp_mhd.mhd"))
                             )
                             with contextlib.suppress(builtins.BaseException):
@@ -1863,7 +1863,7 @@ def page_batch_meshing(state):
                             extract_largest=bool(mesh_state.keep_largest),
                         )
                         vtk_mesh = pv.wrap(vtk_mesh)
-                        mesh_out = pathlib.Path(mesh_out_dir).joinpath(
+                        mesh_out = Path(mesh_out_dir).joinpath(
                             f"{input_name}{mesh_state.mesh_name_append}.{mesh_state.mesh_out_type}"
                         )
                         st.write(f"Writing out {mesh_out}")
@@ -2027,13 +2027,13 @@ def mesh_batch_values(mesh_state):
 
 @st.cache
 def _load_MARS_logo():
-    script_dir = pathlib.Path(os.path.dirname(os.path.realpath(__file__)))
+    script_dir = Path(os.path.dirname(os.path.realpath(__file__)))
     logo = Image.open(str(script_dir.joinpath("Mars_Logo_small.png")))
     return logo
 
 
 def _get_tab_logo():
-    script_dir = pathlib.Path(os.path.dirname(os.path.realpath(__file__)))
+    script_dir = Path(os.path.dirname(os.path.realpath(__file__)))
     tab_logo = Image.open(str(script_dir.joinpath("Mars_square.jpg")))
     return tab_logo
 
@@ -2045,7 +2045,7 @@ def _get_user():
     """
     # We can't always count on this being launchde from a C: on windows
     # So we get the current working directory, then if there are back slashes we grab the root drive letter.
-    current = pathlib.Path.cwd()
+    current = Path.cwd()
     if "\\" in str(current):
         windows_drive = str(current.parts[0])
     pc = socket.gethostname()
@@ -2059,7 +2059,7 @@ def _get_user():
 
 
 def _get_file_name_from_list(image_files, suffix=""):
-    outName = pathlib.Path(image_files[0]).parts[-1]
+    outName = Path(image_files[0]).parts[-1]
     outName = outName.split(".")[0]
     outName = outName.rsplit("_", 1)[0]
     if suffix != "":
@@ -2069,7 +2069,7 @@ def _get_file_name_from_list(image_files, suffix=""):
 
 def _get_file_name_from_input(volume_file, suffix="RDN_seg"):
     if True:
-        outName = pathlib.Path(volume_file).parts[-1]
+        outName = Path(volume_file).parts[-1]
     outName = outName.split(".")[0]
     if suffix != "":
         outName = f"{outName}_{suffix}"
@@ -2191,19 +2191,19 @@ def get_state_path(current_state, current_user, key, message=""):
     if st.checkbox("Previous input path", value=True, key=9990363):
         if is_state_value_empty(state.input_path, verbose=False):
             st.warning("No saved path found, please enter a new location")
-            state.output_path = pathlib.Path(st.text_input("Output location", ""))
+            state.output_path = Path(st.text_input("Output location", ""))
             save_state_values(state=state, user=current_user)
         else:
-            state.input_path = pathlib.Path(state.input_path)
+            state.input_path = Path(state.input_path)
             st.write(state.input_path)
             save_state_values(state=state, user=current_user)
     else:
-        state.input_path = pathlib.Path(st.text_input("Input location", ""))
+        state.input_path = Path(st.text_input("Input location", ""))
         save_state_values(state=state, user=current_user)
 
 
 def save_state_values(state, user):
-    script_dir = pathlib.Path(os.path.dirname(os.path.realpath(__file__)))
+    script_dir = Path(os.path.dirname(os.path.realpath(__file__)))
     saved_dir = script_dir.joinpath("saved_states").joinpath(
         f"{user}_RDN_saved_state.json"
     )
@@ -2222,7 +2222,7 @@ def save_state_values(state, user):
 
 
 def load_state_values(state, user, verbose=True):
-    script_dir = pathlib.Path(os.path.dirname(os.path.realpath(__file__)))
+    script_dir = Path(os.path.dirname(os.path.realpath(__file__)))
     saved_dir = script_dir.joinpath("saved_states").joinpath(
         f"{user}_RDN_saved_state.json"
     )
@@ -2233,7 +2233,7 @@ def load_state_values(state, user, verbose=True):
     state.model = restored_session["model"][0]
     state.input_path = restored_session["input_path"][0]
     state.input_type = restored_session["input_type"][0]
-    state.output_path = pathlib.Path(restored_session["output_path"][0])
+    state.output_path = Path(restored_session["output_path"][0])
     state.out_type = restored_session["out_type"][0]
     state.parm_file = restored_session["parm_file"][0]
     return state
@@ -2241,7 +2241,7 @@ def load_state_values(state, user, verbose=True):
 
 def file_selector(folder_path=".", extension="", selectbox_text="", unique_key=""):
     if folder_path == "." or "":
-        folder_path = pathlib.Path.cwd()
+        folder_path = Path.cwd()
     filenames = os.listdir(folder_path)
     filenames.sort(reverse=True)
     if extension != "":
@@ -2257,7 +2257,7 @@ def file_selector(folder_path=".", extension="", selectbox_text="", unique_key="
 
 
 def gather_image_files(input_path, input_type):
-    image_files = glob.glob(str(pathlib.Path(input_path).joinpath(f"*.{input_type}")))
+    image_files = glob.glob(str(Path(input_path).joinpath(f"*.{input_type}")))
     image_files.sort(key=natural_keys)
     st.write(
         f"Found {len(image_files)} image files for segmentation in {input_path}..."
@@ -2274,7 +2274,7 @@ def parm_from_directory(
     input_dir, input_file_type="tif", output_dir="", output_file_type="mhd"
 ):
     # Directory to be scanned
-    input_dir = pathlib.Path(input_dir)
+    input_dir = Path(input_dir)
     if input_file_type in slice_types:
         dir_obj = os.scandir(input_dir)
         dir_list = [
@@ -2308,7 +2308,7 @@ def parm_from_par(par_file, out_type="mhd", input_type="mhd"):
     parm_file["$oldname"] = parm_file["$oldname"].str.replace("#", "")
     parm_file.columns = ["input_path", "input_name"]
     parm_file["input_path"] = parm_file["input_path"].map(
-        lambda x: str(pathlib.Path(x).as_posix())
+        lambda x: str(Path(x).as_posix())
     )
     parm_file["input_path"] = parm_file["input_path"].str.cat(
         "/" + parm_file["input_name"]
@@ -2913,7 +2913,7 @@ def write_image(inputImage, outName, outDir="", fileFormat="mhd", verbose=True):
     fileFormat = str(fileFormat)
 
     fileFormat = fileFormat.replace(".", "")
-    outputImage = pathlib.Path(outDir).joinpath(f"{outName}.{fileFormat}")
+    outputImage = Path(outDir).joinpath(f"{outName}.{fileFormat}")
     if verbose:
         _print_info(inputImage)
     st.write(f"Writing {outName} to {outDir} as {fileFormat}.")
@@ -2936,7 +2936,7 @@ def write_dicom(inputImage, metadata, outName, outDir=""):
 
     start = timer()
     series_tag_values = metadata
-    outDir = pathlib.Path.cwd() if outDir == "" else pathlib.Path(outDir)
+    outDir = Path.cwd() if outDir == "" else Path(outDir)
 
     # Make is so the file name generator deal with these parts of the name
     if outName[-4] == ".dcm":
@@ -2945,7 +2945,7 @@ def write_dicom(inputImage, metadata, outName, outDir=""):
     if outName[-1] == "_":
         outName = outName[:-1]
 
-    outName = pathlib.Path(outDir).joinpath(outName)
+    outName = Path(outDir).joinpath(outName)
     slice_num = inputImage.GetDepth()
 
     # Use the study/series/frame of reference information given in the meta-data
@@ -3567,8 +3567,8 @@ def three_class_segmentation(input_image, outDir, outType, network=""):
     net = network
 
     # The file types that can be output along with the corresponding dictionary
-    if not pathlib.Path(outDir).exists():
-        pathlib.Path.mkdir(save_folder)
+    if not Path(outDir).exists():
+        Path.mkdir(save_folder)
 
     # Get a list of files from the input folder using a list comprehension approach, then sort them numerically.
     image_names = input_image
@@ -3580,7 +3580,7 @@ def three_class_segmentation(input_image, outDir, outType, network=""):
     # Loop through the images in the folder and use the image name for the output name
     for i in range(len(image_names)):
         image_name = image_names[i]
-        out_name = str(pathlib.Path(image_name).parts[-1]) if True else image_name
+        out_name = str(Path(image_name).parts[-1]) if True else image_name
         if "." in out_name:
             out_name = out_name.rsplit(".", 1)[0]
 

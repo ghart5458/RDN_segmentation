@@ -12,7 +12,7 @@ python -m pip install -U prompt-toolkit~=2.0
 import math
 import multiprocessing
 import os
-import pathlib
+from pathlib import Path
 import platform
 import re
 import socket
@@ -41,7 +41,7 @@ if platform.system().lower() == 'linux':
         sys.path.append(r"/mnt/ics/RyanLab/Projects/NStephens/git_repo")
 
 # Provide the location of the net folder. This will work until packaged.
-script_dir = pathlib.Path(os.path.dirname(os.path.realpath(__file__)))
+script_dir = Path(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(str(script_dir))
 #sys.path.append(r"Z:\RyanLab\Projects\NStephens\git_repo\MARS\morphology\segmentation\pytorch_segmentation")
 #sys.path.append(r"D:\Desktop\git_repo\MARS\morphology\segmentation\pytorch_segmentation")
@@ -264,7 +264,7 @@ def _get_outDir(outDir):
     :param outDir: Directory for writing out a file.
     :return:
     """
-    outDir = pathlib.Path.cwd() if outDir == "" else pathlib.Path(str(outDir))
+    outDir = Path.cwd() if outDir == "" else Path(str(outDir))
     return outDir
 
 def _get_inDir(inDir):
@@ -273,7 +273,7 @@ def _get_inDir(inDir):
     :param outDir: Directory for writing out a file.
     :return:
     """
-    inDir = pathlib.Path.cwd() if inDir == "" else pathlib.Path(str(inDir))
+    inDir = Path.cwd() if inDir == "" else Path(str(inDir))
     return inDir
 
 def alpha_to_int(text):
@@ -334,7 +334,7 @@ def write_image(inputImage, outName, outDir="", fileFormat="mhd"):
     fileFormat = str(fileFormat)
 
     fileFormat = fileFormat.replace(".", "")
-    outputImage = pathlib.Path(outDir).joinpath(str(outName) + "." + str(fileFormat))
+    outputImage = Path(outDir).joinpath(str(outName) + "." + str(fileFormat))
 
     _print_info(inputImage)
     print(f"Writing {outName} to {outDir} as {fileFormat}.")
@@ -691,7 +691,7 @@ def write_dicom(inputImage, metadata, outName, outDir=""):
 
     start = timer()
     series_tag_values = metadata
-    outDir = pathlib.Path.cwd() if outDir == "" else pathlib.Path(outDir)
+    outDir = Path.cwd() if outDir == "" else Path(outDir)
 
     #Make is so the file name generator deal with these parts of the name
     if outName[-4] == ".dcm":
@@ -700,7 +700,7 @@ def write_dicom(inputImage, metadata, outName, outDir=""):
     if outName[-1] == "_":
         outName = outName[:-1]
 
-    outName = pathlib.Path(outDir).joinpath(outName)
+    outName = Path(outDir).joinpath(outName)
     slice_num = inputImage.GetDepth()
 
     # Use the study/series/frame of reference information given in the meta-data

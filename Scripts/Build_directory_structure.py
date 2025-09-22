@@ -14,7 +14,7 @@ Author: Lily DeMars (lvd5263@psu.edu)
 
 import glob
 import os
-import pathlib
+from pathlib import Path
 import platform
 import re
 import shutil
@@ -56,7 +56,7 @@ def get_initial_dataframe(matching_key, directory=""):
     start = timer()
     # Create a dictionary to append to with the key Location
     if directory == "":
-        directory = pathlib.Path.cwd()
+        directory = Path.cwd()
         print(
             f"\nNo directory provided, using the current working directory:\n {directory}\n"
         )
@@ -67,7 +67,7 @@ def get_initial_dataframe(matching_key, directory=""):
     matching_key = str(matching_key)
     # Use the rglob module within pathlib to recursively find all the files matching a wildcarded key word
     # This is the preferred method, but Long file names in Windows don't work.
-    # for filename in pathlib.Path(directory).rglob(str(matching_key)):
+    # for filename in Path(directory).rglob(str(matching_key)):
     # #Append the found tiles to the dictionary
     # files["Location"] += [str(filename)]
 
@@ -119,12 +119,12 @@ def build_from_multiple(file_type_list, directory=""):
     df = pd.DataFrame()
 
     if directory == "":
-        directory = pathlib.Path.cwd()
+        directory = Path.cwd()
         print(
             f"\nNo directory provided, using the current working directory:\n {directory}\n"
         )
     else:
-        directory = pathlib.Path(directory)
+        directory = Path(directory)
 
     for f in file_type_list:
         print(f"\n\nSearching for {f} files....")
@@ -585,16 +585,16 @@ def linuxify_par(par_file, base_folder, linux_base_folder):
     :return: Returns a MedTool parameter file with linux style file structure.
     :useage:
             #Convert the windows par to linux
-            base_folder = pathlib.Path(r"Z:\\RyanLab\\Projects\nsf_human_variation")
-            linux_base_folder = pathlib.Path(r"/gpfs/group/LiberalArts/default/tmr21_collab/RyanLab/Projects/nsf_human_variation/")
+            base_folder = Path(r"Z:\\RyanLab\\Projects\nsf_human_variation")
+            linux_base_folder = Path(r"/gpfs/group/LiberalArts/default/tmr21_collab/RyanLab/Projects/nsf_human_variation/")
 
             #Turn it into a linux par and write it out.
             linux_par = linuxify_par(par, base_folder, linux_base_folder)
             linux_par.to_csv(population + "_linux.par", index=False, sep=";")
 
     """
-    base_folder = pathlib.Path(base_folder).as_posix()
-    linux_base_folder = pathlib.Path(linux_base_folder).as_posix()
+    base_folder = Path(base_folder).as_posix()
+    linux_base_folder = Path(linux_base_folder).as_posix()
 
     # Ensure these are strings and replace the backslashes with forward slashes
     par_file["$folder"] = (
@@ -610,7 +610,7 @@ def linuxify_par(par_file, base_folder, linux_base_folder):
 
     # Use a lamda function to map a pathlib object onto the column of the dataframe
     def folder_replace(x):
-        return pathlib.Path(
+        return Path(
             str(x).replace(str(base_folder), str(linux_base_folder))
         ).as_posix()
     par_file = par_file.applymap(folder_replace)
@@ -809,12 +809,12 @@ set_print_size_max()
 pd.options.mode.chained_assignment = None  # default='warn'
 
 # Get the directory where the files are that you want to work with
-directory = pathlib.Path(r"Z:\RyanLab\Projects\NStephens\SSRI CT Scans")
-# directory = pathlib.Path(r"/gpfs/group/LiberalArts/default/tmr21_collab/RyanLab/Projects/nsf_human_variation/Data/USC transfer/Skull_Gultch")
+directory = Path(r"Z:\RyanLab\Projects\NStephens\SSRI CT Scans")
+# directory = Path(r"/gpfs/group/LiberalArts/default/tmr21_collab/RyanLab/Projects/nsf_human_variation/Data/USC transfer/Skull_Gultch")
 
 # Change to the directory and print it out.
 os.chdir(directory)
-print(pathlib.Path.cwd())
+print(Path.cwd())
 
 # Enter in the file type to be searched (e.g. tif, vol, mhd, nii, raw... etc), use if you know all of the scans you are interested in have the same file type
 file_type = ".bmp"
@@ -1494,8 +1494,8 @@ par = get_par(df_final)
 par.to_csv(population + ".par", index=False, sep=";")
 
 # Convert the windows par to linux
-base_folder = pathlib.Path(r"Z:\RyanLab")
-linux_base_folder = pathlib.Path(
+base_folder = Path(r"Z:\RyanLab")
+linux_base_folder = Path(
     r"/gpfs/group/LiberalArts/default/tmr21_collab/RyanLab"
 )
 
@@ -1576,9 +1576,9 @@ par.to_csv(population + ".par", index=False, sep=";")
 # Get rid of the nan values
 
 # Convert the windows par to linux
-base_folder = pathlib.Path(r"Z:\RyanLab\Projects")
-# linux_base_folder = pathlib.Path(r"/gpfs/group/LiberalArts/default/tmr21_collab/RyanLab/Projects/nsf_human_variation/")
-linux_base_folder = pathlib.Path(r"/mnt/ics/RyanLab/Projects")
+base_folder = Path(r"Z:\RyanLab\Projects")
+# linux_base_folder = Path(r"/gpfs/group/LiberalArts/default/tmr21_collab/RyanLab/Projects/nsf_human_variation/")
+linux_base_folder = Path(r"/mnt/ics/RyanLab/Projects")
 
 # Turn it into a linux par and write it out
 linux_par = linuxify_par(par, base_folder, linux_base_folder)

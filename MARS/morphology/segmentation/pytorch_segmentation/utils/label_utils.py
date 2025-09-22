@@ -2,7 +2,7 @@ import difflib
 import math
 import multiprocessing
 import os
-import pathlib
+from pathlib import Path
 import re
 import tempfile
 from timeit import default_timer as timer
@@ -117,11 +117,11 @@ def combine_images(inputImage1, inputImage2):
     return combined
 
 def write_label(inputImage, out_name, file_type="tif", out_dir=""):
-    out_dir = pathlib.Path.cwd() if out_dir == "" else pathlib.Path(out_dir)
+    out_dir = Path.cwd() if out_dir == "" else Path(out_dir)
     if "." in file_type:
         file_type = file_type.replace(".", "")
     if True:
-        out_name = pathlib.Path(out_name).parts[-1].split(".")[0]
+        out_name = Path(out_name).parts[-1].split(".")[0]
 
     outName = out_dir.joinpath(f"{out_name}.{file_type}")
     writer = sitk.ImageFileWriter()
@@ -143,12 +143,12 @@ def process_dragonfly_labels(labels_location, output_name, out_dir, extract_stri
     start = timer()
     labels = labels_location
     extract_strings.sort()
-    out_dir = pathlib.Path(out_dir)
+    out_dir = Path(out_dir)
 
     labels = [image_file for string_match in extract_strings for image_file in labels if string_match in image_file]
     labels.sort()
 
-    slice_num = str(pathlib.Path(labels[0]).parts[-1]).split(" ", 1)[0].replace(str(extract_strings[0]), " ")
+    slice_num = str(Path(labels[0]).parts[-1]).split(" ", 1)[0].replace(str(extract_strings[0]), " ")
     output_name = f"{output_name}{slice_num}"
 
     _air_label, bone_label, dirt_label = [rescale_labels(inputFilename=label, writeOut=False) for label in labels]
@@ -173,7 +173,7 @@ def rescale_intensity(inputFilename, writeOut=True, file_type="", outDir=""):
     if "." in str(file_type):
         file_type.replace(".", "")
     if "\\" in out_name or "/" in out_name:
-        out_name = pathlib.Path(out_name).parts[-1]
+        out_name = Path(out_name).parts[-1]
 
 
     inputImage = sitk.ReadImage(inputFilename, sitk.sitkUInt8)
@@ -216,7 +216,7 @@ def rescale_intensity(inputFilename, writeOut=True, file_type="", outDir=""):
     if writeOut:
         writer = sitk.ImageFileWriter()
         if outDir != "":
-            out_name = pathlib.Path(outDir).joinpath(out_name)
+            out_name = Path(outDir).joinpath(out_name)
         writer.SetFileName(f"{out_name!s}_rescaled.{file_type}")
         writer.Execute(rescaled)
     else:
@@ -235,7 +235,7 @@ def downscale_intensity(inputFilename, downscale_value=100, writeOut=True, file_
     if "." in str(file_type):
         file_type.replace(".", "")
     if "\\" in out_name or "/" in out_name:
-        out_name = pathlib.Path(out_name).parts[-1]
+        out_name = Path(out_name).parts[-1]
 
 
     inputImage = sitk.ReadImage(inputFilename, sitk.sitkUInt8)
@@ -276,7 +276,7 @@ def downscale_intensity(inputFilename, downscale_value=100, writeOut=True, file_
         if writeOut:
             writer = sitk.ImageFileWriter()
             if outDir != "":
-                out_name = pathlib.Path(outDir).joinpath(out_name)
+                out_name = Path(outDir).joinpath(out_name)
             writer.SetFileName(f"{out_name!s}_downscaled.{file_type}")
             writer.Execute(rescaled)
         else:
@@ -309,13 +309,13 @@ def clean_image(inputFilename, suffix="", out_name="", out_type="", out_dir="", 
 
     if out_dir != "":
         if "\\" in out_name or "/" in out_name:
-            out_name = pathlib.Path(out_name).parts[-1]
+            out_name = Path(out_name).parts[-1]
             if remove_space:
                 out_name = out_name.replace(" ", "")
             if remove_dblundr:
                 out_name = out_name.replace("__", "_")
 
-        out_name = str(pathlib.Path(out_dir).joinpath(out_name))
+        out_name = str(Path(out_dir).joinpath(out_name))
 
     inputImage = sitk.ReadImage(inputFilename, sitk.sitkUInt8)
     if to_streamlit:
@@ -538,7 +538,7 @@ def write_amira_raw(amira_binary, out_name, out_dir=""):
     if "." in out_name:
         out_name.replace(".", "")
     if out_dir != "":
-        out_name = pathlib.Path(out_dir).joinpath(out_name)
+        out_name = Path(out_dir).joinpath(out_name)
     with open(f"{out_name}.raw", "wb") as raw_data:
         raw_data.write(amira_binary)
 
@@ -602,8 +602,8 @@ def check_label_values(inputFilename):
 
 def check_if_label_exists(file_name, label_directory, verbose=True):
     image_file = file_name
-    label_directory = pathlib.Path(label_directory)
-    check_exists = pathlib.Path(image_file).parts[-1]
+    label_directory = Path(label_directory)
+    check_exists = Path(image_file).parts[-1]
     check_file_type = check_exists.split(".")[0]
     #print(check_exists)
     if label_directory.joinpath(check_exists).exists() or label_directory.joinpath(f"{check_file_type}.tif").exists():

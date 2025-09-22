@@ -1,12 +1,12 @@
 import os
-import pathlib
+from pathlib import Path
 import subprocess
 import sys
 
 import SimpleITK as sitk
 import streamlit as st
 
-script_dir = pathlib.Path(os.path.dirname(os.path.realpath(__file__)))
+script_dir = Path(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(str(script_dir.parent.parent))
 from MARS.morphology.segmentation.pytorch_segmentation.execute_3_class_seg import (
     read_image,
@@ -17,7 +17,7 @@ from MARS.morphology.segmentation.pytorch_segmentation.execute_3_class_seg impor
 
 def file_selector(folder_path='.', extension="", selectbox_text=""):
     if folder_path == '.' or '':
-        folder_path = pathlib.Path.cwd()
+        folder_path = Path.cwd()
     filenames = os.listdir(folder_path)
     filenames.sort(reverse=True)
     if extension != "":
@@ -31,13 +31,13 @@ def file_selector(folder_path='.', extension="", selectbox_text=""):
 
 #Define where ImageJ is installed. The .as_posix() makes certain they have forward slashes "/"
 
-ImageJDIR = st.sidebar.text_input("ImageJ location", pathlib.Path(r"D:\Desktop\Fiji.app\ImageJ-win64.exe").as_posix())
+ImageJDIR = st.sidebar.text_input("ImageJ location", Path(r"D:\Desktop\Fiji.app\ImageJ-win64.exe").as_posix())
 
 #Give the input analysis script
-scriptFile = st.sidebar.text_input("Script location", pathlib.Path(r"Z:\RyanLab\Projects\NStephens\git_repo\MARS\analysis\ImageJ_analysis.py").as_posix())
+scriptFile = st.sidebar.text_input("Script location", Path(r"Z:\RyanLab\Projects\NStephens\git_repo\MARS\analysis\ImageJ_analysis.py").as_posix())
 
 #Give the directory where the RDN segmented image is
-in_directory = st.sidebar.text_input("Segmented volume location", pathlib.Path(r"D:\Desktop\From_Lily").as_posix())
+in_directory = st.sidebar.text_input("Segmented volume location", Path(r"D:\Desktop\From_Lily").as_posix())
 directory = file_selector(in_directory, extension="mhd", selectbox_text="Select volume")
 
 
@@ -47,7 +47,7 @@ os.chdir(in_directory)
 
 #Give the input file name
 #file = "NF_27_819941_Humerus_Prox_R_UnSeg_reoriented_sphereVOI_RDN_seg.mhd"
-file = pathlib.Path(directory).parts[-1]
+file = Path(directory).parts[-1]
 
 #Define the output namer
 seg_name = file.replace("_RDN_seg.mhd", "_seg")
@@ -56,7 +56,7 @@ seg_name = file.replace("_RDN_seg.mhd", "_seg")
 shrink = 0.15
 
 #Get the full directory
-input_file = pathlib.Path(in_directory).joinpath(file)
+input_file = Path(in_directory).joinpath(file)
 
 if st.button("Analyze!"):
     #Read in the image
@@ -77,7 +77,7 @@ if st.button("Analyze!"):
     sitk_image = rescale_intensity(inputImage=sitk_image, old_min=0, old_max=210, new_min=0, new_max=255)
 
     # Write that image out at the segmentation
-    write_image(sitk_image, outName=seg_name, outDir=pathlib.Path.cwd(), fileFormat='mhd')
+    write_image(sitk_image, outName=seg_name, outDir=Path.cwd(), fileFormat='mhd')
 
     # Get the sphere from the bounds of the ROI, then shrink it by how much we had to shrink it by
     sphere = get_sphere(bounds=bounds, r="", center="", shrink=float(shrink))
@@ -102,8 +102,8 @@ if st.button("Analyze!"):
     BVTV = calcualte_BVTV_from_composite(inputImage=composite_image)
 
     #Write these out as generic composite iamge and spcaing voi for imagej
-    write_image(inputImage=composite_image, outName="Composite_Image", outDir=pathlib.Path.cwd(), fileFormat='mhd')
-    write_image(inputImage=black_inside, outName="Spacing_VOI", outDir=pathlib.Path.cwd(), fileFormat='mhd')
+    write_image(inputImage=composite_image, outName="Composite_Image", outDir=Path.cwd(), fileFormat='mhd')
+    write_image(inputImage=black_inside, outName="Spacing_VOI", outDir=Path.cwd(), fileFormat='mhd')
 
     #Build the command to pass to the imageJ javascript input
 

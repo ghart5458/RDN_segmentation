@@ -1,6 +1,6 @@
 import glob
 import os
-import pathlib
+from pathlib import Path
 import shutil
 import subprocess
 
@@ -16,7 +16,7 @@ from MARS.morphology.segmentation.pytorch_segmentation.execute_3_class_seg impor
 directory = r"Z:\RyanLab\Projects\CT_Data\Belize\Vols\ST_18_14_Check"
 os.chdir(directory)
 
-vol_list = pathlib.Path.rglob(pathlib.Path.cwd(), pattern="*.vol")
+vol_list = Path.rglob(Path.cwd(), pattern="*.vol")
 vol_list = list(vol_list)
 
 meta_script = r"Z:\RyanLab\Projects\NStephens\git_repo\medtool_plugins\CT_scan_metadata_readers\Ct_metadata_reader.py"
@@ -34,9 +34,9 @@ for vol in vol_list[:]:
     # executed = subprocess.Popen(f"{command}", shell=True)
     # out, err = executed.communicate()
     # print(out)
-    ply_file = glob.glob(str(pathlib.Path(directory).joinpath("*.ply")))
+    ply_file = glob.glob(str(Path(directory).joinpath("*.ply")))
     if ply_file:
-        if pathlib.Path(ply_file[0]).exists():
+        if Path(ply_file[0]).exists():
             print(ply_file)
     else:
         command = f"python {mesh_script} {directory}"
@@ -57,8 +57,8 @@ def read_mhd(directory, mhd_file):
     :param directory:
     :return:
     """
-    original_directory = pathlib.Path.cwd()
-    directory = pathlib.Path(directory)
+    original_directory = Path.cwd()
+    directory = Path(directory)
     os.chdir(directory)
     mhd_file = str(directory.joinpath(mhd_file))
     print(f"Reading {mhd_file}...")
@@ -95,9 +95,9 @@ def ct_log_reader(directory, log_file):
     print(log_file)
     if isinstance(log_file, list):
         log_file = log_file[0]
-    directory = pathlib.Path(directory)
+    directory = Path(directory)
     file_name = str(log_file)
-    log_file = pathlib.Path(directory).joinpath(file_name)
+    log_file = Path(directory).joinpath(file_name)
 
     # Reads in the file
     print("\nOpening log file....\n")
@@ -184,7 +184,7 @@ def write_mhd_file_vol(
     pwd = os.path.split(mhdfile)[0]
     pwd + "/" + meta_dict["ElementDataFile"] if pwd else meta_dict["ElementDataFile"]
     shutil.move(
-        pathlib.Path.cwd().joinpath(mhdfile), pathlib.Path.cwd().joinpath(mhdfile)
+        Path.cwd().joinpath(mhdfile), Path.cwd().joinpath(mhdfile)
     )
 
 
@@ -194,11 +194,11 @@ def write_mhd_file_vol(
 #                                      #
 ########################################
 
-# initial_path = pathlib.Path(r"Z:\RyanLab\Projects\nsf_human_variation")
-# initial_path = pathlib.Path(r"/gpfs/group/LiberalArts/default/tmr21_collab/RyanLab/Projects/nsf_human_variation")
+# initial_path = Path(r"Z:\RyanLab\Projects\nsf_human_variation")
+# initial_path = Path(r"/gpfs/group/LiberalArts/default/tmr21_collab/RyanLab/Projects/nsf_human_variation")
 
 # Define the directory of the paremter file and change to it
-inputdir = pathlib.Path(r"Z:\RyanLab\Projects\nsf_human_variation\Par")
+inputdir = Path(r"Z:\RyanLab\Projects\nsf_human_variation\Par")
 os.chdir(inputdir)
 
 # Read in the first par file. The 0 makes it the first one in the list.
@@ -215,11 +215,11 @@ df = par_file
 df.columns = df.columns.str.replace("$", "")
 print(df.columns)
 
-out_dir = pathlib.Path(r"Z:\RyanLab\Projects\NStephens\SSRI CT Scans\Volumes")
+out_dir = Path(r"Z:\RyanLab\Projects\NStephens\SSRI CT Scans\Volumes")
 os.chdir(out_dir)
 
 for row in df.iloc[:].itertuples():
-    input_location = pathlib.Path(row.location)
+    input_location = Path(row.location)
     file_name = row.file
     out_name = row.oldname
     # if not out_dir.joinpath(f"{out_name}_midplanes_midplanes.png").exists():
@@ -233,8 +233,8 @@ for row in df.iloc[:].itertuples():
         file_stack.sort()
         file_stack = [x for x in file_stack if remove_file not in x]
         input_image = sitk.ReadImage(file_stack, sitk.sitkUInt8)
-        ct_log_dir = pathlib.Path(row.location)
-        ct_log_dir = pathlib.Path(row.location)
+        ct_log_dir = Path(row.location)
+        ct_log_dir = Path(row.location)
         ct_log_file = glob.glob(str(ct_log_dir.joinpath("*_rec.log")))
         if len(ct_log_file) == 2:
             ct_log_file.sort(key=os.path.getmtime, reverse=True)
@@ -256,7 +256,7 @@ for row in df.iloc[:].itertuples():
 
 
 for row in df.iloc[:].itertuples():
-    ct_log_dir = pathlib.Path(row.location)
+    ct_log_dir = Path(row.location)
     ct_log_file = glob.glob(str(ct_log_dir.joinpath("*_rec.log")))
     if len(ct_log_file) == 2:
         ct_log_file.sort(key=os.path.getmtime, reverse=True)
@@ -277,7 +277,7 @@ for row in df.iloc[:].itertuples():
     )
 
 
-directory = pathlib.Path(r"Z:\RyanLab\Projects\NStephens\SSRI CT Scans\Skull_499")
+directory = Path(r"Z:\RyanLab\Projects\NStephens\SSRI CT Scans\Skull_499")
 os.chdir(directory)
 
 my_files = list(directory.rglob("*Skull_499_rec_ (1).bmp"))
@@ -286,10 +286,10 @@ my_files = list(directory.rglob("*Skull_499_rec_ (1).bmp"))
 # If you wnat to subset this, then you can use iloc, which goes [row,row, column:column]
 for row in df.iloc[:1].itertuples():
     # Setup the image input
-    input_dir = pathlib.Path(row.input_path)
+    input_dir = Path(row.input_path)
     input_name = str(row.input_name)
 
-    in_file = pathlib.Path(input_dir).joinpath(input_name)
+    in_file = Path(input_dir).joinpath(input_name)
     # setup the image output
     output_name = input_name.replace(".mhd", "")
 
@@ -357,9 +357,9 @@ for row in df.iloc[:1].itertuples():
 
 for row in df.iloc[1:].itertuples():
     # Setup the image input
-    input_dir = pathlib.Path(row.path).joinpath(row.oldname).joinpath("01_Seg")
+    input_dir = Path(row.path).joinpath(row.oldname).joinpath("01_Seg")
     input_name = f"{row.name!s}_seg.mhd"
-    in_file = pathlib.Path(input_dir).joinpath(input_name)
+    in_file = Path(input_dir).joinpath(input_name)
     # setup the image output
     output_name = input_name.replace(".mhd", "")
 
@@ -458,9 +458,9 @@ df.input_name = df.input_name.str.replace("_cropped", "")
 
 for row in df.iloc[:1].itertuples():
     # Setup the image input
-    input_dir = pathlib.Path(row.input_path)
+    input_dir = Path(row.input_path)
     input_name = f"{row.input_name!s}"
-    in_file = pathlib.Path(input_dir).joinpath(input_name)
+    in_file = Path(input_dir).joinpath(input_name)
     # setup the image output
     output_name = input_name.replace(".mhd", "")
 

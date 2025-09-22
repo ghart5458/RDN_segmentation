@@ -1,6 +1,6 @@
 import glob
 import os
-import pathlib
+from pathlib import Path
 import subprocess
 import sys
 import tempfile
@@ -16,7 +16,7 @@ from streamlit.hashing import _CodeHasher
 from streamlit.report_thread import get_report_ctx
 from streamlit.server.server import Server
 
-script_dir = pathlib.Path(os.path.dirname(os.path.realpath(__file__)))
+script_dir = Path(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(str(script_dir.parent.parent))
 from MARS.registration.Meshlab_tools import *
 
@@ -27,7 +27,7 @@ supported_volume_mesh = ["vtk", "inp", "msh"]
 
 
 # Get the small logo for the tab
-script_dir = pathlib.Path(os.path.dirname(os.path.realpath(__file__)))
+script_dir = Path(os.path.dirname(os.path.realpath(__file__)))
 tab_logo = Image.open(str(script_dir.joinpath('mars_square.jpg')))
 
 # This is a beta feature to control the default elements of the app
@@ -109,11 +109,11 @@ def main():
         save_state_values(state=state, user=current_user)
 
     ## The select boxes and inputs are here
-    state.meshlab_path = pathlib.Path(st.text_input("Meshlab location", r"C:\Program Files\VCG\MeshLab\meshlab.exe"))
-    state.meshlab_server_path = pathlib.Path(str(state.meshlab_path)).parent.joinpath("meshlabserver.exe")
+    state.meshlab_path = Path(st.text_input("Meshlab location", r"C:\Program Files\VCG\MeshLab\meshlab.exe"))
+    state.meshlab_server_path = Path(str(state.meshlab_path)).parent.joinpath("meshlabserver.exe")
 
 
-    state.mesh_location = pathlib.Path(st.text_input("Mesh location"), key=999073)
+    state.mesh_location = Path(st.text_input("Mesh location"), key=999073)
     state.mesh_input_type = st.selectbox("Mesh input file format", supported_mesh, key=9990110)
 
 
@@ -129,7 +129,7 @@ def main():
         state.glob_string = escape_markdown(state.glob_string)
 
 
-    state.mesh_output_location = pathlib.Path(st.text_input("Mesh output location"), key=9990125)
+    state.mesh_output_location = Path(st.text_input("Mesh output location"), key=9990125)
     save_state_values(user=current_user, state=state)
     state.mesh_output_type = st.selectbox("Mesh output file format", supported_mesh, key=9990126)
     save_state_values(user=current_user, state=state)
@@ -139,14 +139,14 @@ def main():
         st.info("You can create meshlab script by running a single mesh through the filters you'd like and saving it. " \
         "This can then be applied to a group of meshes by providing the .mlx script here")
         try:
-            state.filter_script_location = pathlib.Path(st.text_input("Meshlab script location", state.filter_script_location))
+            state.filter_script_location = Path(st.text_input("Meshlab script location", state.filter_script_location))
         except FileNotFoundError:
             st.error("Couldn't find the directory, please check that everything is spelled correctly. "
                      "Note: This is case sensistive.")
         if str(state.filter_script_location) == "." or str(state.filter_script_location) == "None":
             st.info("Please paste in the filter script location")
         else:
-            state.filter_script = pathlib.Path(file_selector(folder_path=str(state.filter_script_location),
+            state.filter_script = Path(file_selector(folder_path=str(state.filter_script_location),
                                                              extension="mlx",
                                                              unique_key=9990138))
             save_state_values(user=current_user, state=state)
@@ -158,7 +158,7 @@ def main():
         glob_string = f"{glob_string!s}*.{state.mesh_input_type!s}"
         glob_string = glob_string.replace("**", "*")
         st.write(state.mesh_location)
-        glob_path = f"{pathlib.Path(state.mesh_location).joinpath(glob_string)!s}"
+        glob_path = f"{Path(state.mesh_location).joinpath(glob_string)!s}"
         st.write(f"Globbing {glob_path}...")
         mesh_list = glob.glob(glob_path)
         st.write(f"Found {len(mesh_list)} mesh files!")
@@ -198,8 +198,8 @@ def main():
                 progress_bar = st.progress(0)
                 current_total = 0
                 for mesh_file in mesh_list:
-                    input_directory = pathlib.Path(mesh_file).as_posix().rsplit("/", 1)[0]
-                    mesh_file = str(pathlib.Path(mesh_file).parts[-1])
+                    input_directory = Path(mesh_file).as_posix().rsplit("/", 1)[0]
+                    mesh_file = str(Path(mesh_file).parts[-1])
                     st.write(f"Processing {mesh_file} in {input_directory}")
                     convert_mesh(in_dir=input_directory,
                                  in_file=mesh_file,
@@ -232,8 +232,8 @@ def main():
                 progress_bar = st.progress(0)
                 current_total = 0
                 for mesh_file in mesh_list:
-                    input_directory = pathlib.Path(mesh_file).as_posix().rsplit("/", 1)[0]
-                    mesh_file = str(pathlib.Path(mesh_file).parts[-1])
+                    input_directory = Path(mesh_file).as_posix().rsplit("/", 1)[0]
+                    mesh_file = str(Path(mesh_file).parts[-1])
 
                     st.write(f"Processing {mesh_file} in {input_directory}....")
 
@@ -261,7 +261,7 @@ def main():
         mesh_list = state.mesh_list
         out_type = str(state.mesh_output_type)
 
-        script_list = glob.glob(str(pathlib.Path(state.filter_script_location).joinpath("*.mlx")))
+        script_list = glob.glob(str(Path(state.filter_script_location).joinpath("*.mlx")))
         meshlab_script_list = st.multiselect("Select scripts in execution order", script_list)
         st.write(meshlab_script_list)
         state.meshlab_script_list = meshlab_script_list
@@ -282,8 +282,8 @@ def main():
                         progress_bar = st.progress(0)
                         current_total = 0
                         for mesh_file in mesh_list:
-                            input_directory = pathlib.Path(mesh_file).as_posix().rsplit("/", 1)[0]
-                            mesh_file = str(pathlib.Path(mesh_file).parts[-1])
+                            input_directory = Path(mesh_file).as_posix().rsplit("/", 1)[0]
+                            mesh_file = str(Path(mesh_file).parts[-1])
 
                             st.write(f"Processing {mesh_file} in {input_directory}....")
 
@@ -312,7 +312,7 @@ def main():
                             current_total = 0
                             for mesh_file in mesh_list:
                                 input_directory = str(state.mesh_output_location)
-                                mesh_file = str(pathlib.Path(mesh_file).parts[-1])
+                                mesh_file = str(Path(mesh_file).parts[-1])
                                 st.write(f"Processing {mesh_file} in {input_directory}....")
                                 highres_to_lowres(in_dir=input_directory,
                                                   in_file=mesh_file,
@@ -344,8 +344,8 @@ def main():
                 progress_bar = st.progress(0)
                 current_total = 0
                 for mesh_file in mesh_list:
-                    input_directory = pathlib.Path(mesh_file).as_posix().rsplit("/", 1)[0]
-                    mesh_file = str(pathlib.Path(mesh_file).parts[-1])
+                    input_directory = Path(mesh_file).as_posix().rsplit("/", 1)[0]
+                    mesh_file = str(Path(mesh_file).parts[-1])
                     st.write(f"Processing {mesh_file} in {input_directory}")
                     pymeshfix(in_dir=input_directory,
                               in_file=mesh_file,
@@ -377,12 +377,12 @@ def main():
                 progress_bar = st.progress(0)
                 current_total = 0
                 for mesh_file in mesh_list:
-                    input_directory = pathlib.Path(mesh_file).as_posix().rsplit("/", 1)[0]
-                    mesh_file = str(pathlib.Path(mesh_file).parts[-1])
+                    input_directory = Path(mesh_file).as_posix().rsplit("/", 1)[0]
+                    mesh_file = str(Path(mesh_file).parts[-1])
                     st.write(f"Processing {mesh_file} in {input_directory}")
                     if state.tet_wild:
                         #This is all pretty ad-hoc and will need to be cleaned up.
-                        temp_dir = pathlib.Path(tempfile.gettempdir())
+                        temp_dir = Path(tempfile.gettempdir())
                         cleaned_mesh = pymeshfix(in_dir=str(input_directory),
                                                  in_file=mesh_file,
                                                  out_type="ply",
@@ -401,7 +401,7 @@ def main():
                         temp_mesh = pv.read(str(temp_dir.joinpath("temp_mesh.vtk")))
                         temp_mesh = temp_mesh.extract_geometry()
                         largest_surface = temp_mesh.connectivity(largest=True)
-                        output = pathlib.Path(str(state.mesh_output_location)).joinpath(f"{mesh_file}.{out_type}")
+                        output = Path(str(state.mesh_output_location)).joinpath(f"{mesh_file}.{out_type}")
                         if out_type in ['ply', 'vtp', 'stl', 'vtk']:
                             largest_surface.save(str(output))
                         else:
@@ -437,8 +437,8 @@ def main():
                 progress_bar = st.progress(0)
                 current_total = 0
                 for mesh_file in mesh_list:
-                    input_directory = pathlib.Path(mesh_file).as_posix().rsplit("/", 1)[0]
-                    mesh_file = str(pathlib.Path(mesh_file).parts[-1])
+                    input_directory = Path(mesh_file).as_posix().rsplit("/", 1)[0]
+                    mesh_file = str(Path(mesh_file).parts[-1])
                     st.write(f"Processing {mesh_file} in {input_directory}")
                     TetWild_tetrahedralize(input_path=str(input_directory),
                                            in_file=mesh_file,
@@ -510,14 +510,14 @@ def direct_pymeshfix(in_dir, in_file, out_type, output_directory):
     :return:
     """
     in_file = str(in_file)
-    in_dir = pathlib.Path(in_dir)
+    in_dir = Path(in_dir)
 
     # Define the output file by replacing the last 3 characters with the new type
     out_file = str(in_file[:-3]) + str(out_type)
 
     # Use pathlib to join the input file and output file
-    in_file = pathlib.Path(in_dir).joinpath(in_file)
-    output = pathlib.Path(output_directory).joinpath(out_file)
+    in_file = Path(in_dir).joinpath(in_file)
+    output = Path(output_directory).joinpath(out_file)
 
     # Print the input name to the console
     print(f"\nInput {in_file}.\n")
@@ -542,7 +542,7 @@ def TetWild_tetrahedralize(input_path, in_file, output_path, out_name="", edge_l
     :return:
     """
     script_dir = _get_script_dir()
-    tetwildpath = pathlib.Path(script_dir.parent.joinpath("TetWild"))
+    tetwildpath = Path(script_dir.parent.joinpath("TetWild"))
 
     # Reads in the input file name as a string.
     in_file = str(in_file)
@@ -557,17 +557,17 @@ def TetWild_tetrahedralize(input_path, in_file, output_path, out_name="", edge_l
     msh_file = str(in_file[:-4]) + "_.msh"
 
     # Gives the long file path and name for reading in
-    in_file = pathlib.Path(input_path).joinpath(in_file)
+    in_file = Path(input_path).joinpath(in_file)
 
-    # in_file = pathlib.Path(input_path).joinpath(in_file)
+    # in_file = Path(input_path).joinpath(in_file)
     print(f"Input: {in_file}")
 
-    # output = pathlib.Path(input_path).joinpath("lowres")
-    output = pathlib.Path(output_path).joinpath(out_file)
+    # output = Path(input_path).joinpath("lowres")
+    output = Path(output_path).joinpath(out_file)
     print(f"Output: {output}")
 
     # This is where meshlabserver lives
-    tetwildpath = pathlib.Path(tetwildpath).joinpath("TetWild.exe")
+    tetwildpath = Path(tetwildpath).joinpath("TetWild.exe")
 
     # So this is just putting it into a format that is readable by tetwild
     command = '"' + str(tetwildpath) + '"' + " " + str(in_file)
@@ -591,9 +591,9 @@ def TetWild_tetrahedralize(input_path, in_file, output_path, out_name="", edge_l
     print(last_line)
     print("\n\nDone!\n")
 
-    temp = pathlib.Path(tempfile.gettempdir())
-    msh_file = pathlib.Path(temp).joinpath(msh_file)
-    out_file = pathlib.Path(output_path).joinpath(out_file)
+    temp = Path(tempfile.gettempdir())
+    msh_file = Path(temp).joinpath(msh_file)
+    out_file = Path(output_path).joinpath(out_file)
 
     # Use meshio to read in the msh file and output the inp. Easier than hoping gmsh installed properly.
     new_mesh = pv.read(str(msh_file))
@@ -608,14 +608,14 @@ def pymeshfix(in_dir, in_file, out_type, output_directory, write=False):
     :return:
     """
     in_file = str(in_file)
-    in_dir = pathlib.Path(in_dir)
+    in_dir = Path(in_dir)
 
     # Define the output file by replacing the last 3 characters with the new type
     out_file = str(in_file[:-3]) + str(out_type)
 
     # Use pathlib to join the input file and output file
-    in_file = pathlib.Path(in_dir).joinpath(in_file)
-    output = pathlib.Path(output_directory).joinpath(out_file)
+    in_file = Path(in_dir).joinpath(in_file)
+    output = Path(output_directory).joinpath(out_file)
 
     rough_mesh = pv.read(str(in_file))
     st.text(f"Loaded mesh with {rough_mesh.n_cells} cells and { rough_mesh.n_points} vertices")
@@ -652,14 +652,14 @@ def isolate_external_surface(in_dir, in_file, out_type, output_directory, write_
     :return:
     """
     in_file = str(in_file)
-    in_dir = pathlib.Path(in_dir)
+    in_dir = Path(in_dir)
 
     # Define the output file by replacing the last 3 characters with the new type
     out_file = str(in_file[:-3]) + str(out_type)
 
     # Use pathlib to join the input file and output file
-    in_file = pathlib.Path(in_dir).joinpath(in_file)
-    output = pathlib.Path(output_directory).joinpath(out_file)
+    in_file = Path(in_dir).joinpath(in_file)
+    output = Path(output_directory).joinpath(out_file)
 
     rough_mesh = pv.read(str(in_file))
     st.text(f"Loaded mesh with {rough_mesh.n_cells} cells and { rough_mesh.n_points} vertices")
@@ -702,11 +702,11 @@ def escape_markdown(text):
     return text
 
 def _get_script_dir():
-    script_dir = pathlib.Path(os.path.dirname(os.path.realpath(__file__)))
+    script_dir = Path(os.path.dirname(os.path.realpath(__file__)))
     return script_dir
 
 def save_state_values(state, user, app_name="meshlab"):
-    script_dir = pathlib.Path(os.path.dirname(os.path.realpath(__file__)))
+    script_dir = Path(os.path.dirname(os.path.realpath(__file__)))
     saved_dir = script_dir.joinpath("saved_states").joinpath(f"{user}_{app_name}_saved_state.json")
     session_dict = {"meshlab_path":  [str(state.meshlab_path)],
                     "meshlab_server_path": [str(state.meshlab_server_path)],
@@ -724,18 +724,18 @@ def save_state_values(state, user, app_name="meshlab"):
 
 
 def load_state_values(state, user, app_name="meshlab", verbose=False):
-    script_dir = pathlib.Path(os.path.dirname(os.path.realpath(__file__)))
+    script_dir = Path(os.path.dirname(os.path.realpath(__file__)))
     saved_dir = script_dir.joinpath("saved_states").joinpath(f"{user}_{app_name}_saved_state.json")
     restored_session = pd.read_json(str(saved_dir))
-    state.meshlab_path = pathlib.Path(restored_session['meshlab_path'][0])
-    state.meshlab_server_path = pathlib.Path(restored_session['meshlab_server_path'][0])
-    state.mesh_location = pathlib.Path(restored_session['mesh_location'][0])
+    state.meshlab_path = Path(restored_session['meshlab_path'][0])
+    state.meshlab_server_path = Path(restored_session['meshlab_server_path'][0])
+    state.mesh_location = Path(restored_session['mesh_location'][0])
     state.mesh_input_type = str(restored_session['mesh_input_type'][0])
     state.glob_string = str(restored_session['glob_string'][0])
-    state.mesh_output_location = pathlib.Path(restored_session['mesh_output_location'][0])
+    state.mesh_output_location = Path(restored_session['mesh_output_location'][0])
     state.mesh_output_type = str(restored_session['mesh_output_type'][0])
-    state.filter_script_location = pathlib.Path(restored_session['filter_script_location'][0])
-    state.filter_script = pathlib.Path(restored_session['filter_script'][0])
+    state.filter_script_location = Path(restored_session['filter_script_location'][0])
+    state.filter_script = Path(restored_session['filter_script'][0])
     if verbose:
         st.write("Restored previous settings")
     return state

@@ -7,7 +7,7 @@ Author: Nick Stephens nbs49@psu.edu
 '''
 
 import os
-import pathlib
+from pathlib import Path
 import sys
 
 import numpy as np
@@ -20,11 +20,11 @@ from PIL import Image
 IMAGE_2D_DIMS = 2
 
 #Path where the MARS icon lives. the sys.argv[0] returns the folder where this script is located.
-setup_path = pathlib.Path(os.path.abspath(os.path.dirname(sys.argv[0]))).parent.parent.parent.parent.joinpath("Setup")
+setup_path = Path(os.path.abspath(os.path.dirname(sys.argv[0]))).parent.parent.parent.parent.joinpath("Setup")
 icon_path = setup_path.joinpath('mars_icon.bmp')
 
 #The default model path is contained within MARS.
-default_model = pathlib.Path(os.path.abspath(os.path.dirname(sys.argv[0]))).joinpath("model").joinpath("unet_light_rdn.pth")
+default_model = Path(os.path.abspath(os.path.dirname(sys.argv[0]))).joinpath("model").joinpath("unet_light_rdn.pth")
 print(default_model)
 
 color_dict = [[0.0], [128.0], [255.0]]

@@ -1,10 +1,10 @@
 import os
-import pathlib
+from pathlib import Path
 import sys
 
 import cv2
 
-script_dir = pathlib.Path(os.path.dirname(os.path.realpath(__file__))).parent
+script_dir = Path(os.path.dirname(os.path.realpath(__file__))).parent
 sys.path.append(str(script_dir))
 
 import base64
@@ -140,9 +140,9 @@ def main():
             with label_col1:
                 st.header("New unsegmented training data")
                 if str(state.unsegmented_dir) not in [".", None, "None"]:
-                    unsegmented_dir = pathlib.Path(st.text_input("Unsegmented directory", state.unsegmented_dir))
+                    unsegmented_dir = Path(st.text_input("Unsegmented directory", state.unsegmented_dir))
                 else:
-                    unsegmented_dir = pathlib.Path(st.text_input("Unsegmented directory"))
+                    unsegmented_dir = Path(st.text_input("Unsegmented directory"))
 
                 if str(unsegmented_dir) not in [".", None, "None"]:
                     if unsegmented_dir.exists():
@@ -171,9 +171,9 @@ def main():
             with label_col2:
                 st.header("New segmented training data")
                 if state.segmented_dir and str(state.segmented_dir) != ".":
-                    segmented_dir = pathlib.Path(st.text_input("Segmented directory", state.segmented_dir))
+                    segmented_dir = Path(st.text_input("Segmented directory", state.segmented_dir))
                 else:
-                    segmented_dir = pathlib.Path(st.text_input("Segmented directory"))
+                    segmented_dir = Path(st.text_input("Segmented directory"))
 
                 if str(segmented_dir) not in [".", None]:
                     if segmented_dir.exists():
@@ -202,8 +202,8 @@ def main():
         "---"
         if state.unsegmented_imgs and state.segmented_imgs:
             with st.beta_expander("Setup for standardizing labels", expanded=True):
-                unseg_dir = pathlib.Path(state.unsegmented_training)
-                label_dir = pathlib.Path(state.segmented_training)
+                unseg_dir = Path(state.unsegmented_training)
+                label_dir = Path(state.segmented_training)
                 st.write(f"Standardized unsegmented images will be written to {unseg_dir} as tif")
                 st.write(f"Standardized labels will be written to {label_dir} as tif")
 
@@ -292,8 +292,8 @@ def main():
                     st.info("This may be because the standardization step failed for some reason (unsupported file types),"
                             " or the source folders didn't have the write images. Please check them and try again")
 
-                match_list = [pathlib.Path(label_name).parts[-1] for label_name in match_list]
-                unsegmented_file_list = [pathlib.Path(unseg_name).parts[-1] for unseg_name in unsegmented_file_list]
+                match_list = [Path(label_name).parts[-1] for label_name in match_list]
+                unsegmented_file_list = [Path(unseg_name).parts[-1] for unseg_name in unsegmented_file_list]
                 state.unsegmented_file_list = unsegmented_file_list
                 state.match_list = match_list
 
@@ -766,23 +766,23 @@ def main():
 
             with config_col_4:
                 st.header("Training files")
-                if pathlib.Path(patch_csv).exists():
+                if Path(patch_csv).exists():
                     st.info(f"Patches: {patch_csv}")
                 else:
                     st.error("Can't find patch csv! Did you generate it?")
 
-                if pathlib.Path(ratio_csv).exists():
+                if Path(ratio_csv).exists():
                     st.info(f"Class ratios: {ratio_csv}")
                 else:
                     st.error("Can't find ratio csv! Did you generate it?")
 
-                if pathlib.Path(validation_csv).exists():
+                if Path(validation_csv).exists():
                     st.info(f"Validation: {validation_csv}")
                 else:
                     st.error("Can't find validation csv! Did you generate it?")
 
 
-            model_save_path = pathlib.Path(config['path']['save_path'])
+            model_save_path = Path(config['path']['save_path'])
             save_path = model_save_path.joinpath(sub_save_file)
             state.save_path = save_path
 
@@ -835,7 +835,7 @@ def main():
 
 
             # save the yaml file to savepath
-            current_config = str(pathlib.Path(state.save_path).joinpath('Config.yaml'))
+            current_config = str(Path(state.save_path).joinpath('Config.yaml'))
             st.write(f"Saving session configuration to {current_config}")
             with open(current_config, 'w') as file:
                 yaml.dump(config, file)
@@ -967,31 +967,31 @@ def main():
 
             with config_col_3:
                 st.header("Validation files")
-                if pathlib.Path(validation_csv).exists():
+                if Path(validation_csv).exists():
                     st.info(f"CSV: {validation_csv}")
                 else:
                     st.error("Can't find validation csv! Did you generate it?")
-                if pathlib.Path(train_data).exists():
+                if Path(train_data).exists():
                     st.info(f"Dataset: {train_data}")
                 else:
                     st.error("Can't find validation data, is the path correct?")
 
             model_directory = str(train_data).replace("dataset.hdf5", "new_model")
             with st.beta_expander("View hide/validation choices", expanded=True):
-                model_directory = [str(e) for e in pathlib.Path(model_directory).iterdir() if e.is_dir()]
+                model_directory = [str(e) for e in Path(model_directory).iterdir() if e.is_dir()]
                 model_directory.sort(key=os.path.getctime, reverse=True)
                 model_validation_directory = st.selectbox("Select model directory (Likely the most recent)",
                                                           options=model_directory,
                                                           index=0)
-                if pathlib.Path(model_validation_directory).is_dir():
+                if Path(model_validation_directory).is_dir():
                     state.model_validation_directory = model_validation_directory
-                    model_list = glob.glob(str(pathlib.Path(model_validation_directory).joinpath("*.pth")))
+                    model_list = glob.glob(str(Path(model_validation_directory).joinpath("*.pth")))
                     model_list.sort(key=natural_keys)
                     st.info(f"Found {len(model_list)} models to validate")
 
         # parsing the input parameter
         if st.button("Validate"):
-            save_path = pathlib.Path(str(model_validation_directory))
+            save_path = Path(str(model_validation_directory))
             criterion_output = save_path.joinpath("Model_scores.csv")
             class_output = save_path.joinpath("Class_overlap.csv")
 
@@ -1071,11 +1071,11 @@ def main():
             with model_col_1:
                 save_model = st.selectbox("Select the model to save?", model_list)
                 model_index = save_model.replace("Model_", "Loss-")
-                search_directory = pathlib.Path(state.model_validation_directory)
+                search_directory = Path(state.model_validation_directory)
                 selected_model = glob.glob(str(search_directory.joinpath(f"{model_index}_*.pth")))[0]
 
             with model_col_2:
-                if pathlib.Path(selected_model).is_file():
+                if Path(selected_model).is_file():
                     st.write("\n")
                     st.write("\n")
                     save_name = f"{save_model}.pth"
@@ -1094,7 +1094,7 @@ def main():
 
     if model_settings_activity == "Model gallery":
         st.header("View results from multiple models")
-        hdf5_file = pathlib.Path(r"C:\Users\skk5802\Desktop\Faye_retraining_muscle\data\dataset.hdf5")
+        hdf5_file = Path(r"C:\Users\skk5802\Desktop\Faye_retraining_muscle\data\dataset.hdf5")
 
         with h5py.File(hdf5_file, "r") as f:
             # List all groups
@@ -1162,15 +1162,15 @@ def main():
         if st.checkbox("Select models list"):
             if st.checkbox("Define a different model directory"):
                 model_directory = st.text_input("Where is the model directory?")
-                model_list = glob.glob(str(pathlib.Path(model_directory).joinpath("*.pth")))
-                model_clean = [pathlib.Path(model).name for model in model_list]
+                model_list = glob.glob(str(Path(model_directory).joinpath("*.pth")))
+                model_clean = [Path(model).name for model in model_list]
             else:
                 model_directory = state.model_validation_directory
-                model_list = glob.glob(str(pathlib.Path(state.model_validation_directory).joinpath("*.pth")))
-                model_clean = [pathlib.Path(model).name for model in model_list]
+                model_list = glob.glob(str(Path(state.model_validation_directory).joinpath("*.pth")))
+                model_clean = [Path(model).name for model in model_list]
 
             models_selected = st.multiselect("select the models to try:", model_clean)
-            models_selected = [pathlib.Path(model_directory).joinpath(f"{try_model}") for try_model in models_selected]
+            models_selected = [Path(model_directory).joinpath(f"{try_model}") for try_model in models_selected]
             if st.button("Try em out!"):
                 all_results = []
                 for try_model in models_selected:
@@ -1437,16 +1437,16 @@ def _end_timer_sidebar(start_timer, message=""):
 def _convert_seconds(seconds: int) -> str:
     return str(timedelta(seconds=seconds)).rpartition(".")[0]
 
-def open_windows_explorer(directory: Union[str, pathlib.Path], folder_designation):
-    command_string = f"explorer {pathlib.Path(directory)}"
+def open_windows_explorer(directory: Union[str, Path], folder_designation):
+    command_string = f"explorer {Path(directory)}"
     with st.spinner(f"Opening {folder_designation} folder: {directory}"):
         subprocess.Popen(command_string, shell=True)
 
 
-def generate_hdf5_streamlit(data_dir: Union[str, pathlib.Path], label_dir: Union[str, pathlib.Path], save_name: str):
+def generate_hdf5_streamlit(data_dir: Union[str, Path], label_dir: Union[str, Path], save_name: str):
     # read the sub file names from a file
-    data_dir = pathlib.Path(data_dir)
-    label_dir = pathlib.Path(label_dir)
+    data_dir = Path(data_dir)
+    label_dir = Path(label_dir)
     data_list = os.listdir(str(data_dir))
     label_list = os.listdir(str(label_dir))
     with st.spinner("Checking names..."):
@@ -1472,9 +1472,9 @@ def check_label_and_training_name(data_list: List, label_list: List) -> List:
             st.error(f"Unable to find a match for {label_name[idx]}. Please check if the cases, underscores, etc. match.")
     return data_set_names
 
-def create_hdf5(save_name: str, data_set_names: List, data_dir: Union[str, pathlib.Path], label_dir: Union[str, pathlib.Path]):
-    data_dir = pathlib.Path(data_dir)
-    label_dir = pathlib.Path(label_dir)
+def create_hdf5(save_name: str, data_set_names: List, data_dir: Union[str, Path], label_dir: Union[str, Path]):
+    data_dir = Path(data_dir)
+    label_dir = Path(label_dir)
     with h5py.File(save_name, "w") as image_file:
         # load train data to hdf5 file
         for data_name in data_set_names:
@@ -1483,8 +1483,8 @@ def create_hdf5(save_name: str, data_set_names: List, data_dir: Union[str, pathl
             sample_img.create_dataset('label', data=load_img(str(label_dir.joinpath(f"{data_name['label']}"))))
 
 
-def generate_patches_streamlit(hdf5_file : Union[str, pathlib.Path], patches_csv: Union[str, pathlib.Path],
-                               validation_csv: Union[str, pathlib.Path], train_ratio: float = 0.7,
+def generate_patches_streamlit(hdf5_file : Union[str, Path], patches_csv: Union[str, Path],
+                               validation_csv: Union[str, Path], train_ratio: float = 0.7,
                                stride: int = 32, output_size=256, always_train_csv: Union[str, bool] = False):
 
     with h5py.File(hdf5_file, 'r') as data_f:
@@ -1522,8 +1522,8 @@ def generate_patches_streamlit(hdf5_file : Union[str, pathlib.Path], patches_csv
     st.info(f"Generated {len(patches)} patches")
     return val_names
 
-def remove_from_validation_set(names_list: List, always_train_csv: Union[str, pathlib.Path], train_ratio: float) -> Union[tuple, tuple]:
-    always_train = pd.read_csv(str(pathlib.Path(always_train_csv)))
+def remove_from_validation_set(names_list: List, always_train_csv: Union[str, Path], train_ratio: float) -> Union[tuple, tuple]:
+    always_train = pd.read_csv(str(Path(always_train_csv)))
     st.write(f"Removing {len(always_train)} images from validation file.")
 
     #Stick the column into a list and then make sure we have unique variables with sets
@@ -1534,7 +1534,7 @@ def remove_from_validation_set(names_list: List, always_train_csv: Union[str, pa
     train_names = train_names + set_aside
     return train_names, val_names
 
-def get_patches(hdf5_file: Union[str, pathlib.Path], train_names: Union[List, tuple], stride: int = 32, output_size: int = 256):
+def get_patches(hdf5_file: Union[str, Path], train_names: Union[List, tuple], stride: int = 32, output_size: int = 256):
     patches = []
     with h5py.File(hdf5_file, 'r') as data_file:
         for name in train_names:
@@ -1548,7 +1548,7 @@ def get_patches(hdf5_file: Union[str, pathlib.Path], train_names: Union[List, tu
         #         patches[idx][j] = str(patches[idx][j])
         return patches
 
-def generate_ratios_streamlit(hdf5_file: Union[str, pathlib.Path], patches_csv: Union[str, pathlib.Path], class_num=3):
+def generate_ratios_streamlit(hdf5_file: Union[str, Path], patches_csv: Union[str, Path], class_num=3):
     patches = load_patches(patches_csv)
     st.info(f"Loaded {len(patches)} patches...")
     ratios = []
@@ -1570,12 +1570,12 @@ def generate_ratios_streamlit(hdf5_file: Union[str, pathlib.Path], patches_csv: 
             progress_bar.progress(int(iteration))
     return ratios
 
-def _setup_patches(patches_csv: Union[str, pathlib.Path]) -> pd.DataFrame:
+def _setup_patches(patches_csv: Union[str, Path]) -> pd.DataFrame:
     patches = pd.read_csv(str(patches_csv))
     st.info(f"Loaded {len(patches)} patches...")
     return patches
 
-def parallelize_ratios(df: pd.DataFrame, func: Callable, hdf5_file: Union[str, pathlib.Path],
+def parallelize_ratios(df: pd.DataFrame, func: Callable, hdf5_file: Union[str, Path],
                        class_num: int, n_cores: int = 4) -> pd.DataFrame:
     #Modified from https://towardsdatascience.com/make-your-own-super-pandas-using-multiproc-1c04f41944a1
     #Get all but one core if it isn't specified for whatever reason.
@@ -1594,7 +1594,7 @@ def parallelize_ratios(df: pd.DataFrame, func: Callable, hdf5_file: Union[str, p
     pool.join()
     return df
 
-def generate_ratios_streamlit_multi(hdf5_file: Union[str, pathlib.Path], patches_csv: pd.DataFrame,
+def generate_ratios_streamlit_multi(hdf5_file: Union[str, Path], patches_csv: pd.DataFrame,
                                     class_num: int = 3) -> pd.DataFrame:
     patches = patches_csv
     ratios = []
@@ -1810,7 +1810,7 @@ def rescale_label_proper(input_image, input_file_name: str):
     writer.SetFileName(f"{input_file_name!s}")
     writer.Execute(rescaled)
 
-def rescale_intensity(inputFilename: str, writeOut: bool=True, file_type: str="", outDir: Union[str, pathlib.Path]=""):
+def rescale_intensity(inputFilename: str, writeOut: bool=True, file_type: str="", outDir: Union[str, Path]=""):
     """
     Load in a 2d image file and rescale for data augmentation.
     :param inputFilename: Name of file to be resclaed. Can be anything that SimpleITK reads.
@@ -1824,7 +1824,7 @@ def rescale_intensity(inputFilename: str, writeOut: bool=True, file_type: str=""
     if "." in str(file_type):
         file_type.replace(".", "")
     if "\\" in out_name or "/" in out_name:
-        out_name = pathlib.Path(out_name).parts[-1]
+        out_name = Path(out_name).parts[-1]
 
 
 
@@ -1868,7 +1868,7 @@ def rescale_intensity(inputFilename: str, writeOut: bool=True, file_type: str=""
     if writeOut:
         writer = sitk.ImageFileWriter()
         if outDir != "":
-            out_name = pathlib.Path(outDir).joinpath(out_name)
+            out_name = Path(outDir).joinpath(out_name)
         writer.SetFileName(f"{out_name!s}_rescaled.{file_type}")
         writer.Execute(rescaled)
     else:
@@ -1887,7 +1887,7 @@ def downscale_intensity(inputFilename, downscale_value=100, writeOut=True, file_
     if "." in str(file_type):
         file_type.replace(".", "")
     if "\\" in out_name or "/" in out_name:
-        out_name = pathlib.Path(out_name).parts[-1]
+        out_name = Path(out_name).parts[-1]
 
 
     inputImage = sitk.ReadImage(str(inputFilename), sitk.sitkUInt8)
@@ -1928,7 +1928,7 @@ def downscale_intensity(inputFilename, downscale_value=100, writeOut=True, file_
         if writeOut:
             writer = sitk.ImageFileWriter()
             if outDir != "":
-                out_name = pathlib.Path(outDir).joinpath(out_name)
+                out_name = Path(outDir).joinpath(out_name)
             writer.SetFileName(f"{out_name!s}_downscaled.{file_type}")
             writer.Execute(rescaled)
         else:
@@ -1936,7 +1936,7 @@ def downscale_intensity(inputFilename, downscale_value=100, writeOut=True, file_
 
 
 def glob_flat_list(search_directory: str, file_types: Union[str, List[str]], unique: bool= False) -> List:
-    search_directory = pathlib.Path(search_directory)
+    search_directory = Path(search_directory)
     file_types = list(file_types)
     new_images = [glob.glob(str(search_directory.joinpath(f"*.{types}"))) for types in file_types]
     flat_list = [item for sublist in new_images for item in sublist]
@@ -1948,7 +1948,7 @@ def glob_flat_list(search_directory: str, file_types: Union[str, List[str]], uni
 
 def file_selector(folder_path='.', extension="", selectbox_text="", unique_key=""):
     if folder_path == '.' or '':
-        folder_path = pathlib.Path.cwd()
+        folder_path = Path.cwd()
     filenames = os.listdir(folder_path)
     filenames.sort(reverse=True)
     if extension != "":
@@ -1990,7 +1990,7 @@ def clean_image(inputFilename, suffix="", out_name="", out_type="", out_dir="", 
 
     if out_dir != "":
         if "\\" in out_name or "/" in out_name:
-            out_name = pathlib.Path(out_name).parts[-1]
+            out_name = Path(out_name).parts[-1]
             if remove_space:
                 out_name = out_name.replace(" ", "")
             if remove_dblundr:
@@ -1999,7 +1999,7 @@ def clean_image(inputFilename, suffix="", out_name="", out_type="", out_dir="", 
                 out_name = out_name.replace("-", "_")
 
 
-        out_name = str(pathlib.Path(out_dir).joinpath(out_name))
+        out_name = str(Path(out_dir).joinpath(out_name))
 
     inputImage = sitk.ReadImage(inputFilename)
     if inputImage.GetPixelID() != 1:
@@ -2096,7 +2096,7 @@ def subtract_images(inputImage1: sitk.Image, inputImage2: sitk.Image):
 
 
 def save_state_values(state, user):
-    script_dir = pathlib.Path(os.path.dirname(os.path.realpath(__file__)))
+    script_dir = Path(os.path.dirname(os.path.realpath(__file__)))
     saved_dir = script_dir.joinpath("saved_states").joinpath(f"{user}_RDN_saved_state.json")
     session_dict = {"model_path": [str(state.model_path)],
                     "model": [str(state.model)],

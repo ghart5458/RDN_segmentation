@@ -1,5 +1,5 @@
 import os
-import pathlib
+from pathlib import Path
 import re
 
 import h5py
@@ -14,8 +14,8 @@ from tqdm import tqdm
 from utils.dataset import load_patches
 
 
-def load_img(path: str | pathlib.Path):
-    path = pathlib.Path(path)
+def load_img(path: str | Path):
+    path = Path(path)
     inputImage = Image.open(str(path)).convert('L')
     return np.array(inputImage)
 
@@ -32,10 +32,10 @@ def find_match_index(target: str, str_list: list):
             return idx
     return None
 
-def generate_hdf5(data_dir: str | pathlib.Path, label_dir: str | pathlib.Path, save_name: str):
+def generate_hdf5(data_dir: str | Path, label_dir: str | Path, save_name: str):
     # read the sub file names from a file
-    data_dir = pathlib.Path(data_dir)
-    label_dir = pathlib.Path(label_dir)
+    data_dir = Path(data_dir)
+    label_dir = Path(label_dir)
     data_list = os.listdir(str(data_dir))
     label_list = os.listdir(str(label_dir))
 

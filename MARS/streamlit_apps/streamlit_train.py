@@ -1,4 +1,4 @@
-import pathlib
+from pathlib import Path
 import sys
 
 import torch
@@ -6,7 +6,7 @@ import torch.nn.functional as F
 from torch import nn
 from torch.utils.data import DataLoader
 
-script_dir = pathlib.Path.cwd().parent()
+script_dir = Path.cwd().parent()
 sys.path.append(script_dir)
 import utils.dataprocess as dp
 from utils.losses import Accuracy, DiceOverlap, DomainEnrichLoss, dice_loss

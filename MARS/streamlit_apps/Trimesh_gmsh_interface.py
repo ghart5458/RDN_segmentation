@@ -10,7 +10,7 @@ Date: 06/21/2019
 
 '''
 
-import pathlib
+from pathlib import Path
 import sys
 from timeit import default_timer as timer
 
@@ -30,9 +30,9 @@ def mesh_2d_to_mesh_3d(directory, input_name, output_dir):
     name = str(input_name)[:-4]
     print("\n\n\n" + str(name))
     outname = str(name) + "_3d.inp"
-    save_location = pathlib.Path(str(output_dir)).joinpath(outname)
+    save_location = Path(str(output_dir)).joinpath(outname)
     print("Output name is ", save_location)
-    input_name = pathlib.Path(directory).joinpath(input_name)
+    input_name = Path(directory).joinpath(input_name)
     mesh_2d = trimesh.load(str(input_name))
     #Redefine the input_name for writing
     input_name = str(input_name)[:-4]
@@ -56,10 +56,10 @@ def mesh_2d_to_mesh_3d(directory, input_name, output_dir):
 ################################
 
 #Define the directory where the ply/off file is
-#dir = pathlib.Path(r"Z:\RyanLab\Projects\AGuerra\pointclouds\Tarsometatarus")
-directory = pathlib.Path(str(sys.argv[1]))
-file_name = pathlib.Path(str(sys.argv[2]))
-output_dir = pathlib.Path(str(sys.argv[3]))
+#dir = Path(r"Z:\RyanLab\Projects\AGuerra\pointclouds\Tarsometatarus")
+directory = Path(str(sys.argv[1]))
+file_name = Path(str(sys.argv[2]))
+output_dir = Path(str(sys.argv[3]))
 
 
 print("\n\n\n\nFile name is", file_name)

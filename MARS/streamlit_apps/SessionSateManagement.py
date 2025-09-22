@@ -2,7 +2,7 @@ import base64
 import glob
 import math
 import os
-import pathlib
+from pathlib import Path
 import sys
 import time
 from timeit import default_timer as timer
@@ -15,7 +15,7 @@ from streamlit.hashing import _CodeHasher
 from streamlit.ReportThread import get_report_ctx
 from streamlit.server.Server import Server
 
-#script_dir = pathlib.Path(os.path.dirname(os.path.realpath(__file__)))
+#script_dir = Path(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(r"D:\Desktop\git_repo")
 from MARS.morphology.segmentation.pytorch_segmentation.execute_3_class_seg import (
     _get_outDir,
@@ -81,14 +81,14 @@ def page_settings(state):
         restored_state = load_state_values(state)
         state.model_path = restored_state.model_path
         st.write(state.model_path)
-        state.model = pathlib.Path(restored_state.model)
-        st.write(pathlib.Path(state.model).parts[-1])
+        state.model = Path(restored_state.model)
+        st.write(Path(state.model).parts[-1])
     elif st.checkbox("Just the model path"):
         restored_state = load_state_values(state)
         state.model_path = restored_state.model_path
         state.model = file_selector(state.model_path)
     else:
-        state.model_path = pathlib.Path(st.text_input('Model location', ""))
+        state.model_path = Path(st.text_input('Model location', ""))
         state.model = file_selector(state.model_path)
 
     st.write("---")
@@ -96,10 +96,10 @@ def page_settings(state):
     if st.checkbox('Load previous input/output settings'):
         restored_state = load_state_values(state)
         if st.checkbox("Previous input path"):
-            state.input_path = pathlib.Path(restored_state.input_path)
+            state.input_path = Path(restored_state.input_path)
             st.write(state.input_path)
         else:
-            state.input_path = pathlib.Path(st.text_input('Input location', ""))
+            state.input_path = Path(st.text_input('Input location', ""))
 
         if st.checkbox("Previous input type"):
             state.input_type = restored_state.input_type
@@ -109,10 +109,10 @@ def page_settings(state):
                                             file_types.index(state.input_type) if state.input_type else 0)
 
         if st.checkbox("Previous output path"):
-            state.output_path = pathlib.Path(restored_state.output_path)
+            state.output_path = Path(restored_state.output_path)
             st.write(state.output_path)
         else:
-            state.output_path = pathlib.Path(st.text_input('Output location', ""))
+            state.output_path = Path(st.text_input('Output location', ""))
 
         if st.checkbox("Previous output type"):
             state.out_type = restored_state.out_type
@@ -121,10 +121,10 @@ def page_settings(state):
             state.out_type = st.selectbox("Select value.", file_types,
                                           file_types.index(state.out_type) if state.out_type else 0)
     else:
-        state.input_path = pathlib.Path(st.text_input('Input location', ""))
+        state.input_path = Path(st.text_input('Input location', ""))
         state.input_type = st.selectbox("Input file type", file_types,
                                         file_types.index(state.input_type) if state.input_type else 0)
-        state.output_path = pathlib.Path(st.text_input('Output location', ""))
+        state.output_path = Path(st.text_input('Output location', ""))
         state.out_type = st.selectbox("Output file type", file_types,
                                       file_types.index(state.out_type) if state.out_type else 0)
 
@@ -136,10 +136,10 @@ def page_segmentations(state):
     if len(state._state["data"]) == 0:
         st.error("Must fill out settings!")
     else:
-        input_path = pathlib.Path(state.input_path)
+        input_path = Path(state.input_path)
         input_type = state.input_type
 
-        output_path = pathlib.Path(state.output_path)
+        output_path = Path(state.output_path)
         out_type = state.out_type
 
         if not output_path.exists():
@@ -167,7 +167,7 @@ def page_segmentations(state):
 
         if st.button('Segment!'):
             if not output_path.exists():
-                pathlib.Path.mkdir(output_path)
+                Path.mkdir(output_path)
             net = state.net
             if state.twoD_to_threeD:
                 out_name = _get_file_name_from_list(image_files, suffix="RDN_seg")
@@ -208,7 +208,7 @@ def segmentation_state_values(state):
     st.info(f"Segmentations will be written to {state.output_path!s} in {state.out_type} file format")
 
 def save_state_values(state):
-    script_dir = pathlib.Path(os.path.dirname(os.path.realpath(__file__)))
+    script_dir = Path(os.path.dirname(os.path.realpath(__file__)))
     saved_dir = script_dir.joinpath("saved_state.json")
     session_dict = {"model_path": [str(state.model_path)],
                     "model": [str(state.model)],
@@ -221,7 +221,7 @@ def save_state_values(state):
     st.write("Saved settings!")
 
 def load_state_values(state):
-    script_dir = pathlib.Path(os.path.dirname(os.path.realpath(__file__)))
+    script_dir = Path(os.path.dirname(os.path.realpath(__file__)))
     saved_dir = script_dir.joinpath("saved_state.json")
     restored_session = pd.read_json(str(saved_dir))
     st.write("Restored previous settings")
@@ -229,7 +229,7 @@ def load_state_values(state):
     state.model = restored_session['model'][0]
     state.input_path = restored_session['input_path'][0]
     state.input_type = restored_session['input_type'][0]
-    state.output_path = pathlib.Path(restored_session['output_path'][0])
+    state.output_path = Path(restored_session['output_path'][0])
     state.out_type = restored_session['out_type'][0]
     return state
 
@@ -240,7 +240,7 @@ def file_selector(folder_path='.'):
     return os.path.join(folder_path, selected_filename)
 
 def _get_file_name_from_list(image_files, suffix=""):
-    outName = pathlib.Path(image_files[0]).parts[-1]
+    outName = Path(image_files[0]).parts[-1]
     outName = outName.split(".")[0]
     if suffix != "":
         outName = f"{outName}_{suffix}"
@@ -419,7 +419,7 @@ def write_image(inputImage, outName, outDir="", fileFormat="mhd"):
     fileFormat = str(fileFormat)
 
     fileFormat = fileFormat.replace(".", "")
-    outputImage = pathlib.Path(outDir).joinpath(str(outName) + "." + str(fileFormat))
+    outputImage = Path(outDir).joinpath(str(outName) + "." + str(fileFormat))
 
     _print_info(inputImage)
     st.write(f"Writing {outName} to {outDir} as {fileFormat}.")
@@ -503,7 +503,7 @@ def write_dicom(inputImage, metadata, outName, outDir=""):
 
     start = timer()
     series_tag_values = metadata
-    outDir = pathlib.Path.cwd() if outDir == "" else pathlib.Path(outDir)
+    outDir = Path.cwd() if outDir == "" else Path(outDir)
 
     #Make is so the file name generator deal with these parts of the name
     if outName[-4] == ".dcm":
@@ -512,7 +512,7 @@ def write_dicom(inputImage, metadata, outName, outDir=""):
     if outName[-1] == "_":
         outName = outName[:-1]
 
-    outName = pathlib.Path(outDir).joinpath(outName)
+    outName = Path(outDir).joinpath(outName)
     slice_num = inputImage.GetDepth()
 
     # Use the study/series/frame of reference information given in the meta-data
@@ -577,8 +577,8 @@ def three_class_segmentation(input_image, outDir, outType, network=""):
     net = network
 
     # The file types that can be output along with the corresponding dictionary
-    if not pathlib.Path(outDir).exists():
-        pathlib.Path.mkdir(save_folder)
+    if not Path(outDir).exists():
+        Path.mkdir(save_folder)
 
     # Get a list of files from the input folder using a list comprehension approach, then sort them numerically.
     image_names = input_image
@@ -591,7 +591,7 @@ def three_class_segmentation(input_image, outDir, outType, network=""):
     for i in range(len(image_names)):
         image_name = image_names[i]
 
-        out_name = str(pathlib.Path(image_name).parts[-1]) if True else image_name
+        out_name = str(Path(image_name).parts[-1]) if True else image_name
 
         if "." in out_name:
             out_name = out_name.rsplit(".", 1)[0]

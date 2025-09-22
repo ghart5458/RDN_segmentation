@@ -2,7 +2,7 @@
 Can we make a compact dashboard across several columns and with a dark theme?"""
 #import gmsh
 import os
-import pathlib
+from pathlib import Path
 import subprocess
 from timeit import default_timer as timer
 
@@ -44,7 +44,7 @@ def inp_to_case(in_name, outname, out_dir):
 
     start = timer()
     file_name = str(outname)
-    outname = pathlib.Path(out_dir).joinpath(outname)
+    outname = Path(out_dir).joinpath(outname)
     # Open the inp and find the diagnostic lines
     with open(in_name) as f:
         # Get the number of lines in the file
@@ -254,17 +254,17 @@ def file_selector(directory='.'):
 st.title('2d to 3d mesh')
 
 
-directory = pathlib.Path(st.sidebar.text_input('What directory is the mesh file in?', ""))
-output = pathlib.Path(st.sidebar.text_input("What is the output directory?", ""))
+directory = Path(st.sidebar.text_input('What directory is the mesh file in?', ""))
+output = Path(st.sidebar.text_input("What is the output directory?", ""))
 file = file_selector(directory)
 bone = st.sidebar.text_input("What bone is it?",
                              "example: canonical_Ovis_Ast")
 
 #write_format = st.sidebar.checkbox("Write out with scientific notation?")
-mesh_input = pathlib.Path(directory).joinpath(file)
+mesh_input = Path(directory).joinpath(file)
 
 if output == "":
-    output = pathlib.Path(directory)
+    output = Path(directory)
 
 if st.button('Load mesh'):
     st.write("mesh file is:", file)
@@ -274,7 +274,7 @@ if st.button('Load mesh'):
         mesh = load_mesh(mesh_input)
     st.success('Done!')
     st.write(mesh_input)
-    external_script = pathlib.Path(r'Z:\RyanLab\Projects\NStephens\AM\plugins\Trimesh_gmsh_interface.py')
+    external_script = Path(r'Z:\RyanLab\Projects\NStephens\AM\plugins\Trimesh_gmsh_interface.py')
     #result = subprocess.run('python'
     #                        ' "' + str(external_script) + '" '
     #                        + '"' + str(mesh_input) + '"', shell=True)
@@ -287,7 +287,7 @@ if st.button('Load mesh'):
                                   shell=True)
 
 if st.button('Process inp'):
-    inp_name = pathlib.Path(output).joinpath(file)
+    inp_name = Path(output).joinpath(file)
     st.write("reading in ", inp_name)
     inp_name = str(inp_name)[:-4]
     st.write("Name_before_add", inp_name)
