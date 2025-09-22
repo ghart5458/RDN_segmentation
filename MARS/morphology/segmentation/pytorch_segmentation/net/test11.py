@@ -1,16 +1,6 @@
-from utils.dataset import HDF52D
-import time
-import utils.dataprocess as dp
-import numpy as np
-from PIL import Image
-from torchvision import transforms
-from torch.utils.data import DataLoader
-from unet import UNet
-from utils.dice_loss import dice_coeff
 import torch
-import torch.nn as nn
-from torch import optim
-from tqdm import tqdm
+from torch import nn
+
 batch_size = 1
 c, h, w = 3, 10, 10
 nb_classes = 5

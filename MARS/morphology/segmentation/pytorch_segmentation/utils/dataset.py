@@ -1,11 +1,11 @@
-from __future__ import print_function, division
 import re
+
 import h5py
 import numpy as np
 import pandas as pd
 import utils.dataprocess as dp
-from torchvision import transforms
 from torch.utils.data import Dataset
+from torchvision import transforms
 
 
 def alpha_to_int(text):

@@ -1,11 +1,10 @@
 import torch
-import numpy as np
-import torch.nn as nn
 import torch.nn.functional as F
 import utils.dataprocess as dp
-from tqdm import tqdm
+from torch import nn
 from torch.utils.data import DataLoader
-from utils.losses import DomainEnrichLoss, dice_loss, DiceOverlap, Accuracy
+from tqdm import tqdm
+from utils.losses import Accuracy, DiceOverlap, DomainEnrichLoss, dice_loss
 
 bce_losses = nn.BCEWithLogitsLoss()
 accuracy = Accuracy()

@@ -1,9 +1,9 @@
-import torch
 import numpy as np
-import torch.nn as nn
+import torch
+from torch import nn
 
 
-class Accuracy():
+class Accuracy:
 
     def __call__(self, input, target, **kwargs):
 
@@ -34,7 +34,7 @@ def dice_loss(pred, target, smooth=1.0, if_mean=True):
     else:
         return np.squeeze(loss)
 
-class DomainEnrichLoss():
+class DomainEnrichLoss:
 
     def __init__(self):
         self.loss = nn.CrossEntropyLoss()
@@ -70,7 +70,7 @@ class DomainEnrichLoss():
 
         return LDF_bone + LDF_dirt
 
-class DiceOverlap():
+class DiceOverlap:
 
     def __init__(self, class_num):
         self.len = class_num

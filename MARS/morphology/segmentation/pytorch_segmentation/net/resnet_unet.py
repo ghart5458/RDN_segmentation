@@ -1,6 +1,7 @@
 import torch
-import torch.nn as nn
+from torch import nn
 from torchvision import models
+
 
 def convrelu(in_channels, out_channels, kernel, padding):
     return nn.Sequential(

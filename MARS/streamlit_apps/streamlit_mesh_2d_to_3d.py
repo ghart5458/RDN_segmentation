@@ -1,17 +1,14 @@
 """This application experiments with the (grid) layout and some styling
 Can we make a compact dashboard across several columns and with a dark theme?"""
-import os
-import sys
 #import gmsh
-import glob
+import os
 import pathlib
-import trimesh
 import subprocess
-import matplotlib
-import numpy as np
+from timeit import default_timer as timer
+
 import pandas as pd
 import streamlit as st
-from timeit import default_timer as timer
+import trimesh
 
 
 def mesh_info(mesh):
@@ -27,13 +24,12 @@ def mesh_info(mesh):
     edgemean = mesh_2d.edges_unique_length.mean()
     if mesh_2d.is_volume == True:
         st.write("Mesh can be represented as a 3d volume.")
+    elif mesh_2d.is_watertight != True:
+        st.write("Mesh has holes.")
     else:
-        if mesh_2d.is_watertight != True:
-            st.write("Mesh has holes.")
-        else:
-            st.write("Mesh doesn't have holes, please check for other issues in Meshlab.")
-    st.write("Mesh has {} faces and {} vertices.".format(triangles, points))
-    st.write("Mesh edge length: \n           mean {:06.4f}, max {:06.4f}, min {:06.4f}".format(edgemean, edgemax, edgemin))
+        st.write("Mesh doesn't have holes, please check for other issues in Meshlab.")
+    st.write(f"Mesh has {triangles} faces and {points} vertices.")
+    st.write(f"Mesh edge length: \n           mean {edgemean:06.4f}, max {edgemax:06.4f}, min {edgemin:06.4f}")
 
 #Function to read in an inp and output a case
 def inp_to_case(in_name, outname, out_dir):
@@ -50,11 +46,11 @@ def inp_to_case(in_name, outname, out_dir):
     file_name = str(outname)
     outname = pathlib.Path(out_dir).joinpath(outname)
     # Open the inp and find the diagnostic lines
-    with open(in_name, "rt") as f:
+    with open(in_name) as f:
         # Get the number of lines in the file
         size = len([0 for _ in f])
         st.write("Lines in inp file:", size)
-    with open(in_name, "rt") as f:
+    with open(in_name) as f:
         # Get the number of lines in the file
         start_xyz = "*NODE"
         start_elements = "******* E L E M E N T S *************"
@@ -83,7 +79,7 @@ def inp_to_case(in_name, outname, out_dir):
     range_2 = list(range(int(elements - 1), int(size)))
 
     # Start of file until the end of the elements.
-    range_3 = list(range(int(0), int(elements + 1)))
+    range_3 = list(range(0, int(elements + 1)))
 
     # Start of the element set until the end of the file.
     range_4 = list(range(int(sets - 1), int(size)))
@@ -91,7 +87,7 @@ def inp_to_case(in_name, outname, out_dir):
     # Create a list with the individual range lists
     xyz_range = range_1 + range_2
     element_range = range_3 + range_4
-    set_range = list(range(int(0), int(sets)))
+    set_range = list(range(0, int(sets)))
 
     # Read in individual dataframes for the portions. It isn't efficient, but it is readable.
     xyz_df = pd.read_csv(in_name, header=None, sep=",", skiprows=xyz_range)
@@ -154,11 +150,11 @@ def inp_to_case_2d(in_name, outname):
 
     start = timer()
     # Open the inp and find the diagnostic lines
-    with open(in_name, "rt") as f:
+    with open(in_name) as f:
         # Get the number of lines in the file
         size = len([0 for _ in f])
         st.write("Lines in inp file:", size)
-    with open(in_name, "rt") as f:
+    with open(in_name) as f:
         # Get the number of lines in the file
         start_xyz = "*NODE"
         start_elements = "******* E L E M E N T S *************"
@@ -187,7 +183,7 @@ def inp_to_case_2d(in_name, outname):
     range_2 = list(range(int(elements - 1), int(size)))
 
     # Start of file until the end of the elements.
-    range_3 = list(range(int(0), int(elements + 1)))
+    range_3 = list(range(0, int(elements + 1)))
 
     # Start of the element set until the end of the file.
     range_4 = list(range(int(sets - 1), int(size)))
@@ -195,7 +191,7 @@ def inp_to_case_2d(in_name, outname):
     # Create a list with the individual range lists
     xyz_range = range_1 + range_2
     element_range = range_3 + range_4
-    set_range = list(range(int(0), int(sets)))
+    set_range = list(range(0, int(sets)))
 
     # Read in individual dataframes for the portions. It isn't efficient, but it is readable.
     xyz_df = pd.read_csv(in_name, header=None, sep=",", skiprows=xyz_range)
@@ -282,7 +278,7 @@ if st.button('Load mesh'):
     #result = subprocess.run('python'
     #                        ' "' + str(external_script) + '" '
     #                        + '"' + str(mesh_input) + '"', shell=True)
-    with st.spinner("Converting {} to inp...".format(file)):
+    with st.spinner(f"Converting {file} to inp..."):
         result = subprocess.Popen(['python',
                                     str(external_script),
                                     str(directory),

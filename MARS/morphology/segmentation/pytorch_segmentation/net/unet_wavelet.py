@@ -1,10 +1,11 @@
 """ Full assembly of the parts to form the complete network """
 
-import torch.nn.functional as F
 import numpy as np
-from .unet_parts import *
-from pytorch_wavelets import DWTForward
 import torch
+from pytorch_wavelets import DWTForward
+
+from .unet_parts import DoubleConv, Down, OutConv, Up
+
 
 class UNet_Wavelet(nn.Module):
     def __init__(self, n_channels, n_classes, bilinear=True, wave_conv_channels = 64):

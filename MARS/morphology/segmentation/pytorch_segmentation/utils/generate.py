@@ -1,21 +1,20 @@
 import os
-import re
-import h5py
-import random
 import pathlib
+import re
+
+import h5py
 import numpy as np
-from PIL import Image
-from tqdm import tqdm
 import utils.dataprocess as dp
-from sklearn.utils import shuffle
-from torchvision import transforms
-from typing import Union, List
+from PIL import Image
 from sklearn.model_selection import train_test_split
+from sklearn.utils import shuffle
+from tqdm import tqdm
 
 #Within this package
-from utils.dataset import HDF52D, load_patches
+from utils.dataset import load_patches
 
-def load_img(path: Union[str, pathlib.Path]):
+
+def load_img(path: str | pathlib.Path):
     path = pathlib.Path(path)
     inputImage = Image.open(str(path)).convert('L')
     return np.array(inputImage)
@@ -27,13 +26,13 @@ def sep_string(string: str, target, n=2):
         str_result = str_result + target + str_list[idx]
     return str_result
 
-def find_match_index(target: str, str_list: List):
+def find_match_index(target: str, str_list: list):
     for idx in range(len(str_list)):
         if re.match(target, str_list[idx]):
             return idx
     return None
 
-def generate_hdf5(data_dir: Union[str, pathlib.Path], label_dir: Union[str, pathlib.Path], save_name: str):
+def generate_hdf5(data_dir: str | pathlib.Path, label_dir: str | pathlib.Path, save_name: str):
     # read the sub file names from a file
     data_dir = pathlib.Path(data_dir)
     label_dir = pathlib.Path(label_dir)
@@ -68,8 +67,7 @@ def separate_names(names, train=0.7):
         train = round(train)
     else:
         train = round(len(names)*train)
-    if train > len(names):
-        train = len(names)
+    train = min(train, len(names))
 
     #The shuffle method was not randomizing the names
     val_names, train_names = train_test_split(names, test_size=train, shuffle=True)
@@ -207,8 +205,7 @@ def random_patches(dirt_choose_threshold: float, dirt_rate: float, patches: np.a
 
     if not (dirt_rate == 0):
         rest_num = round(((last_idx - 1) / dirt_rate) * (1 - dirt_rate))
-        if rest_num > rest_idx.shape[0]:
-            rest_num = rest_idx.shape[0]
+        rest_num = min(rest_num, rest_idx.shape[0])
     else:
         rest_num = rest_idx.shape[0]
 

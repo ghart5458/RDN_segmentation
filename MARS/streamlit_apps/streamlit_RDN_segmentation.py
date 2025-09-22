@@ -20,37 +20,34 @@ python -m torch.utils.collect_env
 """
 
 
-import os
-import io
-import cv2
-import sys
-import vtk
-import math
-import time
-import glob
-import torch
 import base64
-import socket
-import pathlib
 import builtins
-import tempfile
-import subprocess
+import glob
+import math
 import multiprocessing
+import os
+import pathlib
+import socket
+import subprocess
+import sys
+import tempfile
+import time
+from timeit import default_timer as timer
+
+import cv2
 import numpy as np
-import pyvista as pv
-import streamlit as st
-import SimpleITK as sitk
 import plotly.express as px
 import plotly.graph_objects as go
-import matplotlib.pyplot as plt
-from pandas.core.common import flatten
+import pyvista as pv
+import SimpleITK as sitk
+import streamlit as st
+import torch
+import vtk
 from PIL import Image, ImageColor
-from timeit import default_timer as timer
-from streamlit import caching
+from streamlit import StreamlitAPIException, caching
 from streamlit.hashing import _CodeHasher
-from streamlit.server.server import Server
 from streamlit.report_thread import get_report_ctx
-from streamlit import StreamlitAPIException
+from streamlit.server.server import Server
 
 # TODO only dark mode
 # TODO make portion for comparing model outputs
@@ -65,13 +62,17 @@ from streamlit import StreamlitAPIException
 # Reads where this script is launched from so you can import all the other functionality
 script_dir = pathlib.Path(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(str(script_dir.parent.parent))
-from MARS.morphology.segmentation.pytorch_segmentation.execute_3_class_seg import *
 from MARS.morphology.segmentation.pytorch_segmentation.execute_3_class_seg import (
-    _setup_image,
-    _return_predictors,
-    _get_threads,
     _get_outDir,
-    _get_inDir,
+    _get_threads,
+    _return_predictors,
+    feed_slice,
+    natural_keys,
+    read_image,
+    rescale_8,
+    three_class_segmentation,
+    three_class_segmentation_volume,
+    write_image,
 )
 from MARS.morphology.segmentation.pytorch_segmentation.net.unet_light_rdn import (
     UNet_Light_RDN,
@@ -178,17 +179,17 @@ def main():
     if st.sidebar.button("Parameter notepad++"):
         if state.parm_file:
             parm_file_loc = pathlib.Path(state.parm_file).as_posix()
-            subprocess.run(f'start notepad++ "{str(parm_file_loc)}"', shell=True)
+            subprocess.run(f'start notepad++ "{parm_file_loc!s}"', check=False, shell=True)
         else:
             st.warning("No parameter file set, opening notepad++ instead")
-            subprocess.run(f"start notepad++", shell=True)
+            subprocess.run("start notepad++", check=False, shell=True)
 
     if st.sidebar.button("Parameter Sublime Text"):
         sublime_dir = pathlib.Path(r"C:\Program Files\Sublime Text 3\subl.exe")
         if state.parm_file:
             parm_file_loc = pathlib.Path(state.parm_file).as_posix()
             command = subprocess.run(
-                f'"{str(sublime_dir)}" "{str(parm_file_loc)}"', shell=True
+                f'"{sublime_dir!s}" "{parm_file_loc!s}"', check=False, shell=True
             )
             exit_status = str(command).rsplit("=", 1)[1]
             if exit_status == "1)":
@@ -198,7 +199,7 @@ def main():
 
         else:
             st.warning("No parameter file set, opening notepad++ instead")
-            subprocess.run(f'"{str(sublime_dir)}"', shell=True)
+            subprocess.run(f'"{sublime_dir!s}"', check=False, shell=True)
 
     # Button to clear GPU memory
     if st.sidebar.button("Clear GPU"):
@@ -764,7 +765,7 @@ def page_batch_segmentations(state):
             failed_images = []
             batch = state.parms
             net = state.net
-            batch_len = int(len(state.parms))
+            batch_len = len(state.parms)
             curr_batch = batch_len
             st.sidebar.text(f"Currently segmenting {batch_len} images:")
 
@@ -877,13 +878,12 @@ def page_batch_segmentations(state):
         if st.checkbox("View parameters file"):
             if state.parms is None:
                 st.error("Please define the parameter file in settings!")
+            elif st.checkbox("Wrap style", value=True):
+                st.subheader("Batch parameters")
+                st.table(state.parms.style.highlight_null(null_color="red"))
             else:
-                if st.checkbox("Wrap style", value=True):
-                    st.subheader("Batch parameters")
-                    st.table(state.parms.style.highlight_null(null_color="red"))
-                else:
-                    st.subheader("Batch parameters")
-                    st.dataframe(state.parms.style.highlight_null(null_color="red"))
+                st.subheader("Batch parameters")
+                st.dataframe(state.parms.style.highlight_null(null_color="red"))
 
 
 #####
@@ -1047,19 +1047,15 @@ def page_midslice_viewer(state):
     else:
         temp_state.unseg_vol_file = temp_state.unseg_location
 
-    if temp_state.unseg_type == None and temp_state.seg_type == None:
+    if (temp_state.unseg_type == None and temp_state.seg_type == None) or temp_state.unseg_type == None or temp_state.seg_type == None:
         st.write("Please choose your unsegmented and segmented files to compare")
-
-    elif temp_state.unseg_type == None or temp_state.seg_type == None:
-        st.write("Please choose your unsegmented and segmented files to compare")
-    else:
-        if str(temp_state.unseg_type) != "nan":
-            st.write(temp_state.unseg_vol_file)
-            temp_state.unseg_type = temp_state.unseg_type
-            if str(temp_state.unseg_vol_file) != "None":
-                st.info(
-                    f"{pathlib.Path(temp_state.unseg_vol_file)} ready to load :smile:"
-                )
+    elif str(temp_state.unseg_type) != "nan":
+        st.write(temp_state.unseg_vol_file)
+        temp_state.unseg_type = temp_state.unseg_type
+        if str(temp_state.unseg_vol_file) != "None":
+            st.info(
+                f"{pathlib.Path(temp_state.unseg_vol_file)} ready to load :smile:"
+            )
     st.write("---")
     view_style = st.radio("Views:", ["Comparative", "Single view"])
 
@@ -1154,7 +1150,7 @@ def page_midslice_viewer(state):
                 st.sidebar.markdown("## Overlay options ##")
                 overlay_thresh = st.sidebar.text_input("Overlay thresh level", 200)
                 overlay_opacity = st.sidebar.slider(
-                    label=f"Overlay opacity", min_value=0.0, max_value=1.0, value=0.5
+                    label="Overlay opacity", min_value=0.0, max_value=1.0, value=0.5
                 )
                 try:
                     color = st.sidebar.color_picker(
@@ -1192,47 +1188,47 @@ def page_midslice_viewer(state):
                 # Probably drop this into a funciton later.
                 d_index_x = _direction_index("x")
                 compare_slice_x = st.slider(
-                    label=f"x slice number",
+                    label="x slice number",
                     min_value=0,
                     max_value=unseg_dims[d_index_x],
                     value=int(unseg_dims[d_index_x] * 0.5),
                     key="99999000",
                 )
                 unseg_x = feed_slice(
-                    inputImage=unseg_vol, slice=compare_slice_x, direction=str("x")
+                    inputImage=unseg_vol, slice=compare_slice_x, direction="x"
                 )
                 seg_x = feed_slice(
-                    inputImage=seg_vol, slice=compare_slice_x, direction=str("x")
+                    inputImage=seg_vol, slice=compare_slice_x, direction="x"
                 )
 
                 d_index_y = _direction_index("y")
                 compare_slice_y = st.slider(
-                    label=f"y slice number",
+                    label="y slice number",
                     min_value=0,
                     max_value=unseg_dims[d_index_y],
                     value=int(unseg_dims[d_index_y] * 0.5),
                     key="99999001",
                 )
                 unseg_y = feed_slice(
-                    inputImage=unseg_vol, slice=compare_slice_y, direction=str("y")
+                    inputImage=unseg_vol, slice=compare_slice_y, direction="y"
                 )
                 seg_y = feed_slice(
-                    inputImage=seg_vol, slice=compare_slice_y, direction=str("y")
+                    inputImage=seg_vol, slice=compare_slice_y, direction="y"
                 )
 
                 d_index_z = _direction_index("z")
                 compare_slice_z = st.slider(
-                    label=f"z slice number",
+                    label="z slice number",
                     min_value=0,
                     max_value=unseg_dims[d_index_z],
                     value=int(unseg_dims[d_index_z] * 0.5),
                     key="99999002",
                 )
                 unseg_z = feed_slice(
-                    inputImage=unseg_vol, slice=compare_slice_z, direction=str("z")
+                    inputImage=unseg_vol, slice=compare_slice_z, direction="z"
                 )
                 seg_z = feed_slice(
-                    inputImage=seg_vol, slice=compare_slice_z, direction=str("z")
+                    inputImage=seg_vol, slice=compare_slice_z, direction="z"
                 )
 
                 unseg_array_x = sitk.GetArrayFromImage(unseg_x).astype(np.uint8)
@@ -1255,7 +1251,7 @@ def page_midslice_viewer(state):
                     st.sidebar.markdown("## Overlay options ##")
                     overlay_thresh = st.sidebar.text_input("Overlay thresh level", 200)
                     overlay_opacity = st.sidebar.slider(
-                        label=f"Overlay opacity",
+                        label="Overlay opacity",
                         min_value=0.0,
                         max_value=1.0,
                         value=0.5,
@@ -1455,9 +1451,9 @@ def page_midslice_viewer(state):
                 )
                 st.write(f"Writing out {mesh_out}")
                 if mesh_out_type in ["ply", "vtk", "stl"]:
-                    vtk_mesh.save(f"{str(mesh_out)}", vtk_mesh)
+                    vtk_mesh.save(f"{mesh_out!s}", vtk_mesh)
                 else:
-                    pv.save_meshio(f"{str(mesh_out)}", vtk_mesh)
+                    pv.save_meshio(f"{mesh_out!s}", vtk_mesh)
 
             st.markdown("Meshing done! :smile:")
         st.sidebar.markdown(
@@ -1531,13 +1527,12 @@ def page_batch_meshing(state):
     if st.checkbox("View parameters file"):
         if mesh_state.parms is None:
             st.error("Please define the parameter file in settings!")
+        elif st.checkbox("Wrap style", value=True):
+            st.subheader("Batch parameters")
+            st.table(mesh_state.parms.style.highlight_null(null_color="red"))
         else:
-            if st.checkbox("Wrap style", value=True):
-                st.subheader("Batch parameters")
-                st.table(mesh_state.parms.style.highlight_null(null_color="red"))
-            else:
-                st.subheader("Batch parameters")
-                st.dataframe(mesh_state.parms.style.highlight_null(null_color="red"))
+            st.subheader("Batch parameters")
+            st.dataframe(mesh_state.parms.style.highlight_null(null_color="red"))
     st.write("---")
     st.markdown(
         ":rainbow: :sparkles: :rainbow: :sparkles: :rainbow: :sparkles: :rainbow: :sparkles: :rainbow: :sparkles: :rainbow:"
@@ -1708,7 +1703,7 @@ def page_batch_meshing(state):
                 "progress. :confounded:"
             )
             if st.button("Mesh!", key=9991117):
-                batch_len = int(len(batch))
+                batch_len = len(batch)
                 st.sidebar.text(f"Currently meshing {batch_len} volumes:")
                 with st.spinner(f"Meshing {batch_len} volumes..."):
                     progress_bar = st.progress(0)
@@ -1875,9 +1870,9 @@ def page_batch_meshing(state):
                         )
                         st.write(f"Writing out {mesh_out}")
                         if mesh_state.mesh_out_type in ["ply", "vtk", "stl"]:
-                            vtk_mesh.save(f"{str(mesh_out)}", vtk_mesh)
+                            vtk_mesh.save(f"{mesh_out!s}", vtk_mesh)
                         else:
-                            pv.save_meshio(f"{str(mesh_out)}", vtk_mesh)
+                            pv.save_meshio(f"{mesh_out!s}", vtk_mesh)
                         current_total += 1
                         remaining_items -= 1
                         iteration = np.floor(100 * (current_total / batch_len))
@@ -1902,7 +1897,7 @@ def display_state_values(state):
     if ".pth" in str(state.model):
         st.info(f"Model path: {state.model}")
     else:
-        st.error(f"Model path not set!")
+        st.error("Model path not set!")
 
     if str(state.parm_file) == "None":
         st.warning("Parameter file not set")
@@ -1936,9 +1931,9 @@ def segmentation_state_values(state):
     if ".pth" in str(state.model):
         st.info(f"Model path: {state.model}")
     else:
-        st.error(f"Model path not set!")
+        st.error("Model path not set!")
     st.info(
-        f"Segmentations will be written to {str(state.output_path)} in {state.out_type} file format"
+        f"Segmentations will be written to {state.output_path!s} in {state.out_type} file format"
     )
 
     _check_for_slice_to_vol(
@@ -1965,7 +1960,7 @@ def segmentation_batch_values(state):
     if ".pth" in str(state.model):
         st.info(f"Model path: {state.model}")
     else:
-        st.error(f"Model path not set!")
+        st.error("Model path not set!")
     st.info(f"Parameter file: {state.parm_file}")
 
 
@@ -1990,7 +1985,7 @@ def mesh_batch_values(mesh_state):
         st.info("No resampling set")
     elif int(mesh_state.resample_amount) == 999999:
         st.info(
-            f"Segmented volume will be resampled according to the parameter files 'resample_amount' column."
+            "Segmented volume will be resampled according to the parameter files 'resample_amount' column."
         )
     else:
         st.info(f"Segmented volume will be resampled by {mesh_state.resample_amount}")
@@ -2020,9 +2015,9 @@ def mesh_batch_values(mesh_state):
         )
 
     if mesh_state.keep_largest:
-        st.info(f"A mesh of the largest connected elements will be extracted.")
+        st.info("A mesh of the largest connected elements will be extracted.")
     else:
-        st.info(f"Not extracting the largest connected mesh element.")
+        st.info("Not extracting the largest connected mesh element.")
 
 
 ####
@@ -2092,7 +2087,7 @@ def _check_for_slice_to_vol(
                 f"Slice input type: {input_type} and volume output type: {out_type} selected."
             )
             st.info(
-                f" This is assumed to be an image stack and the slices will be converted to a volume output."
+                " This is assumed to be an image stack and the slices will be converted to a volume output."
             )
         state.twoD_to_threeD = True
         current_user = _get_user()
@@ -2104,11 +2099,11 @@ def _check_for_slice_to_vol(
 def _direction_index(slice_direction="z"):
     slice_direction = str(slice_direction).lower()
     if slice_direction == "z":
-        return int(2)
+        return 2
     elif slice_direction == "y":
-        return int(1)
+        return 1
     else:
-        return int(0)
+        return 0
 
 
 def _alter_parameter(parameter_file, new_column, column_value):
@@ -2555,7 +2550,7 @@ def get_midplane_histogram(image_volume, log=False):
 
 
 def render_svg(svg_file):
-    with open(svg_file, "r") as f:
+    with open(svg_file) as f:
         lines = f.readlines()
         svg = "".join(lines)
         """Renders the given svg string."""
@@ -2973,7 +2968,7 @@ def write_dicom(inputImage, metadata, outName, outDir=""):
     # dictionary and not the automatically generated information from the file IO
     writer = sitk.ImageFileWriter()
     writer.KeepOriginalImageUIDOn()
-    digits_offset = int(len(str(slice_num)))
+    digits_offset = len(str(slice_num))
 
     for i in range(slice_num):
         image_slice = inputImage[:, :, i]
@@ -2996,7 +2991,7 @@ def write_dicom(inputImage, metadata, outName, outDir=""):
 
         # Write to the output directory and add the extension dcm, to force writing
         # in DICOM format.
-        writer.SetFileName(f"{str(outName)}_{i:0{int(digits_offset)}}.dcm")
+        writer.SetFileName(f"{outName!s}_{i:0{int(digits_offset)}}.dcm")
         writer.Execute(image_slice)
     _end_timer(start, message="Writing DICOM slices")
 
@@ -3515,19 +3510,19 @@ def thresh_simple(inputImage, background=0, foreground=1, outside=0, threads="th
 
 def isolate_largest_bone(inputImage, min_size=100000, threads="threads"):
     start = timer()
-    st.info(f"Running connected components... ")
+    st.info("Running connected components... ")
     cc, stats = _scalar_connected_component(
         inputImage, min_size=min_size, threads=threads
     )
     st.write(
         f"Found {stats.GetNumberOfLabels()} connected components, including the background..."
     )
-    bone = sitk.Threshold(cc, int(2), int(2))
+    bone = sitk.Threshold(cc, 2, 2)
     st.write(f"Element bounds at {stats.GetBoundingBox(2)}")
     bone = rescale_intensity(
         inputImage=bone, old_min=0, old_max=1, new_min=0, new_max=1, threads="threads"
     )
-    _end_timer(start, message=f"Isolating largest bone")
+    _end_timer(start, message="Isolating largest bone")
     return bone
 
 
@@ -3633,7 +3628,7 @@ def three_class_segmentation(input_image, outDir, outType, network=""):
         _save_predictors(
             pred=pred, save_folder=outDir, image_name=out_name, file_type=outType
         )
-        iteration = np.floor((100 * ((i + 1) / len(image_names))))
+        iteration = np.floor(100 * ((i + 1) / len(image_names)))
         progress_bar.progress(int(iteration))
 
     st.write("\n\nSegmentations are done!\n\n")
@@ -3663,7 +3658,7 @@ def _save_predictors(pred, save_folder, image_name, file_type):
     pred_img = Image.fromarray(pred_img, "L")
     if "." in image_name:
         image_name = image_name.replace(".", "")
-    pred_name = f"{image_name}.{str(file_type)}"
+    pred_name = f"{image_name}.{file_type!s}"
     pred_img.save(os.path.join(save_folder, str(pred_name)), str(f_type))
 
 
@@ -3756,7 +3751,7 @@ def three_class_segmentation_volume(inputImage, direction="z", network=""):
                 vol_image, slice_vol, slice_vol.GetSize(), destinationIndex=[i, 0, 0]
             )
 
-        iteration = np.floor((100 * ((i + 1) / seg_count)))
+        iteration = np.floor(100 * ((i + 1) / seg_count))
         progress_bar.progress(int(iteration))
 
     _end_timer(start_timer=start, message=f"{direction}-plane segmentations")
@@ -3781,21 +3776,21 @@ def three_class_seg_xyz(inputImage, network=""):
         inputImage=inputImage, direction="z", network=network
     )
 
-    iteration = np.floor((100 * (1 / steps)))
+    iteration = np.floor(100 * (1 / steps))
     progress_bar.progress(int(iteration))
 
     seg_y = three_class_segmentation_volume(
         inputImage=inputImage, direction="y", network=network
     )
 
-    iteration = np.floor((100 * (2 / steps)))
+    iteration = np.floor(100 * (2 / steps))
     progress_bar.progress(int(iteration))
 
     seg_x = three_class_segmentation_volume(
         inputImage=inputImage, direction="x", network=network
     )
 
-    iteration = np.floor((100 * (3 / steps)))
+    iteration = np.floor(100 * (3 / steps))
     progress_bar.progress(int(iteration))
 
     # Rescale them to prevent overflow when we combine
@@ -3803,7 +3798,7 @@ def three_class_seg_xyz(inputImage, network=""):
     seg_y = rescale_16(seg_y)
     seg_z = combine_images(seg_z, seg_y)
 
-    iteration = np.floor((100 * (4 / steps)))
+    iteration = np.floor(100 * (4 / steps))
     progress_bar.progress(int(iteration))
 
     # Free up memory
@@ -3812,7 +3807,7 @@ def three_class_seg_xyz(inputImage, network=""):
 
     seg_z = combine_images(seg_z, seg_x)
 
-    iteration = np.floor((100 * (5 / steps)))
+    iteration = np.floor(100 * (5 / steps))
     progress_bar.progress(int(iteration))
 
     seg_x = 0
@@ -3820,7 +3815,7 @@ def three_class_seg_xyz(inputImage, network=""):
     seg_z.CopyInformation(inputImage)
     seg = rescale_8(seg_z, verbose=False)
 
-    iteration = np.floor((100 * (6 / steps)))
+    iteration = np.floor(100 * (6 / steps))
     progress_bar.progress(int(iteration))
 
     return seg

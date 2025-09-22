@@ -1,18 +1,17 @@
-import os
-import re
-import sys
-import math
-import glob
 import difflib
-import pathlib
-import tempfile
+import math
 import multiprocessing
-import numpy as np
-import streamlit as st
-import SimpleITK as sitk
-from PIL import Image
-from PIL import ImageOps
+import os
+import pathlib
+import re
+import tempfile
 from timeit import default_timer as timer
+
+import numpy as np
+import SimpleITK as sitk
+import streamlit as st
+from PIL import Image, ImageOps
+
 
 def _end_timer(start_timer, message=""):
     """
@@ -44,7 +43,7 @@ def rescale_labels(inputFilename, writeOut=False):
 
     pixelid = inputImage.GetPixelIDValue()
     if pixelid != 1:
-        print(f"Rescaling to unsigned 8bit...")
+        print("Rescaling to unsigned 8bit...")
         inputImage = sitk.Cast(sitk.RescaleIntensity(inputImage), sitk.sitkUInt8)
 
     rescaleFilter = sitk.RescaleIntensityImageFilter()
@@ -55,7 +54,7 @@ def rescale_labels(inputFilename, writeOut=False):
     if int(imageMax) == 1:
         rescaled = inputImage
     else:
-        print(f"Rescaling max intensity to 1...\n")
+        print("Rescaling max intensity to 1...\n")
         rescaleFilter.SetOutputMaximum(1)
         rescaled = rescaleFilter.Execute(inputImage)
 
@@ -219,7 +218,7 @@ def rescale_intensity(inputFilename, writeOut=True, file_type="", outDir=""):
         writer = sitk.ImageFileWriter()
         if outDir != "":
             out_name = pathlib.Path(outDir).joinpath(out_name)
-        writer.SetFileName(f"{str(out_name)}_rescaled.{file_type}")
+        writer.SetFileName(f"{out_name!s}_rescaled.{file_type}")
         writer.Execute(rescaled)
     else:
         return rescaled
@@ -279,7 +278,7 @@ def downscale_intensity(inputFilename, downscale_value=100, writeOut=True, file_
             writer = sitk.ImageFileWriter()
             if outDir != "":
                 out_name = pathlib.Path(outDir).joinpath(out_name)
-            writer.SetFileName(f"{str(out_name)}_downscaled.{file_type}")
+            writer.SetFileName(f"{out_name!s}_downscaled.{file_type}")
             writer.Execute(rescaled)
         else:
             return rescaled
@@ -324,7 +323,7 @@ def clean_image(inputFilename, suffix="", out_name="", out_type="", out_dir="", 
 
     inputImage = sitk.ReadImage(inputFilename, sitk.sitkUInt8)
     if to_streamlit:
-        st.write((f"\nWriting out {out_name} as {out_type}....\n"))
+        st.write(f"\nWriting out {out_name} as {out_type}....\n")
     else:
         print(f"\nWriting out {out_name} as {out_type}....\n")
     writer = sitk.ImageFileWriter()
@@ -359,7 +358,7 @@ def check_for_match(missing_file, check_filelist):
         for checking, match_file in pairs:
             for i, s in enumerate(difflib.ndiff(checking, match_file)):
                 if s[0] == ' ':
-                    grey_text.append((i))
+                    grey_text.append(i)
                 elif s[0] == '-':
                     green_text.append(i)
                 elif s[0] == '+':
@@ -367,12 +366,12 @@ def check_for_match(missing_file, check_filelist):
             print(f"\nDifferences between {checking}")
             print(f"                and {match_file}:")
             if len(green_text) > 0:
-                print(f"Adds:")
+                print("Adds:")
                 missing_g = [f"{checking[g_text]}" for g_text in green_text]
                 [green_print(g) for g in missing_g]
 
             if len(red_text) > 0:
-                print(f"Removes:")
+                print("Removes:")
                 missing_r = [f"{match_file[r_text]}" for r_text in red_text]
                 [red_print(r) for r in missing_r]
         return matches
@@ -461,8 +460,8 @@ def read_raw(binary_file_name, image_size, sitk_pixel_type, image_spacing=None,
     direction_cosine = ['1 0 0 1', '1 0 0 0 1 0 0 0 1',
                         '1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1']
     dim = len(image_size)
-    header = ['ObjectType = Image\n'.encode(),
-              ('NDims = {0}\n'.format(dim)).encode(),
+    header = [b'ObjectType = Image\n',
+              (f'NDims = {dim}\n').encode(),
               ('DimSize = ' + ' '.join([str(v) for v in image_size]) + '\n')
               .encode(),
               ('ElementSpacing = ' + (' '.join([str(v) for v in image_spacing])
@@ -474,7 +473,7 @@ def read_raw(binary_file_name, image_size, sitk_pixel_type, image_spacing=None,
               ('TransformMatrix = ' + direction_cosine[dim - 2] + '\n')
               .encode(),
               ('ElementType = ' + pixel_dict[sitk_pixel_type] + '\n').encode(),
-              'BinaryData = True\n'.encode(),
+              b'BinaryData = True\n',
               ('BinaryDataByteOrderMSB = ' + str(big_endian) + '\n').encode(),
               # ElementDataFile must be the last entry in the header
               ('ElementDataFile = ' + os.path.abspath(
@@ -500,7 +499,7 @@ def get_amira_header(amira_file, search_length=2048):
             binary_file.seek(i)
             eight_bytes = binary_file.read(25)
             if eight_bytes == b'# Data section follows\n@1':
-                print(f"Found header end at position {str(i)}!")
+                print(f"Found header end at position {i!s}!")
                 header_end = i + 25
     return header_end
 
@@ -515,7 +514,7 @@ def read_amira_header(amira_file, header_length=514):
     bounds = []
     for items in enumerate(header):
         if "Content" in str(items):
-            dims = [int(x) for x in re.findall('\d+', str(items[1]))]
+            dims = [int(x) for x in re.findall(r'\d+', str(items[1]))]
             _file_size(dim1=dims[0], dim2=dims[1], dim3=dims[2], bits=8)
         if "b'    BoundingBox " in str(items):
             bounds = [float(x) for x in re.findall(r"[+-]? *(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?", str(items[1]))]
@@ -597,7 +596,7 @@ def check_label_values(inputFilename):
     MinMax.Execute(inputImage)
     pixelid = inputImage.GetPixelIDValue()
     if pixelid != 1:
-        print(f"Rescaling to unsigned 8bit...")
+        print("Rescaling to unsigned 8bit...")
         inputImage = sitk.Cast(sitk.RescaleIntensity(inputImage), sitk.sitkUInt8)
 
     imageMax = MinMax.GetMaximum()
@@ -617,11 +616,7 @@ def check_if_label_exists(file_name, label_directory, verbose=True):
     check_exists = pathlib.Path(image_file).parts[-1]
     check_file_type = check_exists.split(".")[0]
     #print(check_exists)
-    if label_directory.joinpath(check_exists).exists():
-        if verbose == True:
-            print(f"File {check_exists} already exists...")
-        return True
-    elif label_directory.joinpath(f"{check_file_type}.tif").exists():
+    if label_directory.joinpath(check_exists).exists() or label_directory.joinpath(f"{check_file_type}.tif").exists():
         if verbose == True:
             print(f"File {check_exists} already exists...")
         return True

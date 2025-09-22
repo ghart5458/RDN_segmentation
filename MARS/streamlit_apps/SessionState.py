@@ -15,11 +15,11 @@ result:
 #>>> session_state.user_name
 'Mary'
 """
-import streamlit.ReportThread as ReportThread
+from streamlit import ReportThread
 from streamlit.server.Server import Server
 
 
-class SessionState(object):
+class SessionState:
     def __init__(self, **kwargs):
         """A new SessionState object.
         Parameters

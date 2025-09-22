@@ -1,33 +1,18 @@
 import os
-import io
-import cv2
-import sys
-import math
-import time
-import glob
-import torch
-import base64
 import pathlib
-import builtins
 import subprocess
-import multiprocessing
-import numpy as np
-import streamlit as st
+import sys
+
 import SimpleITK as sitk
-import plotly.express as px
-import matplotlib.pyplot as plt
-from pandas.core.common import flatten
-from PIL import Image, ImageColor
-from timeit import default_timer as timer
-from streamlit import caching
-from streamlit.hashing import _CodeHasher
-from streamlit.server.Server import Server
-from streamlit.ReportThread import get_report_ctx
+import streamlit as st
+
 script_dir = pathlib.Path(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(str(script_dir.parent.parent))
-from MARS.morphology.segmentation.pytorch_segmentation.execute_3_class_seg import *
-from MARS.morphology.segmentation.pytorch_segmentation.execute_3_class_seg import _setup_image, _save_predictors, \
-    _return_predictors, _get_threads, _get_outDir, _get_inDir
+from MARS.morphology.segmentation.pytorch_segmentation.execute_3_class_seg import (
+    read_image,
+    rescale_8,
+    write_image,
+)
 
 
 def file_selector(folder_path='.', extension="", selectbox_text=""):
@@ -125,7 +110,7 @@ if st.button("Analyze!"):
     #Directory and file, just as above.
     command1 = "DIRECTORY="
     command2 = ",FILE="
-    DIRECTORY = f"{str(directory)}/"
+    DIRECTORY = f"{directory!s}/"
     FILE = f"'{seg_name}.mhd'"
 
     #These get joined together with doubel quotes " to deal with any spaces people may place into their file strcuture....
@@ -133,12 +118,12 @@ if st.button("Analyze!"):
     command = str(command)
 
     #Prints out the command so you can make certain it looks fine on the console.
-    setup = f"{str(ImageJDIR)} --ij2 --console --run {str(scriptFile)} {str(command)}"
+    setup = f"{ImageJDIR!s} --ij2 --console --run {scriptFile!s} {command!s}"
     print(setup)
 
     # Use subprocess to send it to an external terminal and then print the output (e.g. if there are java errors or imgaej
     # can't read it
-    task = subprocess.run(str(setup), shell=True)
+    task = subprocess.run(str(setup), check=False, shell=True)
     print(task)
 
     # Replace the BoneJ results with those from the composite image with the correct background values,

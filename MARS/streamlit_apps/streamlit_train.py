@@ -1,18 +1,15 @@
-import os
-import sys
-import torch
 import pathlib
-import streamlit
-import pandas as pd
-import numpy as np
-import torch.nn as nn
+import sys
+
+import torch
 import torch.nn.functional as F
+from torch import nn
 from torch.utils.data import DataLoader
+
 script_dir = pathlib.Path.cwd().parent()
 sys.path.append(script_dir)
 import utils.dataprocess as dp
-from utils.losses import DomainEnrichLoss, dice_loss, DiceOverlap, Accuracy
-
+from utils.losses import Accuracy, DiceOverlap, DomainEnrichLoss, dice_loss
 
 bce_losses = nn.BCEWithLogitsLoss()
 accuracy = Accuracy()

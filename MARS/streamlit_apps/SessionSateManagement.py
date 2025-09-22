@@ -1,26 +1,30 @@
-import os
-import sys
-import math
-import time
-import glob
-import torch
 import base64
+import glob
+import math
+import os
 import pathlib
-import multiprocessing
-import streamlit as st
-import SimpleITK as sitk
-from pandas.core.common import flatten
-from PIL import Image
+import sys
+import time
 from timeit import default_timer as timer
+
+import SimpleITK as sitk
+import streamlit as st
+import torch
+from PIL import Image
 from streamlit.hashing import _CodeHasher
-from streamlit.server.Server import Server
 from streamlit.ReportThread import get_report_ctx
+from streamlit.server.Server import Server
 
 #script_dir = pathlib.Path(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(r"D:\Desktop\git_repo")
-from MARS.morphology.segmentation.pytorch_segmentation.execute_3_class_seg import *
-from MARS.morphology.segmentation.pytorch_segmentation.execute_3_class_seg import _setup_image, _save_predictors, \
-    _return_predictors, _get_threads, _get_outDir, _get_inDir
+from MARS.morphology.segmentation.pytorch_segmentation.execute_3_class_seg import (
+    _get_outDir,
+    _return_predictors,
+    _save_predictors,
+    natural_keys,
+    read_image,
+    rescale_8,
+)
 from MARS.morphology.segmentation.pytorch_segmentation.net.unet_light_rdn import UNet_Light_RDN
 
 
@@ -79,14 +83,13 @@ def page_settings(state):
         st.write(state.model_path)
         state.model = pathlib.Path(restored_state.model)
         st.write(pathlib.Path(state.model).parts[-1])
+    elif st.checkbox("Just the model path"):
+        restored_state = load_state_values(state)
+        state.model_path = restored_state.model_path
+        state.model = file_selector(state.model_path)
     else:
-        if st.checkbox("Just the model path"):
-            restored_state = load_state_values(state)
-            state.model_path = restored_state.model_path
-            state.model = file_selector(state.model_path)
-        else:
-            state.model_path = pathlib.Path(st.text_input('Model location', ""))
-            state.model = file_selector(state.model_path)
+        state.model_path = pathlib.Path(st.text_input('Model location', ""))
+        state.model = file_selector(state.model_path)
 
     st.write("---")
     st.subheader("Input/Output settings")
@@ -202,7 +205,7 @@ def segmentation_state_values(state):
     st.title("RDN 3-class segmentation:")
     st.info(f"Segmenting with {torch.cuda.get_device_name(state.use_gpu)}, {state.cuda_mem} of memory.")
     st.info(f"Model path: {state.model}")
-    st.info(f"Segmentations will be written to {str(state.output_path)} in {state.out_type} file format")
+    st.info(f"Segmentations will be written to {state.output_path!s} in {state.out_type} file format")
 
 def save_state_values(state):
     script_dir = pathlib.Path(os.path.dirname(os.path.realpath(__file__)))
@@ -245,7 +248,7 @@ def _get_file_name_from_list(image_files, suffix=""):
 
 def render_svg(svg_file):
 
-    with open(svg_file, "r") as f:
+    with open(svg_file) as f:
         lines = f.readlines()
         svg = "".join(lines)
 
@@ -519,7 +522,7 @@ def write_dicom(inputImage, metadata, outName, outDir=""):
     # dictionary and not the automatically generated information from the file IO
     writer = sitk.ImageFileWriter()
     writer.KeepOriginalImageUIDOn()
-    digits_offset = int(len(str(slice_num)))
+    digits_offset = len(str(slice_num))
 
     for i in range(slice_num):
         image_slice = inputImage[:, :, i]
@@ -539,7 +542,7 @@ def write_dicom(inputImage, metadata, outName, outDir=""):
 
         # Write to the output directory and add the extension dcm, to force writing
         # in DICOM format.
-        writer.SetFileName(f'{str(outName)}_{i:0{int(digits_offset)}}.dcm')
+        writer.SetFileName(f'{outName!s}_{i:0{int(digits_offset)}}.dcm')
         writer.Execute(image_slice)
     print("\n")
     _end_timer(start, message="Writing DICOM slices")
@@ -617,7 +620,7 @@ def three_class_segmentation(input_image, outDir, outType, network=""):
 
         #Pass the predictions to be saved using pillow
         _save_predictors(pred=pred, save_folder=outDir, image_name=out_name, file_type=outType)
-        iteration = np.floor((100 * ((i + 1)/len(image_names))))
+        iteration = np.floor(100 * ((i + 1)/len(image_names)))
         progress_bar.progress(int(iteration))
 
     st.write('\n\nSegmentations are done!\n\n')
@@ -684,7 +687,7 @@ def three_class_segmentation_volume(inputImage, direction="z", network=""):
         else:
             vol_image = sitk.Paste(vol_image, slice_vol, slice_vol.GetSize(), destinationIndex=[i, 0, 0])
 
-        iteration = np.floor((100 * ((i + 1)/seg_count)))
+        iteration = np.floor(100 * ((i + 1)/seg_count))
         progress_bar.progress(int(iteration))
 
     _end_timer(start_timer=start, message=f"{direction}-plane segmentations")
@@ -697,17 +700,17 @@ def three_class_seg_xyz(inputImage, network=""):
     #Segment the volume from all three directions
     seg_z = three_class_segmentation_volume(inputImage=inputImage, direction="z", network=network)
 
-    iteration = np.floor((100 * (1 / steps)))
+    iteration = np.floor(100 * (1 / steps))
     progress_bar.progress(int(iteration))
 
     seg_y = three_class_segmentation_volume(inputImage=inputImage, direction="y", network=network)
 
-    iteration = np.floor((100 * (2 / steps)))
+    iteration = np.floor(100 * (2 / steps))
     progress_bar.progress(int(iteration))
 
     seg_x = three_class_segmentation_volume(inputImage=inputImage, direction="x", network=network)
 
-    iteration = np.floor((100 * (3 / steps)))
+    iteration = np.floor(100 * (3 / steps))
     progress_bar.progress(int(iteration))
 
 
@@ -716,7 +719,7 @@ def three_class_seg_xyz(inputImage, network=""):
     seg_y = rescale_16(seg_y)
     seg_z = combine_images(seg_z, seg_y)
 
-    iteration = np.floor((100 * (4 / steps)))
+    iteration = np.floor(100 * (4 / steps))
     progress_bar.progress(int(iteration))
 
 
@@ -726,14 +729,14 @@ def three_class_seg_xyz(inputImage, network=""):
 
     seg_z = combine_images(seg_z, seg_x)
 
-    iteration = np.floor((100 * (5 / steps)))
+    iteration = np.floor(100 * (5 / steps))
     progress_bar.progress(int(iteration))
 
     seg_x = 0
     #Get the final product
     seg = rescale_8(seg_z)
 
-    iteration = np.floor((100 * (6 / steps)))
+    iteration = np.floor(100 * (6 / steps))
     progress_bar.progress(int(iteration))
 
     return seg

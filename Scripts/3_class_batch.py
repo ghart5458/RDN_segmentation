@@ -1,13 +1,12 @@
-import os
-import sys
 import glob
-import torch
-import socket
+import os
 import pathlib
 import platform
+import socket
+import sys
+
 import pandas as pd
-from PIL import UnidentifiedImageError
-from tqdm import tqdm
+import torch
 
 # Provide the location of the net folder. This will work until packaged.
 sys.path.append(r"D:\Desktop\git_repo\MARS\morphology\segmentation\pytorch_segmentation")
@@ -24,8 +23,8 @@ if platform.system().lower() == 'linux':
     else:
         sys.path.append(r"/mnt/ics/RyanLab/Projects/NStephens/git_repo")
 
-from MARS.morphology.segmentation.pytorch_segmentation.net.unet_light_rdn import UNet_Light_RDN
 from MARS.morphology.segmentation.pytorch_segmentation.execute_3_class_seg import *
+from MARS.morphology.segmentation.pytorch_segmentation.net.unet_light_rdn import UNet_Light_RDN
 
 ###################################################
 #                                                 #

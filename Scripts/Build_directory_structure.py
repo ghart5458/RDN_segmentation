@@ -12,16 +12,17 @@ Author: Lily DeMars (lvd5263@psu.edu)
 """
 
 
-import os
-import re
-import sys
 import glob
-import shutil
+import os
 import pathlib
 import platform
+import re
+import shutil
+from time import time as timer
+
 import numpy as np
 import pandas as pd
-from time import time as timer
+
 
 ########################################
 #                                      #
@@ -80,7 +81,7 @@ def get_initial_dataframe(matching_key, directory=""):
     files = pd.DataFrame(files)
 
     if len(files) == 0:
-        print("No matching {} files found...".format(str(matching_key)))
+        print(f"No matching {matching_key!s} files found...")
     else:
         files["Root"] = str(directory)
         # Take the column and reverse split by the backslash, which you need two of to re-enter the expression.
@@ -456,7 +457,7 @@ def explode(pandas_df, cols, split_on=","):
     repeat_list = []
     # for r, e in zip(df_cols.as_matrix(), explode_len):
     #    repeat_list.extend([list(r)]*e)
-    for r, e in zip(df_cols.values, explode_len):
+    for r, e in zip(df_cols.values, explode_len, strict=False):
         repeat_list.extend([list(r)] * e)
     df_repeat = pd.DataFrame(repeat_list, columns=cols_sep)
     df_explode = pd.concat(
@@ -507,35 +508,35 @@ def get_par(pandas_df, root_folder="Z:/RyanLab/Projects/nsf_human_variation/"):
         df["Population"], df["Individual"], df["Bone"], df["Side"], join_char=""
     )
     df["$res"] = float(0)
-    df["$dim1"] = int(0)
-    df["$dim2"] = int(0)
-    df["$dim3"] = int(0)
+    df["$dim1"] = 0
+    df["$dim2"] = 0
+    df["$dim3"] = 0
     df["$kc"] = df["KC"].astype(int)
-    df["$kpoint"] = int(0)
-    df["$kout"] = int(3)
-    df["$kin"] = int(6)
-    df["$grid"] = int(200)
-    df["$kmeans"] = int(2)
-    df["$miathresh"] = int(1)
-    df["$probability"] = float(0.02)
+    df["$kpoint"] = 0
+    df["$kout"] = 3
+    df["$kin"] = 6
+    df["$grid"] = 200
+    df["$kmeans"] = 2
+    df["$miathresh"] = 1
+    df["$probability"] = 0.02
     df["$threads"] = float(2)
-    df["$inmesh"] = float(0.6)
-    df["$outmesh"] = float(0.3)
+    df["$inmesh"] = 0.6
+    df["$outmesh"] = 0.3
     df["$pcinmehs"] = df["pcinmesh"]
-    df["$z1"] = int(0)
-    df["$z2"] = int(0)
-    df["$cut"] = int(0)
-    df["$r1"] = int(0)
-    df["$r2"] = int(0)
-    df["$r3"] = int(0)
-    df["$r3"] = int(0)
-    df["$r4"] = int(0)
-    df["$r5"] = int(0)
-    df["$r6"] = int(0)
-    df["$r7"] = int(0)
-    df["$r7"] = int(0)
-    df["$r8"] = int(0)
-    df["$r9"] = int(0)
+    df["$z1"] = 0
+    df["$z2"] = 0
+    df["$cut"] = 0
+    df["$r1"] = 0
+    df["$r2"] = 0
+    df["$r3"] = 0
+    df["$r3"] = 0
+    df["$r4"] = 0
+    df["$r5"] = 0
+    df["$r6"] = 0
+    df["$r7"] = 0
+    df["$r7"] = 0
+    df["$r8"] = 0
+    df["$r9"] = 0
     df["$species"] = df["Species"]
     df["$population"] = df["Population"]
     df["$specimen"] = df["Individual"]
@@ -556,7 +557,7 @@ def get_par(pandas_df, root_folder="Z:/RyanLab/Projects/nsf_human_variation/"):
     df["$location"] = df["Location"]
     df["$file"] = df["File_name"]
     df["$type"] = df["File_type"]
-    df["$thresh"] = int(0)
+    df["$thresh"] = 0
     bits_pattern = "tif|Tif|dcm|dicom|Dicom|vol|Vol|raw|Raw|nii"
     df["$bits"] = (
         df["$type"].str.lower().str.extract("(" + bits_pattern + ")", expand=False)
@@ -590,7 +591,7 @@ def linuxify_par(par_file, base_folder, linux_base_folder):
     :return: Returns a MedTool parameter file with linux style file structure.
     :useage:
             #Convert the windows par to linux
-            base_folder = pathlib.Path(r"Z:\RyanLab\Projects\nsf_human_variation")
+            base_folder = pathlib.Path(r"Z:\\RyanLab\\Projects\nsf_human_variation")
             linux_base_folder = pathlib.Path(r"/gpfs/group/LiberalArts/default/tmr21_collab/RyanLab/Projects/nsf_human_variation/")
 
             #Turn it into a linux par and write it out.
@@ -682,10 +683,10 @@ def remove_projections(pandas_df, fldr_substring=["_01", "_02", "_03"]):
 
     if len(fldr_substring) != 3:
         fldr_substring = list(fldr_substring)
-        print("Isolating folders matching {}...".format(fldr_substring))
+        print(f"Isolating folders matching {fldr_substring}...")
     else:
         fldr_substring = list(fldr_substring)
-        print("Isolating folders matching {}...".format(fldr_substring))
+        print(f"Isolating folders matching {fldr_substring}...")
 
     pattern_match = "(" + "|".join(fldr_substring) + ")"
 
@@ -712,7 +713,7 @@ def set_print_size_max():
     columns, rows = shutil.get_terminal_size()
     columns = int(columns) - 6
     pd.options.display.max_colwidth = int(columns)
-    print("Pandas print size width set to {}".format(columns))
+    print(f"Pandas print size width set to {columns}")
 
 
 def pre_explode_stacked(pandas_df):
@@ -1459,11 +1460,11 @@ df["Individual"] = df["Individual"].str.capitalize()
 # Assign the initial values
 df["Population"] = str(population)
 df["Species"] = str(species)
-df["KC"] = int(3)
-df["kmeans"] = int(3)
-df["miathresh"] = int(2)
-df["probability"] = float(0.02)
-df["pcinmesh"] = float(1.75)
+df["KC"] = 3
+df["kmeans"] = 3
+df["miathresh"] = 2
+df["probability"] = 0.02
+df["pcinmesh"] = 1.75
 
 
 # Reorder the columns and place it into another dataframe

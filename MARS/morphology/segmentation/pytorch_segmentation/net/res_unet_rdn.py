@@ -1,7 +1,10 @@
 import torch
-import torch.nn as nn
+from torch import nn
 from torchvision import models
-from net.unet_parts import DomainEnrich
+
+from .unet_parts import DomainEnrich
+
+
 def convrelu(in_channels, out_channels, kernel, padding):
     return nn.Sequential(
         nn.Conv2d(in_channels, out_channels, kernel, padding=padding),

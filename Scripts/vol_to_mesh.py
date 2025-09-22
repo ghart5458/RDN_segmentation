@@ -1,5 +1,5 @@
-import os
 import glob
+import os
 import pathlib
 import subprocess
 
@@ -17,7 +17,7 @@ for vol in vol_list[:]:
     file_name = str(vol.as_posix())
     par_oldname = str(vol.name).replace(".vol", "")
     par_name = par_oldname
-    text_match = str("''")
+    text_match = "''"
 
     # command = f"python {meta_script} {directory} {file_name} {par_oldname} {par_name} {text_match}"
     # print(command)
@@ -35,22 +35,19 @@ for vol in vol_list[:]:
         print(out)
 
 
-import os
-import re
-import sys
 import glob
-import shutil
+import os
 import pathlib
+import shutil
 import subprocess
-import numpy as np
+import sys
+
 import pandas as pd
 import SimpleITK as sitk
-from timeit import default_timer as timer
-from typing import Union, Any, List, Optional, cast
 
 sys.path.append(r"Z:\RyanLab\Projects\NStephens\git_repo")
-from MARS.utils.readPar import *
 from MARS.morphology.vtk_mesh import *
+from MARS.utils.readPar import *
 
 
 def read_mhd(directory, mhd_file):
@@ -74,16 +71,10 @@ def read_mhd(directory, mhd_file):
     print(f"Image Resolution: {xres} {yres} {zres}")
     if xres == 1.0:
         print(
-            f"\n\n\n!!!!Image spacing is set as 1.0 which is unlikely to be true. \n"
-            f"ImageJ often writes out mhd files in this way, ignoring spacing. Please manually correct this file.!!!!!\n\n\n"
+            "\n\n\n!!!!Image spacing is set as 1.0 which is unlikely to be true. \n"
+            "ImageJ often writes out mhd files in this way, ignoring spacing. Please manually correct this file.!!!!!\n\n\n"
         )
-    if xres != yres:
-        res = [xres, yres, zres]
-        print(f"Resolution: {xres, yres, zres}")
-    elif xres != zres:
-        res = [xres, yres, zres]
-        print(f"Resolution: {xres, yres, zres}")
-    elif yres != zres:
+    if xres != yres or xres != zres or yres != zres:
         res = [xres, yres, zres]
         print(f"Resolution: {xres, yres, zres}")
     else:
@@ -110,7 +101,7 @@ def ct_log_reader(directory, log_file):
     # Reads in the file
     print("\nOpening log file....\n")
     # Reads in the file to find the line number for the resolution
-    with open(str(log_file), "rt") as in_file:
+    with open(str(log_file)) as in_file:
 
         # Search for the resolution using a string
         searchres = "Image Pixel Size (um)="
@@ -307,9 +298,7 @@ for row in df.iloc[:1].itertuples():
     if in_file.exists():
         sitk_image = read_image(in_file)
 
-        if "Femur" in input_name:
-            resampled_amount = 0.15
-        elif "Tibia" in input_name:
+        if "Femur" in input_name or "Tibia" in input_name:
             resampled_amount = 0.15
         elif "Humerus" in input_name:
             resampled_amount = 0.1
@@ -371,7 +360,7 @@ for row in df.iloc[:1].itertuples():
 for row in df.iloc[1:].itertuples():
     # Setup the image input
     input_dir = pathlib.Path(row.path).joinpath(row.oldname).joinpath("01_Seg")
-    input_name = f"{str(row.name)}_seg.mhd"
+    input_name = f"{row.name!s}_seg.mhd"
     in_file = pathlib.Path(input_dir).joinpath(input_name)
     # setup the image output
     output_name = input_name.replace(".mhd", "")
@@ -379,9 +368,7 @@ for row in df.iloc[1:].itertuples():
     if in_file.exists():
         sitk_image = read_image(in_file)
 
-        if "Femur" in input_name:
-            resampled_amount = 0.15
-        elif "Tibia" in input_name:
+        if "Femur" in input_name or "Tibia" in input_name:
             resampled_amount = 0.15
         elif "Humerus" in input_name:
             resampled_amount = 0.1
@@ -474,7 +461,7 @@ df.input_name = df.input_name.str.replace("_cropped", "")
 for row in df.iloc[:1].itertuples():
     # Setup the image input
     input_dir = pathlib.Path(row.input_path)
-    input_name = f"{str(row.input_name)}"
+    input_name = f"{row.input_name!s}"
     in_file = pathlib.Path(input_dir).joinpath(input_name)
     # setup the image output
     output_name = input_name.replace(".mhd", "")
@@ -497,9 +484,7 @@ for row in df.iloc[:1].itertuples():
 
         write_midplanes(sitk_image, file_name=str(input_dir.joinpath(output_name)))
 
-        if "Femur" in input_name:
-            resampled_amount = 0.15
-        elif "Tibia" in input_name:
+        if "Femur" in input_name or "Tibia" in input_name:
             resampled_amount = 0.15
         elif "Humerus" in input_name:
             resampled_amount = 0.1

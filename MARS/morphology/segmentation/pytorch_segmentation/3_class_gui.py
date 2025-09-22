@@ -7,13 +7,14 @@ Author: Nick Stephens nbs49@psu.edu
 '''
 
 import os
-import sys
-import wx
-import torch
 import pathlib
+import sys
+
 import numpy as np
-from PIL import Image
+import torch
+import wx
 from net.unet_light_rdn import UNet_Light_RDN
+from PIL import Image
 
 #Path where the MARS icon lives. the sys.argv[0] returns the folder where this script is located.
 setup_path = pathlib.Path(os.path.abspath(os.path.dirname(sys.argv[0]))).parent.parent.parent.parent.joinpath("Setup")
@@ -175,7 +176,7 @@ class segment_widget(wx.Frame):
 
             f_type = type_dict[str(self.file_type)]
             pred_img = Image.fromarray(pred_img, 'L')
-            image_name = f"{image_name[:-3]}.{str(self.file_type)}"
+            image_name = f"{image_name[:-3]}.{self.file_type!s}"
             image_name = image_name.replace("..", ".")
             pred_img.save(os.path.join(save_folder, image_name), str(f_type))
 

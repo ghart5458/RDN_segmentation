@@ -1,63 +1,57 @@
 import os
-import sys
 import pathlib
+import sys
 
 import cv2
 
 script_dir = pathlib.Path(os.path.dirname(os.path.realpath(__file__))).parent
 sys.path.append(str(script_dir))
 
-import csv
-import glob
-import h5py
-import math
-import uuid
-import json
-import yaml
-import torch
 import base64
-import random
-import shutil
-import pickle
-import socket
-import difflib
-import platform
-import subprocess
-import numpy as np
-import pandas as pd
-import streamlit as st
-import SimpleITK as sitk
 import concurrent.futures
-import torch.nn as nn
-import torch.nn.functional as F
-
-from PIL import Image, ImageColor
-from torch import optim
+import difflib
+import glob
+import json
+import math
+import pickle
+import shutil
+import subprocess
+import uuid
+from collections.abc import Callable
+from datetime import datetime, timedelta
 from functools import wraps
-from typing import Callable, Tuple
 from multiprocessing import cpu_count
 from multiprocessing.pool import Pool
-from torch.utils.data import DataLoader
-from adabelief_pytorch import AdaBelief
-from datetime import datetime, timedelta
-from timeit import default_timer as timer
-from streamlit.hashing import _CodeHasher
 from random import shuffle as rand_shuffle
-from streamlit.server.server import Server
-from sklearn.utils import shuffle as sk_shuffle
-from streamlit.report_thread import get_report_ctx
-from streamlit_apps.streamlit_utils import _get_user
+from timeit import default_timer as timer
+
+import h5py
+import numpy as np
+import pandas as pd
+import SimpleITK as sitk
+import streamlit as st
+import torch
+import torch.nn.functional as F
 
 #This package
 import utils.dataprocess as dp
+import yaml
+from adabelief_pytorch import AdaBelief
 from net import UNet_Light_RDN
-from utils.generate import *
-from utils.label_utils import *
-from utils.label_utils import _check_label
-from streamlit_apps.streamlit_utils import *
-from utils.train import rdn_train, rdn_val
+from PIL import Image, ImageColor
+from sklearn.utils import shuffle as sk_shuffle
+from streamlit.hashing import _CodeHasher
+from streamlit.report_thread import get_report_ctx
+from streamlit.server.server import Server
+from torch import nn, optim
+from torch.utils.data import DataLoader
 from utils.dataset import HDF52D, load_patches, natural_keys
-from utils.losses import DomainEnrichLoss, dice_loss, DiceOverlap, Accuracy
+from utils.generate import load_img, separate_names, slide_windows
+from utils.label_utils import _check_label
+from utils.losses import Accuracy, DomainEnrichLoss, dice_loss
+from utils.train import rdn_train, rdn_val
+
+from streamlit_apps.streamlit_utils import _get_user, file_selector
 
 #To easily adjust drop down menus
 supported_file_types = ["mhd", "nii", "tif", "png", "jpg", "bmp", "dcm"]
@@ -266,8 +260,7 @@ def main():
                         img_count += 1
                         iteration = np.floor((100 * img_count) / len(segmented_imgs))
                         #Got to fix this
-                        if iteration > 100:
-                            iteration = 100
+                        iteration = min(iteration, 100)
                         progress_bar.progress(int(iteration))
 
     if model_settings_activity == "Check training names":
@@ -384,27 +377,26 @@ def main():
                                     subprocess.Popen(command_string, shell=True)
                                     remaining_choices_list = [item for item in state.unsegmented_file_list if item not in state.match_list]
                                     st.write("Remaining unsegmented training data file names:", remaining_choices_list)
-                        else:
-                            if st.button("Rename labels to match the unsegmented tif!"):
-                                for row in df.itertuples():
-                                    if row.unsegmented_name_match != "None":
-                                        label_path = state.segmented_dir.joinpath("new_labels")
-                                        rename_from = label_path.joinpath(row.label_name)
-                                        rename_to = label_path.joinpath(row.unsegmented_name_match)
-                                        st.write(f"Renaming {row.label_name}")
-                                        if rename_from.is_file():
-                                            try:
-                                                rename_from.rename(rename_to)
-                                            except FileExistsError:
-                                                st.error(f"Whoops! It looks like {rename_to} already exists.")
+                        elif st.button("Rename labels to match the unsegmented tif!"):
+                            for row in df.itertuples():
+                                if row.unsegmented_name_match != "None":
+                                    label_path = state.segmented_dir.joinpath("new_labels")
+                                    rename_from = label_path.joinpath(row.label_name)
+                                    rename_to = label_path.joinpath(row.unsegmented_name_match)
+                                    st.write(f"Renaming {row.label_name}")
+                                    if rename_from.is_file():
+                                        try:
+                                            rename_from.rename(rename_to)
+                                        except FileExistsError:
+                                            st.error(f"Whoops! It looks like {rename_to} already exists.")
 
 
-                                        else:
-                                            st.error(f"Whoops! Looks like {rename_from} either moved or we can't access it.")
-                                            st.write([label_path.as_posix()])
-                                state.unmatched_labels = None
-                                st.info("Renaming done, please rerun the label check to see if there are remaining issues!")
-    
+                                    else:
+                                        st.error(f"Whoops! Looks like {rename_from} either moved or we can't access it.")
+                                        st.write([label_path.as_posix()])
+                            state.unmatched_labels = None
+                            st.info("Renaming done, please rerun the label check to see if there are remaining issues!")
+
     if model_settings_activity == "Data augmentation":
         #state.unsegmented_training is the directory with training data
         #state.segmented_training is the directory with label data
@@ -542,7 +534,7 @@ def main():
             with yaml2_col_4:
                 if optimizer == "AdaBelief":
                     st.write("Weight decay is decoupled. Recommended epsilon:")
-                    st.write(f"Between 1e-08 and 1e-16")
+                    st.write("Between 1e-08 and 1e-16")
                     st.info(f"Current: {epsilon}")
 
             with yaml_col_2:
@@ -767,7 +759,7 @@ def main():
                 st.info(f"Method: {optimize_method}")
                 st.info(f"Learning rate: {optimize_learning_rate}")
                 if optimize_method == "AdaBelief":
-                    st.info(f"Weight decay: Decoupled")
+                    st.info("Weight decay: Decoupled")
                     epsilon = config["optimizer"]["epsilon"]
                     st.info(f"Epsilon: {epsilon}")
                 else:
@@ -876,7 +868,7 @@ def main():
                 # training
                 progress_bar = st.progress(0)
                 epoch_count = 0
-                st.sidebar.write(f"Epoch progress:")
+                st.sidebar.write("Epoch progress:")
                 st.write(f"Progress training {Epoch} epochs...")
                 total_timer = timer()
                 for i_epoch in range(Epoch):
@@ -1065,10 +1057,10 @@ def main():
             st.balloons()
             validation_col1, validation_col2 = st.beta_columns([1, 1])
             with validation_col1:
-                st.subheader(f"Best 3 models per non-bone class:")
+                st.subheader("Best 3 models per non-bone class:")
                 st.write(class_overlap.head(3))
             with validation_col2:
-                st.subheader(f"Overall Dice overlap:")
+                st.subheader("Overall Dice overlap:")
                 st.write(criterion_df.head(3))
             state.validated_models = True
 
@@ -1147,7 +1139,7 @@ def main():
             with control_col_3:
                 overlay_thresh = st.text_input("Overlay thresh level", 200)
             with control_col_4:
-                overlay_opacity = st.slider(label=f'Overlay opacity',
+                overlay_opacity = st.slider(label='Overlay opacity',
                                             min_value=0.0,
                                             max_value=1.0,
                                             value=0.5)
@@ -1156,7 +1148,7 @@ def main():
 
             bottom_layer = [cv2.cvtColor(np.array(unseg).astype(np.uint8), cv2.COLOR_GRAY2BGR) for unseg in state.image_set]
             top_layer = [cv2.cvtColor(np.array(seg).astype(np.uint8), cv2.COLOR_GRAY2BGR) for seg in state.label_set]
-            overlay_zip = zip(bottom_layer, top_layer)
+            overlay_zip = zip(bottom_layer, top_layer, strict=False)
 
             overlay_list = []
             for key, values in overlay_zip:
@@ -1343,26 +1335,25 @@ def download_button(object_to_download, download_filename, button_text, pickle_i
             st.write(e)
             return None
 
+    elif isinstance(object_to_download, bytes):
+        pass
+
+    elif isinstance(object_to_download, pd.DataFrame):
+        object_to_download = object_to_download.to_csv(index=False)
+
+    # Try JSON encode for everything else
     else:
-        if isinstance(object_to_download, bytes):
-            pass
-
-        elif isinstance(object_to_download, pd.DataFrame):
-            object_to_download = object_to_download.to_csv(index=False)
-
-        # Try JSON encode for everything else
-        else:
-            object_to_download = json.dumps(object_to_download)
+        object_to_download = json.dumps(object_to_download)
 
     try:
         # some strings <-> bytes conversions necessary here
         b64 = base64.b64encode(object_to_download.encode()).decode()
 
-    except AttributeError as e:
+    except AttributeError:
         b64 = base64.b64encode(object_to_download).decode()
 
     button_uuid = str(uuid.uuid4()).replace('-', '')
-    button_id = re.sub('\d+', '', button_uuid)
+    button_id = re.sub(r'\d+', '', button_uuid)
     #Black button with deep pink 1 text
     custom_css = f""" 
         <style>
@@ -1530,7 +1521,7 @@ def generate_patches_streamlit(hdf5_file : Union[str, pathlib.Path], patches_csv
     st.info(f"Generated {len(patches)} patches")
     return val_names
 
-def remove_from_validation_set(names_list: List, always_train_csv: Union[str, pathlib.Path], train_ratio: float) -> Union[Tuple, Tuple]:
+def remove_from_validation_set(names_list: List, always_train_csv: Union[str, pathlib.Path], train_ratio: float) -> Union[tuple, tuple]:
     always_train = pd.read_csv(str(pathlib.Path(always_train_csv)))
     st.write(f"Removing {len(always_train)} images from validation file.")
 
@@ -1542,7 +1533,7 @@ def remove_from_validation_set(names_list: List, always_train_csv: Union[str, pa
     train_names = train_names + set_aside
     return train_names, val_names
 
-def get_patches(hdf5_file: Union[str, pathlib.Path], train_names: Union[List, Tuple], stride: int = 32, output_size: int = 256):
+def get_patches(hdf5_file: Union[str, pathlib.Path], train_names: Union[List, tuple], stride: int = 32, output_size: int = 256):
     patches = []
     with h5py.File(hdf5_file, 'r') as data_file:
         for name in train_names:
@@ -1818,7 +1809,7 @@ def rescale_label_proper(input_image, input_file_name: str):
     rescaled = sitk.Cast(rescaled, sitk.sitkUInt8)
     rescaled.CopyInformation(input_image)
     writer = sitk.ImageFileWriter()
-    writer.SetFileName(f"{str(input_file_name)}")
+    writer.SetFileName(f"{input_file_name!s}")
     writer.Execute(rescaled)
 
 def rescale_intensity(inputFilename: str, writeOut: bool=True, file_type: str="", outDir: Union[str, pathlib.Path]=""):
@@ -1880,7 +1871,7 @@ def rescale_intensity(inputFilename: str, writeOut: bool=True, file_type: str=""
         writer = sitk.ImageFileWriter()
         if outDir != "":
             out_name = pathlib.Path(outDir).joinpath(out_name)
-        writer.SetFileName(f"{str(out_name)}_rescaled.{file_type}")
+        writer.SetFileName(f"{out_name!s}_rescaled.{file_type}")
         writer.Execute(rescaled)
     else:
         return rescaled
@@ -1940,7 +1931,7 @@ def downscale_intensity(inputFilename, downscale_value=100, writeOut=True, file_
             writer = sitk.ImageFileWriter()
             if outDir != "":
                 out_name = pathlib.Path(outDir).joinpath(out_name)
-            writer.SetFileName(f"{str(out_name)}_downscaled.{file_type}")
+            writer.SetFileName(f"{out_name!s}_downscaled.{file_type}")
             writer.Execute(rescaled)
         else:
             return rescaled
@@ -2019,7 +2010,7 @@ def clean_image(inputFilename, suffix="", out_name="", out_type="", out_dir="", 
     if inputImage.GetPixelID() != 1:
         inputImage = sitk.Cast(sitk.RescaleIntensity(inputImage), sitk.sitkUInt8)
     if to_streamlit:
-        st.write((f"\nWriting out {out_name} as {out_type}....\n"))
+        st.write(f"\nWriting out {out_name} as {out_type}....\n")
     else:
         print(f"\nWriting out {out_name} as {out_type}....\n")
     writer = sitk.ImageFileWriter()
@@ -2082,13 +2073,13 @@ def check_for_match(missing_file: str, check_filelist: List):
                     st.write(f"{len(minus_text)} character must be changed or removed to match {checking}:")
                 too_little_text = str(", ".join(minus_text).replace(",", ""))
                 color_print(text=too_little_text, color="blue")
-            st.markdown(f"")
-            st.markdown(f"")
+            st.markdown("")
+            st.markdown("")
         return matches
     else:
         st.warning(f"No good matches for {checking} found :frowning: (Sometimes happens with short file names)")
-        st.markdown(f"")
-        st.markdown(f"")
+        st.markdown("")
+        st.markdown("")
 
 
 def color_print(text: str, color: str):

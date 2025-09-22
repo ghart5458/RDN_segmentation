@@ -1,11 +1,11 @@
-import os
-import sys
 import glob
+import os
 import pathlib
+
 import pandas as pd
+import streamlit as st
 from PIL import Image
 
-import streamlit as st
 
 def alpha_to_int(text):
     clean_text = int(text) if text.isdigit() else text
@@ -39,11 +39,11 @@ def natural_keys_float(text):
 def _direction_index(slice_direction="z"):
     slice_direction = str(slice_direction).lower()
     if slice_direction == "z":
-        return int(2)
+        return 2
     elif slice_direction == "y":
-        return int(1)
+        return 1
     else:
-        return int(0)
+        return 0
 
 supported_file_types = ["mhd", "nii", "tif", "png", "jpg", "bmp", "dcm"]
 slice_types = ["tif", "png", "jpg", "bmp", "dcm"]
@@ -80,7 +80,7 @@ def _check_for_slice_to_vol(state, input_type, out_type, slice_types, volume_typ
     if input_type in slice_types and out_type in volume_types:
         if verbose == True:
             st.info(f"Slice input type: {input_type} and volume output type: {out_type} selected.")
-            st.info(f" This is assumed to be an image stack and the slices will be converted to a volume output.")
+            st.info(" This is assumed to be an image stack and the slices will be converted to a volume output.")
         state.twoD_to_threeD = True
         current_user = _get_user()
         save_state_values(state=state, user=current_user)

@@ -1,12 +1,6 @@
-from __future__ import print_function, division
-import os
-import time
-import torch
-import numpy as np
-import pandas as pd
 import albumentations as albu
-from PIL import Image
-from torch.utils.data import Dataset
+import numpy as np
+import torch
 
 # this function only consider the situation of both mask and image are 2-D gray scale picture.
 # That is the input is (H x W) not (H x W x C) even though the C is equal to 1.
@@ -39,7 +33,7 @@ def adjustMask(mask, class_num):
                 new_mask[i*interval <= mask] = i
         return new_mask
 
-class AdjustMask(object):
+class AdjustMask:
     def __init__(self, class_num = 3):
         self.class_num = class_num
 
@@ -47,7 +41,7 @@ class AdjustMask(object):
         sample['mask'] = adjustMask(sample['mask'], self.class_num)
         return sample
 
-class ToTensor(object):
+class ToTensor:
 
     def __init__(self, if_multi_img=False):
         self.if_multi_img = if_multi_img
@@ -78,7 +72,7 @@ class ToTensor(object):
             sample['ratio'] = torch.from_numpy(sample['ratio'])
         return sample
 
-class Normalize(object):
+class Normalize:
     def __init__(self, max=255.0, min=0.0, tg_max=1.0, tg_min=0.0):
         self.max = max
         self.min = min
@@ -91,7 +85,7 @@ class Normalize(object):
         sample['image'] = image
         return sample
 
-class Augmentation(object):
+class Augmentation:
 
     def __init__(self, output_size=256):
         self.aug = albu.Compose([

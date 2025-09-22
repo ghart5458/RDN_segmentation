@@ -1,30 +1,26 @@
-import os
-import sys
 import glob
-import tetgen
+import os
 import pathlib
-import tempfile
-import platform
 import subprocess
+import sys
+import tempfile
+
 import numpy as np
 import pandas as pd
 import pyvista as pv
 import streamlit as st
-from streamlit import caching
+import tetgen
 from pymeshfix import _meshfix
 from pymeshfix import meshfix as mf
 from streamlit.hashing import _CodeHasher
-from timeit import default_timer as timer
-from streamlit.server.server import Server
 from streamlit.report_thread import get_report_ctx
-
+from streamlit.server.server import Server
 
 script_dir = pathlib.Path(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(str(script_dir.parent.parent))
-from MARS.streamlit_apps.streamlit_utils import *
-from MARS.streamlit_apps.streamlit_utils import _get_user, _load_MARS_logo
 from MARS.registration.Meshlab_tools import *
 
+from MARS.streamlit_apps.streamlit_utils import _get_user, _load_MARS_logo, file_selector
 
 supported_mesh = ["off", "ply", "stl", "obj", "wrl"]
 supported_volume_mesh = ["vtk", "inp", "msh"]
@@ -85,17 +81,15 @@ def main():
         state.clear()
         save_state_values(state=state, user=current_user, app_name="meshlab")
 
-    #
     if st.sidebar.button("Open meshlab"):
-        subprocess.run(f'{str(state.meshlab_path)}', shell=True)
+        subprocess.run(f'{state.meshlab_path!s}', check=False, shell=True)
 
-    #
     if st.sidebar.button("Open mesh input folder"):
-        subprocess.run(f'start {str(state.mesh_location)}', shell=True)
+        subprocess.run(f'start {state.mesh_location!s}', check=False, shell=True)
 
     # Button to clear state values
     if st.sidebar.button("Open mesh output folder"):
-        subprocess.run(f'start {str(state.mesh_output_location)}', shell=True)
+        subprocess.run(f'start {state.mesh_output_location!s}', check=False, shell=True)
 
     ###
     st.sidebar.subheader("Common operations")
@@ -149,9 +143,7 @@ def main():
         except FileNotFoundError:
             st.error("Couldn't find the directory, please check that everything is spelled correctly. "
                      "Note: This is case sensistive.")
-        if str(state.filter_script_location) == ".":
-            st.info("Please paste in the filter script location")
-        elif str(state.filter_script_location) == "None":
+        if str(state.filter_script_location) == "." or str(state.filter_script_location) == "None":
             st.info("Please paste in the filter script location")
         else:
             state.filter_script = pathlib.Path(file_selector(folder_path=str(state.filter_script_location),
@@ -163,10 +155,10 @@ def main():
         load_state_values(state=state, user=current_user)
         state.mesh_list = []
         glob_string = state.glob_string.replace("\\", "")
-        glob_string = f"{str(glob_string)}*.{str(state.mesh_input_type)}"
+        glob_string = f"{glob_string!s}*.{state.mesh_input_type!s}"
         glob_string = glob_string.replace("**", "*")
         st.write(state.mesh_location)
-        glob_path = f"{str(pathlib.Path(state.mesh_location).joinpath(glob_string))}"
+        glob_path = f"{pathlib.Path(state.mesh_location).joinpath(glob_string)!s}"
         st.write(f"Globbing {glob_path}...")
         mesh_list = glob.glob(glob_path)
         st.write(f"Found {len(mesh_list)} mesh files!")
@@ -215,10 +207,10 @@ def main():
                                  output_directory=str(state.mesh_output_location),
                                  meshlabserverpath=str(state.meshlab_server_path)
                                  )
-                    st.write(f"{mesh_file} writen to {str(state.mesh_output_location)}")
+                    st.write(f"{mesh_file} writen to {state.mesh_output_location!s}")
 
                     current_total += 1
-                    iteration = np.floor((100 * ((current_total) / num_meshes)))
+                    iteration = np.floor(100 * ((current_total) / num_meshes))
                     progress_bar.progress(int(iteration))
 
     if mesh_settings_activity == "Apply Meshlab Script":
@@ -254,9 +246,9 @@ def main():
                                       shell=True)
 
                     current_total += 1
-                    iteration = np.floor((100 * ((current_total) / num_meshes)))
+                    iteration = np.floor(100 * ((current_total) / num_meshes))
                     progress_bar.progress(int(iteration))
-                    st.write(f"{mesh_file} writen to {str(state.mesh_output_location)}")
+                    st.write(f"{mesh_file} writen to {state.mesh_output_location!s}")
 
     if mesh_settings_activity == "Chain Meshlab Scripts":
         load_state_values(state=state, user=current_user)
@@ -304,12 +296,12 @@ def main():
                                               shell=True)
 
                             current_total += 1
-                            iteration = np.floor((100 * ((current_total) / num_meshes)))
+                            iteration = np.floor(100 * ((current_total) / num_meshes))
                             progress_bar.progress(int(iteration))
-                            st.write(f"{mesh_file} writen to {str(state.mesh_output_location)}")
+                            st.write(f"{mesh_file} writen to {state.mesh_output_location!s}")
 
                         large_current_total += 1
-                        large_iteration = np.floor((100 * ((large_current_total) / scripts_total)))
+                        large_iteration = np.floor(100 * ((large_current_total) / scripts_total))
                         large_progress_bar.progress(int(large_iteration))
 
                     #Should probably make this into a function for readability
@@ -331,11 +323,11 @@ def main():
                                                   shell=True)
 
                                 current_total += 1
-                                iteration = np.floor((100 * ((current_total) / num_meshes)))
+                                iteration = np.floor(100 * ((current_total) / num_meshes))
                                 progress_bar.progress(int(iteration))
-                                st.write(f"{mesh_file} writen to {str(state.mesh_output_location)}")
+                                st.write(f"{mesh_file} writen to {state.mesh_output_location!s}")
                             large_current_total += 1
-                            large_iteration = np.floor((100 * ((large_current_total) / scripts_total)))
+                            large_iteration = np.floor(100 * ((large_current_total) / scripts_total))
                             large_progress_bar.progress(int(large_iteration))
 
     if mesh_settings_activity == "Apply PyMeshfix":
@@ -360,10 +352,10 @@ def main():
                               out_type=out_type,
                               output_directory=str(state.mesh_output_location),
                               write=True)
-                    st.write(f"{mesh_file} writen to {str(state.mesh_output_location)}")
+                    st.write(f"{mesh_file} writen to {state.mesh_output_location!s}")
 
                     current_total += 1
-                    iteration = np.floor((100 * ((current_total) / num_meshes)))
+                    iteration = np.floor(100 * ((current_total) / num_meshes))
                     progress_bar.progress(int(iteration))
     if mesh_settings_activity == "Remove internal geometry":
         load_state_values(state=state, user=current_user)
@@ -420,10 +412,10 @@ def main():
                                                  out_type=out_type,
                                                  output_directory=str(state.mesh_output_location),
                                                  write_mesh=True)
-                    st.write(f"{mesh_file} writen to {str(state.mesh_output_location)}")
+                    st.write(f"{mesh_file} writen to {state.mesh_output_location!s}")
 
                     current_total += 1
-                    iteration = np.floor((100 * ((current_total) / num_meshes)))
+                    iteration = np.floor(100 * ((current_total) / num_meshes))
                     progress_bar.progress(int(iteration))
 
     if mesh_settings_activity == "Make solid":
@@ -456,10 +448,10 @@ def main():
                                            target_verts="",
                                            laplacian=True)
 
-                    st.write(f"{mesh_file} writen to {str(state.mesh_output_location)}")
+                    st.write(f"{mesh_file} writen to {state.mesh_output_location!s}")
 
                     current_total += 1
-                    iteration = np.floor((100 * ((current_total) / num_meshes)))
+                    iteration = np.floor(100 * ((current_total) / num_meshes))
                     progress_bar.progress(int(iteration))
 
     mesh_state_values(state)
@@ -478,7 +470,7 @@ def mesh_state_values(state):
     if state.mesh_location != ".":
         st.info(f"Mesh input path: {state.mesh_location}")
     else:
-        st.error(f"Mesh input path not set!")
+        st.error("Mesh input path not set!")
 
     if not state.mesh_list:
         st.error("There are no meshes in the mesh list!")
@@ -589,7 +581,7 @@ def TetWild_tetrahedralize(input_path, in_file, output_path, out_name="", edge_l
         command += " --is-laplacian "
 
     # Tells us the command we are sending to the console
-    print(f"\nGoing to execute:\n                            {str(command)}")
+    print(f"\nGoing to execute:\n                            {command!s}")
 
     # Actually sends this to the console
     output = subprocess.call(command)
@@ -698,14 +690,13 @@ def isolate_external_surface(in_dir, in_file, out_type, output_directory, write_
     print("\n\nDone")
     if not write_mesh:
         return new_mesh
+    elif out_type in ['ply', 'vtp', 'stl', 'vtk']:
+        new_mesh.save(str(output))
     else:
-        if out_type in ['ply', 'vtp', 'stl', 'vtk']:
-            new_mesh.save(str(output))
-        else:
-            pv.save_meshio(filename=str(output), mesh=rough_mesh)
+        pv.save_meshio(filename=str(output), mesh=rough_mesh)
 
 def escape_markdown(text):
-    MD_SPECIAL_CHARS = "\`*_{}[]()#+-.!"
+    MD_SPECIAL_CHARS = r"\`*_{}[]()#+-.!"
     for char in MD_SPECIAL_CHARS:
         text = text.replace(char, "\\" + char)
     return text

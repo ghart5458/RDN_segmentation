@@ -10,13 +10,11 @@ Date: 06/21/2019
 
 '''
 
-import os
-import sys
-import gmsh
 import pathlib
-import trimesh
-import streamlit as st
+import sys
 from timeit import default_timer as timer
+
+import trimesh
 
 
 def mesh_2d_to_mesh_3d(directory, input_name, output_dir):

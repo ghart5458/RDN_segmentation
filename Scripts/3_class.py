@@ -1,9 +1,7 @@
-import os
-import sys
-import socket
 import pathlib
 import platform
-import tempfile
+import socket
+import sys
 from subprocess import PIPE, Popen
 
 if platform.system() == "Windows":
@@ -27,7 +25,7 @@ pytorch_env = check_environment_location(env_name="pytorch_seg")
 
 
 if isinstance(pytorch_env, bool):
-    print(f"Pytorch environment not found!")
+    print("Pytorch environment not found!")
 else:
     pytorch_env = pytorch_env["Location"][0]
     pytorch_python = pathlib.Path(pytorch_env).joinpath("python")

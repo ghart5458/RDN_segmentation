@@ -1,14 +1,13 @@
-import os
-import re
-import sys
 import glob
+import os
 import pathlib
-import subprocess
-import numpy as np
+import sys
+
 import pandas as pd
 
 sys.path.append(r"Z:\RyanLab\Projects\NStephens\git_repo")
 from MARS.morphology.vtk_mesh import *
+
 #from MARS.utils.readPar import *
 
 
@@ -32,7 +31,7 @@ print(df.columns)
 for row in df.iloc[:].itertuples():
     dir_out = pathlib.Path(str(row.folder)).joinpath(str(row.oldname)).joinpath("01_Seg")
     #dir_out = pathlib.Path(str(row.output_path))
-    mhd_file = f"{str(row.oldname)}_RDN_seg.mhd"
+    mhd_file = f"{row.oldname!s}_RDN_seg.mhd"
     #mhd_file = f"{str(row.input_name).rpartition('.')[0]}_RDN_seg.mhd"
     seg_name = dir_out.joinpath(mhd_file)
     mid_plane_name = dir_out.joinpath(f'{mhd_file.replace(".mhd", "")}')
@@ -64,14 +63,14 @@ df = df[~df.oldname.str.contains("#")]
 
 #Check to see if the original file exists
 for row in df.iloc[:].itertuples():
-    dir_out = pathlib.Path(str(row.folder)).joinpath(str(row.oldname)).joinpath("00_Original")    
-    mhd_file = f"{str(row.oldname)}.mhd"
+    dir_out = pathlib.Path(str(row.folder)).joinpath(str(row.oldname)).joinpath("00_Original")
+    mhd_file = f"{row.oldname!s}.mhd"
     mhd_file = dir_out.joinpath(mhd_file)
     if not mhd_file.exists():
         print("Nope!")
-    
+
 df.reset_index(drop=True, inplace=True)
-df.to_csv(str(inputdir.joinpath(f"Still_to_RDN_May_2021.csv")), index=False, sep=";")
+df.to_csv(str(inputdir.joinpath("Still_to_RDN_May_2021.csv")), index=False, sep=";")
 
 remove_list = ["ShaftDist", "ShaftMid", "ShaftProx", "Overview"]
 
@@ -90,7 +89,7 @@ for row in df.iloc[:].itertuples():
     dir_out = (
         pathlib.Path(str(row.folder)).joinpath(str(row.oldname)).joinpath("00_Original")
     )
-    mhd_file = f"{str(row.oldname)}.mhd"
+    mhd_file = f"{row.oldname!s}.mhd"
     mhd_name = dir_out.joinpath(mhd_file)
     # mid_plane_name = dir_out.joinpath(f'{mhd_file.replace(".mhd", "")}')
     print(dir_out)

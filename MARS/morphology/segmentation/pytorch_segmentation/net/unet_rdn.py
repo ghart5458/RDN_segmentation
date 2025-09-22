@@ -1,9 +1,10 @@
 """ Full assembly of the parts to form the complete network """
 
-import torch.nn.functional as F
 import torch
-from .unet_parts import *
+
 from .domian_enrich_block import DomainEnrich_Block
+from .unet_parts import DoubleConv, Down, OutConv, Up
+
 
 class UNet_RDN(nn.Module):
     def __init__(self, n_channels, n_classes, bilinear=True):

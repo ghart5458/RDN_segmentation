@@ -9,24 +9,22 @@ Author: Nick Stephens nbs49@psu.edu
 python -m pip install -U prompt-toolkit~=2.0
 
 """
-import os
-import re
-import sys
-import glob
 import math
-import time
-import torch
-import socket
+import multiprocessing
+import os
 import pathlib
 import platform
+import re
+import socket
+import sys
+import time
+from timeit import default_timer as timer
+
 import numpy as np
-import pandas as pd
-import multiprocessing
 import SimpleITK as sitk
+import torch
 from PIL import Image
 from tqdm import tqdm
-from PIL import UnidentifiedImageError
-from timeit import default_timer as timer
 
 if platform.system() == "Windows":
     if socket.gethostname() == 'L2ANTH-WT0023':
@@ -44,7 +42,6 @@ script_dir = pathlib.Path(os.path.dirname(os.path.realpath(__file__)))
 sys.path.append(str(script_dir))
 #sys.path.append(r"Z:\RyanLab\Projects\NStephens\git_repo\MARS\morphology\segmentation\pytorch_segmentation")
 #sys.path.append(r"D:\Desktop\git_repo\MARS\morphology\segmentation\pytorch_segmentation")
-from MARS.morphology.segmentation.pytorch_segmentation.net.unet_light_rdn import UNet_Light_RDN
 
 class ReportPosition(sitk.Command):
     """
@@ -205,7 +202,7 @@ def _save_predictors(pred, save_folder, image_name, file_type):
     # Cast the data as unsigned 8 bit and reconstruct the image for writing.
     pred_img = pred_img.astype(np.uint8)
     pred_img = Image.fromarray(pred_img, 'L')
-    pred_img.save(os.path.join(save_folder, f"{image_name[:-3]}.{str(file_type)}"), str(f_type))
+    pred_img.save(os.path.join(save_folder, f"{image_name[:-3]}.{file_type!s}"), str(f_type))
 
 def _setup_sitk_image(image_slice, direction="z"):
     """
@@ -397,7 +394,7 @@ def three_class_segmentation(inDir, outDir, outType, network=""):
     print(f"Processing images in {data_folder}")
 
     # Loop through the images in the folder and use the image name for the output name
-    for i in tqdm(range(len(image_names), unit=f" slices", desc=f" Segmenting...")):
+    for i in tqdm(range(len(image_names), unit=" slices", desc=" Segmenting...")):
         image_name = image_names[i]
 
         #Read the image in with pillow and set it as a numpy array for pytorch
@@ -450,7 +447,7 @@ def three_class_segmentation_volume(inputImage, direction="z", network=""):
     vol_image = sitk.Image(inputImage.GetSize(), sitk.sitkUInt8)
 
     # Loop through the images in the folder and use the image name for the output name
-    for i in tqdm(range(seg_count), unit=f" slices", desc=f" Segmenting {direction}"):
+    for i in tqdm(range(seg_count), unit=" slices", desc=f" Segmenting {direction}"):
         image = feed_slice(inputImage, slice=i, direction=str(direction))
 
         #Read the image in with pillow and set it as a numpy array for pytorch
@@ -719,7 +716,7 @@ def write_dicom(inputImage, metadata, outName, outDir=""):
     # dictionary and not the automatically generated information from the file IO
     writer = sitk.ImageFileWriter()
     writer.KeepOriginalImageUIDOn()
-    digits_offset = int(len(str(slice_num)))
+    digits_offset = len(str(slice_num))
 
     for i in tqdm(range(slice_num), unit=" slices", desc=f" Writing out {slice_num} DICOM slices to {outDir}..."):
         image_slice = inputImage[:, :, i]
@@ -739,7 +736,7 @@ def write_dicom(inputImage, metadata, outName, outDir=""):
 
         # Write to the output directory and add the extension dcm, to force writing
         # in DICOM format.
-        writer.SetFileName(f'{str(outName)}_{i:0{int(digits_offset)}}.dcm')
+        writer.SetFileName(f'{outName!s}_{i:0{int(digits_offset)}}.dcm')
         writer.Execute(image_slice)
     print("\n")
     _end_timer(start, message="Writing DICOM slices")
