@@ -3250,10 +3250,6 @@ def resample_sitk_image(inputImage, spacing=None, interpolator=None, fill_value=
         st.write(
             "You have an older version of SimpleITK installed in your anaconda environment."
         )
-        st.write(
-            "This function has been made to be backwards compatible, but if you notice others don't work please"
-            "email me at nbs49@psu.edu or contact me through my github https://github.com/NBStephens/"
-        )
 
         resampled_inputImage = resample_filter.Execute(
             inputImage,
