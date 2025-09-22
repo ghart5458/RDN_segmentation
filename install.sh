@@ -21,28 +21,89 @@ fi
 echo "Found uv package manager"
 echo
 
-# Check if Python is available
+# Function to check for NVIDIA GPU
+check_nvidia_gpu() {
+    echo "Checking for NVIDIA GPU..."
+    
+    # Check for nvidia-smi command (most reliable)
+    if command -v nvidia-smi &> /dev/null; then
+        if nvidia-smi &> /dev/null; then
+            return 0  # GPU found
+        fi
+    fi
+    
+    # Fallback: check lspci for NVIDIA devices (Linux)
+    if command -v lspci &> /dev/null; then
+        if lspci | grep -i nvidia &> /dev/null; then
+            return 0  # GPU found
+        fi
+    fi
+    
+    # Fallback: check system_profiler for NVIDIA devices (macOS)
+    if [[ "$OSTYPE" == "darwin"* ]] && command -v system_profiler &> /dev/null; then
+        if system_profiler SPDisplaysDataType | grep -i nvidia &> /dev/null; then
+            return 0  # GPU found
+        fi
+    fi
+    
+    return 1  # No GPU found
+}
+
+# Platform-specific GPU checking
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    echo "macOS detected - this software requires NVIDIA GPU acceleration"
+    echo "Unfortunately, modern macOS systems do not support NVIDIA CUDA."
+    echo "This software requires CUDA for deep learning acceleration."
+    echo ""
+    echo "Please use a Linux or Windows system with NVIDIA GPU."
+    exit 1
+else
+    # Linux - check for NVIDIA GPU
+    if ! check_nvidia_gpu; then
+        echo
+        echo "========================================"
+        echo "ERROR: NVIDIA GPU NOT DETECTED"
+        echo "========================================"
+        echo
+        echo "This software requires an NVIDIA graphics card for CUDA acceleration."
+        echo "Without CUDA support, the deep learning models will not function properly."
+        echo
+        echo "Please ensure you have:"
+        echo "  1. An NVIDIA graphics card installed"
+        echo "  2. NVIDIA drivers installed"
+        echo "  3. nvidia-smi command available"
+        echo
+        echo "To install NVIDIA drivers on Ubuntu/Debian:"
+        echo "  sudo apt update"
+        echo "  sudo apt install nvidia-driver-XXX"
+        echo "  (replace XXX with appropriate driver version)"
+        echo
+        echo "After installing drivers, restart your computer and run this installer again."
+        echo
+        exit 1
+    fi
+    echo "Found NVIDIA GPU - proceeding with CUDA installation"
+    echo
+fi
+
+# Check if Python 3.11+ is available
 if ! uv python list &> /dev/null; then
     echo "Installing Python 3.11..."
     uv python install 3.11
 else
     echo "Python is available"
+    echo "Ensuring Python 3.11+ compatibility..."
+    uv python install 3.11
 fi
 
 # Create and sync the project
 echo "Creating uv project..."
 uv sync
 
-# Install PyTorch - detect platform and install appropriate version
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    echo
-    echo "Installing PyTorch for macOS (CPU-only)..."
-    uv sync --extra cpu
-else
-    echo
-    echo "Installing PyTorch with CUDA support..."
-    uv sync --extra cuda
-fi
+# Install PyTorch with CUDA support (Linux only, macOS exits above)
+echo
+echo "Installing PyTorch with CUDA support..."
+uv sync
 
 # Install special dependencies
 echo
