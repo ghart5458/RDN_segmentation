@@ -44,9 +44,9 @@ def install_pytorch_wavelets():
             str(repo_dir)
         ])
 
-        # Install the package
+        # Install the package using uv
         run_command([
-            sys.executable, "-m", "pip", "install", "."
+            "uv", "pip", "install", "."
         ], cwd=repo_dir)
 
         print("pytorch_wavelets installed successfully!")
