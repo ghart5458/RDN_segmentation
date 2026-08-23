@@ -1,6 +1,9 @@
 # RDN_segmentation
 Home of the [FEMR Lab](https://femr.la.psu.edu/) RDN segmentation software at PSU
 
+Forked from [NBStephens/RDN_segmentation](https://github.com/NBStephens/RDN_segmentation) —
+that is the upstream this repository was branched from, not the clone URL for this fork.
+
 [![DOI](https://zenodo.org/badge/425930676.svg)](https://zenodo.org/badge/latestdoi/425930676)
 
 ## System Requirements
@@ -17,7 +20,7 @@ This software requires an NVIDIA graphics card with CUDA support for deep learni
 ### Prerequisites
 - NVIDIA graphics card with CUDA support
 - NVIDIA drivers installed
-- Python 3.11 or later
+- Python 3.11 or 3.12 (3.13 is not supported: PyTorch 2.5 ships no Windows wheels for it)
 
 ## Quick Install
 
@@ -25,14 +28,14 @@ This software requires an NVIDIA graphics card with CUDA support for deep learni
 
 **Windows:**
 ```cmd
-git clone https://github.com/femr-lab/RDN_segmentation.git
+git clone https://github.com/ghart5458/RDN_segmentation.git
 cd RDN_segmentation
 install.bat
 ```
 
 **Linux:**
 ```bash
-git clone https://github.com/femr-lab/RDN_segmentation.git
+git clone https://github.com/ghart5458/RDN_segmentation.git
 cd RDN_segmentation
 chmod +x install.sh
 ./install.sh
@@ -41,7 +44,7 @@ chmod +x install.sh
 The installation script will:
 1. Check for NVIDIA GPU (required)
 2. Install uv package manager if needed
-3. Set up Python 3.11+ environment
+3. Set up a Python 3.11 or 3.12 environment
 4. Install PyTorch with CUDA support
 5. Install all dependencies
 6. Verify installation
@@ -61,21 +64,11 @@ If you prefer manual installation:
 
 2. **Clone and install:**
    ```bash
-   git clone https://github.com/femr-lab/RDN_segmentation.git
+   git clone https://github.com/ghart5458/RDN_segmentation.git
    cd RDN_segmentation
    uv sync
    uv run python setup_pytorch_wavelets.py
    ```
-
-## Legacy Installation
-
-For systems still using conda:
-```bash
-conda env create -f Setup/pytorch.yaml
-conda activate pytorch
-```
-
-**Note:** The conda environment is deprecated and will be removed in future versions. Please migrate to uv.
 
 ## Standalone Version
 
@@ -85,10 +78,10 @@ For Windows users who prefer a pre-built container, download RDN_segmentation_co
 ## Authors
 
 * **Nicholas B. Stephens** - *Initial work* nbstephens@proton.me
-* **Amiraseed Yazdani** - *Network design*
+* **Amirsaeed Yazdani** - *Network design*
 * **Yung-Chen Sun** - *Network design*
 * **Sharon Kuo** -  kuo@d.umn.edu
-* **Lily J. Demars** - lvd5263@psu.edu
+* **Lily J. DeMars** - lvd5263@psu.edu
 * **Tim M. Ryan** - *PI* tmr21@psu.edu
 * **Vishal Monga** - *PI* vum4@psu.edu
 

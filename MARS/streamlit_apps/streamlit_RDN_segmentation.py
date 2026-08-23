@@ -3246,7 +3246,7 @@ def resample_sitk_image(inputImage, spacing=None, interpolator=None, fill_value=
     # Hacky fix for the version differences
     if sitk.SITK_ITK_VERSION_MAJOR < 5:
         st.write(
-            "You have an older version of SimpleITK installed in your anaconda environment."
+            "You have an older version of SimpleITK installed in this environment."
         )
 
         resampled_inputImage = resample_filter.Execute(

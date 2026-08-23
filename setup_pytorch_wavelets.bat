@@ -1,6 +1,6 @@
 @echo off
 REM Windows batch script to install pytorch_wavelets from source
-REM This replaces the original Setup/pytorch_wavelets.bat
+REM Installs pytorch_wavelets from source into the project's uv environment.
 
 echo Installing pytorch_wavelets from GitHub source...
 

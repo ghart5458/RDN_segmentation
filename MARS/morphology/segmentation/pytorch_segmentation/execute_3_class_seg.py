@@ -1,4 +1,4 @@
-"""Script to run the 3_class model in the command line. This should be executed using the pytorch_seg conda environment
+"""Script to run the 3_class model in the command line. Run it inside the project's uv environment (uv run python ...).
 
 Author: Sun, Yung-Chen yzs5463@psu.edu
 Author: Yazdani, Amirsaeed auy200@psu.edu

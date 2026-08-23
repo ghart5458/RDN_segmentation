@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Removed
+- **conda support**: `Setup/` and its three conda-only files (`pytorch.yaml`,
+  `install_pytorch.bat`, `pytorch_wavelets.bat`) are gone, completing the deprecation
+  announced in 2.0.0. The conda recipe pinned Python 3.8 and PyTorch 1.7.0 and could no
+  longer run the current code. Install with uv; see README.
+
+### Changed
+- **Python 3.13 excluded**: `requires-python` is now `>=3.11,<3.13`. PyTorch 2.5 publishes
+  no Windows wheels for CPython 3.13, so an install on 3.13 fails at dependency resolution.
+
 ## [2.0.0] - 2024-09-22
 
 ### Major Changes - Environment Modernization
