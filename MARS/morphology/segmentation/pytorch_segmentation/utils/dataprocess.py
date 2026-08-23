@@ -193,17 +193,24 @@ class Augmentation:
         self.aug = albu.Compose([
             albu.HorizontalFlip(),
             albu.OneOf([
-            albu.RandomContrast(),
+            # albumentations >=1.0 removed RandomContrast and RandomBrightness and
+            # merged them into RandomBrightnessContrast. Splitting it into a
+            # contrast-only and a brightness-only variant keeps the three separate
+            # intensity augmentations the original pipeline picked between.
+            albu.RandomBrightnessContrast(brightness_limit=0.0, contrast_limit=0.2),
             albu.RandomGamma(),
-            albu.RandomBrightness(),
+            albu.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.0),
             ], p=0.5),
             albu.OneOf([
-            albu.ElasticTransform(alpha=60, sigma=120 * 0.05, alpha_affine=120 * 0.03),
+            # alpha_affine was removed from ElasticTransform in albumentations 1.4,
+            # and OpticalDistortion lost shift_limit in 2.0.
+            albu.ElasticTransform(alpha=60, sigma=120 * 0.05),
             albu.GridDistortion(),
-            albu.OpticalDistortion(distort_limit=2, shift_limit=0.5),
+            albu.OpticalDistortion(distort_limit=2),
             ], p=0.5),
             albu.ShiftScaleRotate(rotate_limit=180),
-            albu.Resize(output_size, output_size, always_apply=True),
+            # always_apply was removed in albumentations 2.0; p=1.0 is equivalent.
+            albu.Resize(output_size, output_size, p=1.0),
         ])
     def __call__(self, sample):
         """Apply augmentation to image and mask simultaneously.

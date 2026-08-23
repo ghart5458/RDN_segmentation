@@ -877,10 +877,10 @@ def main():
             # create train transform
             train_transform = transforms.Compose([dp.Augmentation(output_size=config['output_size']),
                                                   dp.AdjustMask(class_num=config['model']['class_num']),
-                                                  dp.Normalize(max=255, min=0),
+                                                  dp.Normalize(input_max=255, input_min=0),
                                                   dp.ToTensor()])
             val_transform = transforms.Compose([dp.AdjustMask(class_num=config['model']['class_num']),
-                                                dp.Normalize(max=255, min=0),
+                                                dp.Normalize(input_max=255, input_min=0),
                                                 dp.ToTensor()])
 
             if st.button("Train model!"):
@@ -1027,7 +1027,7 @@ def main():
             # get nets' name list and sort by creation time
             # create train transform
             val_transform = transforms.Compose([dp.AdjustMask(class_num=config['model']['class_num']),
-                                                dp.Normalize(max=255, min=0),
+                                                dp.Normalize(input_max=255, input_min=0),
                                                 dp.ToTensor()])
             data_set = HDF52D(config['path']['data_path'], [], config['csv_path']['val'], val_transform=val_transform)
             data_set.val()

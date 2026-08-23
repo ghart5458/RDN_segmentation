@@ -43,7 +43,7 @@ def get_size_of_tensor(a_tensor):
         size = size*a_tensor.shape[i]
     return size
 
-def dice_loss(pred, target, smooth=1.0, if_mean=True):
+def dice_loss(pred, target, smooth=1.0, if_mean=True, class_weights=None):
     """Compute Dice loss for segmentation.
 
     The Dice loss is based on the Dice coefficient, which measures overlap
@@ -55,6 +55,12 @@ def dice_loss(pred, target, smooth=1.0, if_mean=True):
         target (torch.Tensor): Ground truth binary masks
         smooth (float): Smoothing factor to avoid division by zero
         if_mean (bool): If True, return mean loss; otherwise return per-sample loss
+        class_weights (sequence or None): Optional per-class weights, one per class
+            in label order (air, non-bone, bone). When None -- the default -- every
+            class contributes equally, which is the historical behaviour. Supplying
+            weights makes rare classes count for more, which matters here because
+            air dominates the pixel count. Weights are used as given, so pass a set
+            that sums to 1.0 if you want to preserve the loss scale.
 
     Returns:
         torch.Tensor: Dice loss value(s)
@@ -66,7 +72,17 @@ def dice_loss(pred, target, smooth=1.0, if_mean=True):
     intersection = (pred * target).sum(dim=2).sum(dim=2)
 
     loss = ((2. * intersection + smooth) / (pred.sum(dim=2).sum(dim=2) + target.sum(dim=2).sum(dim=2) + smooth))
+    if class_weights is not None:
+        # loss is (batch, class); collapse the class axis with the given weights.
+        weights = torch.as_tensor(class_weights, dtype=loss.dtype, device=loss.device)
+        if weights.numel() != loss.shape[1]:
+            raise ValueError(
+                f"class_weights has {weights.numel()} entries but there are {loss.shape[1]} classes"
+            )
+        loss = (loss * weights).sum(dim=1)
     if if_mean:
+        # Historical unweighted alternatives, kept for reference. Note the second
+        # line contains a typo (** rather than *) and would exponentiate.
         # loss = 0.1*loss[:,0] + 0.7*loss[:,1] + 0.2*loss[:,2]
         # loss = 0.04205177**loss[:,0] + 0.73025561*loss[:,1] + 0.22769263*loss[:,2]
         return (1 - loss).mean()

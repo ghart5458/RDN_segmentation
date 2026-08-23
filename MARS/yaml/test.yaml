@@ -1,0 +1,14 @@
+# Default validation configuration read by streamlit_label_prep.py.
+# Paths are placeholders relative to wherever you launch the app.
+gpu_config:
+  gpu_name: 0
+  use_gpu: true
+model:
+  n_channels: 1
+  class_num: 3
+  # Directory holding the trained checkpoints to validate.
+  path: 'data/new_model'
+path:
+  data_path: 'data/dataset.hdf5'
+csv_path:
+  val: 'data/val.csv'

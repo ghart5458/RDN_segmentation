@@ -192,7 +192,7 @@ if __name__ == '__main__':
 
     transforms = transforms.Compose([dp.Augmentation(output_size=256),
                                      dp.AdjustMask(class_num=NUM_CLASSES_3),
-                                     dp.Normalize(max=255, min=0)])
+                                     dp.Normalize(input_max=255, input_min=0)])
 
     data_set = HDF52D(data_path,train_patches,val_patches,train_transform=transforms, train_idx=ratios)
     sample = data_set[1000]

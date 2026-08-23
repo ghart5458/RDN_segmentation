@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# TensorBoard run logs
+runs/
+
+# uv lockfile - environment is resolved per-machine here
+uv.lock
