@@ -70,11 +70,18 @@ def rdn_train(net, optimizer, data_loader, epoch=None, total_epoch=None, use_gpu
             net(image2)
             loss1 = DomainEnrichLoss()(net, index)
 
-            pred = F.sigmoid(net(image))
+            logits = net(image)
             mask = dp.create_one_hot(mask)
-            loss2 = 0.25 * bce_losses(pred, mask) + (1 - 0.25) * dice_loss(pred, mask)
 
-            loss = loss2 + 0.0001*loss1
+            # BCEWithLogitsLoss applies its own sigmoid, so it must be given raw
+            # logits; dice_loss needs probabilities. The original passed
+            # sigmoid(logits) to both, which squashed the BCE term twice.
+            probs = torch.sigmoid(logits)
+            loss2 = 0.25 * bce_losses(logits, mask) + (1 - 0.25) * dice_loss(probs, mask)
+
+            # loss1 is already scaled inside DomainEnrichLoss (lambda1/lambda2),
+            # so it is added unweighted here.
+            loss = loss2 + loss1
 
             # backward
             optimizer.zero_grad()

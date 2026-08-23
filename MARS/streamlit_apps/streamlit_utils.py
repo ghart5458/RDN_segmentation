@@ -1,10 +1,65 @@
 import glob
 import os
+import re
 from pathlib import Path
 
 import pandas as pd
 import streamlit as st
 from PIL import Image
+
+
+class _SessionStateProxy:
+    """Attribute-style view over ``st.session_state``.
+
+    The apps were written against a pre-1.0 streamlit session-state gist whose
+    object supported ``state.foo`` access, returned ``None`` for unset keys, and
+    needed an explicit ``sync()`` at the end of a run. Streamlit's built-in
+    ``st.session_state`` persists on its own and never rolls back, so this proxy
+    keeps the several hundred existing ``state.foo`` call sites working while the
+    storage underneath is the supported API.
+    """
+
+    def __call__(self, **kwargs):
+        """Set default values without clobbering anything already stored."""
+        for item, value in kwargs.items():
+            if item not in st.session_state:
+                st.session_state[item] = value
+
+    def __getitem__(self, item):
+        return st.session_state.get(item, None)
+
+    def __getattr__(self, item):
+        if item.startswith("__"):
+            raise AttributeError(item)
+        return st.session_state.get(item, None)
+
+    def __setitem__(self, item, value):
+        st.session_state[item] = value
+
+    def __setattr__(self, item, value):
+        st.session_state[item] = value
+
+    @property
+    def _state(self):
+        """Back-compat shim for code that reached into ``state._state["data"]``."""
+        return {"data": st.session_state}
+
+    def clear(self):
+        for key in list(st.session_state.keys()):
+            del st.session_state[key]
+
+    def sync(self):
+        """No-op. st.session_state persists across reruns without help."""
+        return None
+
+
+def _get_state(hash_funcs=None):  # noqa: ARG001 - kept for call-site compatibility
+    """Return the session-state proxy.
+
+    Replaces the old ``_get_state`` built on ``streamlit.server.Server`` and
+    ``streamlit.hashing._CodeHasher``, both removed in streamlit 1.x.
+    """
+    return _SessionStateProxy()
 
 
 def alpha_to_int(text):

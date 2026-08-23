@@ -9,7 +9,9 @@ authors = [
 ]
 readme = "README.md"
 license = "GPL-3.0"
-requires-python = ">=3.11,<3.14"
+# torch 2.5.x ships no Windows wheels for CPython 3.13 (Linux only), so 3.13 is
+# excluded until the torch pin moves to >=2.6.
+requires-python = ">=3.11,<3.13"
 dependencies = [
     # Core scientific computing
     "numpy>=1.21.0",
@@ -33,10 +35,17 @@ dependencies = [
     "torchvision>=0.20.0,<0.21.0",
     "tensorboard>=2.15.0",
     
+    # Machine learning utilities (utils/generate.py, utils/dataset.py)
+    "scikit-learn>=1.0.0",
+
+    # Optimizer used by the training app (streamlit_label_prep imports at module level)
+    "adabelief-pytorch==0.2.1",
+
     # Data handling
     "h5py>=3.1.0",
     "tqdm>=4.60.0",
     "pyyaml>=5.4.0",
+    "packaging>=21.0",
     
     # Web interface
     "streamlit>=1.0.0",
@@ -84,9 +93,9 @@ git-deps = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/femr-lab/RDN_segmentation"
-Repository = "https://github.com/femr-lab/RDN_segmentation"
-Documentation = "https://github.com/femr-lab/RDN_segmentation/blob/main/README.md"
+Homepage = "https://github.com/NBStephens/RDN_segmentation"
+Repository = "https://github.com/NBStephens/RDN_segmentation"
+Documentation = "https://github.com/NBStephens/RDN_segmentation/blob/main/README.md"
 
 # uv-specific configuration
 [tool.uv.sources]
@@ -148,7 +157,7 @@ ignore = [
 "MARS/streamlit_apps/*.py" = ["T201"]  # print statements allowed in streamlit apps
 
 [tool.ruff.format]
-line-ending = "auto"
+line-ending = "lf"
 indent-style = "space"
 quote-style = "double"
 docstring-code-format = true

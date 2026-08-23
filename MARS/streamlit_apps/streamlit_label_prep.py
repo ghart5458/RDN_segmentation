@@ -6,8 +6,19 @@ import cv2
 
 # Add project root to Python path for imports
 project_root = Path(__file__).resolve().parent.parent.parent
-if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
+
+# script_dir is the MARS package directory; several asset paths below are built
+# from it (logos live under MARS/streamlit_apps/).
+script_dir = project_root / "MARS"
+
+# The training code (utils/, net/) lives under pytorch_segmentation and imports
+# itself flatly ("import utils.dataprocess as dp"), so that directory has to be
+# on sys.path for `from utils.train import ...` and `from net import ...` to
+# resolve. MARS itself is added so `streamlit_apps.streamlit_utils` resolves.
+_pytorch_seg = script_dir / "morphology" / "segmentation" / "pytorch_segmentation"
+for _p in (project_root, script_dir, _pytorch_seg):
+    if str(_p) not in sys.path:
+        sys.path.insert(0, str(_p))
 
 import base64
 import concurrent.futures
@@ -16,10 +27,13 @@ import glob
 import json
 import math
 import pickle
+import re
 import shutil
 import subprocess
+import time
 import uuid
 from collections.abc import Callable
+from typing import List, Union
 from datetime import datetime, timedelta
 from functools import wraps
 from multiprocessing import cpu_count
@@ -46,13 +60,24 @@ from sklearn.utils import shuffle as sk_shuffle
 # Removed deprecated streamlit internal imports
 from torch import nn, optim
 from torch.utils.data import DataLoader
+from torch.utils.tensorboard import SummaryWriter
+from torchvision import transforms
+from tqdm import tqdm
 from utils.dataset import HDF52D, load_patches, natural_keys
-from utils.generate import load_img, separate_names, slide_windows
-from utils.label_utils import _check_label
+from utils.generate import (
+    find_match_index,
+    get_dirt_bone_patches,
+    load_img,
+    random_patches,
+    sep_string,
+    separate_names,
+    slide_windows,
+)
+from utils.label_utils import _check_label, rgb_to_gray
 from utils.losses import Accuracy, DomainEnrichLoss, dice_loss
 from utils.train import rdn_train, rdn_val
 
-from streamlit_apps.streamlit_utils import _get_user, file_selector
+from streamlit_apps.streamlit_utils import _get_state, _get_user, file_selector
 
 #To easily adjust drop down menus
 supported_file_types = ["mhd", "nii", "tif", "png", "jpg", "bmp", "dcm"]
@@ -69,16 +94,10 @@ st.set_page_config(page_title="RDN model training",
                    layout='wide',
                    initial_sidebar_state='auto')
 
-#Check the version of streamlit
-version_check = check_streamlit_versions(tested_version=73)
-check_sitk_version()
-
-if version_check == "below":
-    with st.expander("View/hide warnings"):
-        streamlit_minor(tested_version=73, below_above=version_check)
-if version_check == "above":
-    with st.expander("View/hide warnings"):
-        streamlit_minor(tested_version=73, below_above=version_check)
+#The old streamlit 0.6x/0.7x version banners (check_streamlit_versions,
+#check_sitk_version, streamlit_minor) were removed by the refactor but their call
+#sites were left behind, which made this module fail to import. Minimum versions
+#are now enforced by pyproject.toml, so the banners are simply gone.
 
 
 def main():
@@ -93,15 +112,16 @@ def main():
     #### Start of sidebar information
     #Write out the logog to the sidebar with the proper label this uses allow html so it won't work in some situations
     _custom_logo(image_path=mars_logo, image_text="RDN model training")
-    known_user = known_user_dict(user_name=current_user)
-    user_welcome_message(known_user)
+    # known_user_dict/user_welcome_message were removed by the refactor but their
+    # call sites remained; they only rendered a greeting banner.
 
     #Get a list of actions to perform in here
     model_radio_list = ['Standardize training data', 'Check training names', 'Data augmentation',
                         'Set up training parameters', 'Finalize data', 'Train model',
                         'Validate model', 'Model gallery']
-    query_params = st.experimental_get_query_params()
-    default = int(query_params["activity"][0]) if "activity" in query_params else 0
+    # st.experimental_get_query_params was removed in streamlit 1.x; st.query_params
+    # is the replacement and yields plain strings rather than one-element lists.
+    default = int(st.query_params.get("activity", 0))
 
     model_settings_activity = st.sidebar.radio(
         "What are we doing today:",
@@ -906,13 +926,15 @@ def main():
                     train_data_loader.append(DataLoader(dataset=data_set1,
                                                         batch_size=current_batch,
                                                         shuffle=True,
-                                                        num_workers=0))
+                                                        pin_memory=True,
+                                                        num_workers=_loader_workers(config)))
 
 
                     train_data_loader.append(DataLoader(dataset=data_set2,
                                                         batch_size=current_batch,
                                                         shuffle=True,
-                                                        num_workers=0))
+                                                        pin_memory=True,
+                                                        num_workers=_loader_workers(config)))
 
                     print(f"learning rate {optimizer.param_groups[0]['lr']:.6f}")
 
@@ -1669,6 +1691,40 @@ def make_parallel(func):
         return result
     return wrapper
 
+def _loader_workers(config):
+    """Number of DataLoader worker processes.
+
+    Defaults to 0 (everything loads in the main process), which is what this code
+    has always done. HDF52D opens the HDF5 file inside __getitem__, so workers are
+    safe to use and typically speed up training noticeably; raise this by setting
+    data_loader.num_workers in the training YAML. Left at 0 by default so a long
+    run cannot fail at startup on a Windows worker-spawn problem.
+    """
+    try:
+        return int(config["data_loader"].get("num_workers", 0))
+    except (KeyError, TypeError, AttributeError):
+        return 0
+
+
+def _get_tb_writer():
+    """Return this training run's TensorBoard writer, creating it once.
+
+    Kept in session state so every epoch logs to the same run directory instead
+    of opening a fresh writer per call.
+    """
+    writer = st.session_state.get("tb_writer")
+    if writer is None:
+        log_dir = Path("runs") / datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        writer = SummaryWriter(str(log_dir))
+        st.session_state["tb_writer"] = writer
+        st.session_state["tb_log_dir"] = str(log_dir)
+        st.info(
+            f"TensorBoard logging to `{log_dir}`. View it with:  "
+            f"`uv run tensorboard --logdir=runs`  then open http://localhost:6006"
+        )
+    return writer
+
+
 def rdn_train(net, optimizer, data_loader, epoch=None, total_epoch=None, use_gpu=False,):
     if use_gpu:
         net.cuda()
@@ -1676,6 +1732,8 @@ def rdn_train(net, optimizer, data_loader, epoch=None, total_epoch=None, use_gpu
         net.cpu()
     bce_losses = nn.BCEWithLogitsLoss()
     Accuracy()
+    writer = _get_tb_writer()
+    global_step = int(st.session_state.get("tb_global_step", 0))
 
     # set data_loader
     data_loader1 = data_loader[0]
@@ -1720,11 +1778,18 @@ def rdn_train(net, optimizer, data_loader, epoch=None, total_epoch=None, use_gpu
             net(image2)
             loss1 = DomainEnrichLoss()(net, index)
 
-            pred = F.sigmoid(net(image))
+            logits = net(image)
             mask = dp.create_one_hot(mask)
-            loss2 = 0.25 * bce_losses(pred, mask) + (1 - 0.25) * dice_loss(pred, mask)
 
-            loss = loss2 + 0.0001*loss1
+            # BCEWithLogitsLoss applies its own sigmoid, so it must be given raw
+            # logits; dice_loss needs probabilities. The original passed
+            # sigmoid(logits) to both, which squashed the BCE term twice.
+            probs = torch.sigmoid(logits)
+            loss2 = 0.25 * bce_losses(logits, mask) + (1 - 0.25) * dice_loss(probs, mask)
+
+            # loss1 is already scaled inside DomainEnrichLoss (lambda1/lambda2),
+            # so it is added unweighted here.
+            loss = loss2 + loss1
 
             # backward
             optimizer.zero_grad()
@@ -1741,6 +1806,31 @@ def rdn_train(net, optimizer, data_loader, epoch=None, total_epoch=None, use_gpu
             #Casting this as float explcitly seems to keep it from dropping off into NaN
             loss1_sum = loss1_sum + float(loss1.cpu().data.numpy())
             loss2_sum = loss2_sum + float(loss2.cpu().data.numpy())
+
+            writer.add_scalars(
+                "Losses",
+                {
+                    "total": float(loss.detach().cpu()),
+                    "loss1_domain_enrich": float(loss1.detach().cpu()),
+                    "loss2_bce_dice": float(loss2.detach().cpu()),
+                },
+                global_step,
+            )
+            global_step += 1
+
+        n_batches = last_batches + 1
+        writer.add_scalars(
+            "Average_losses",
+            {
+                "loss1_domain_enrich": loss1_sum / n_batches,
+                "loss2_bce_dice": loss2_sum / n_batches,
+                "total": (loss1_sum + loss2_sum) / n_batches,
+            },
+            global_step,
+        )
+        writer.add_scalar("learning_rate", optimizer.param_groups[0]["lr"], global_step)
+        writer.flush()
+        st.session_state["tb_global_step"] = global_step
 
         _end_timer_sidebar(start_timer=start_train, message="Training")
 
@@ -2148,79 +2238,10 @@ def _convert_size(sizeBytes):
 
 
 
-class _SessionState:
-
-    def __init__(self, session, hash_funcs):
-        """Initialize SessionState instance."""
-        self.__dict__["_state"] = {
-            "data": {},
-            "hash": None,
-            "hasher": _CodeHasher(hash_funcs),
-            "is_rerun": False,
-            "session": session,
-        }
-
-    def __call__(self, **kwargs):
-        """Initialize state data once."""
-        for item, value in kwargs.items():
-            if item not in self._state["data"]:
-                self._state["data"][item] = value
-
-    def __getitem__(self, item):
-        """Return a saved state value, None if item is undefined."""
-        return self._state["data"].get(item, None)
-
-    def __getattr__(self, item):
-        """Return a saved state value, None if item is undefined."""
-        return self._state["data"].get(item, None)
-
-    def __setitem__(self, item, value):
-        """Set state value."""
-        self._state["data"][item] = value
-
-    def __setattr__(self, item, value):
-        """Set state value."""
-        self._state["data"][item] = value
-
-    def clear(self):
-        """Clear session state and request a rerun."""
-        self._state["data"].clear()
-        self._state["session"].request_rerun()
-
-    def sync(self):
-        """Rerun the app with all state values up to date from the beginning to fix rollbacks."""
-        # Ensure to rerun only once to avoid infinite loops
-        # caused by a constantly changing state value at each run.
-        #
-        # Example: state.value += 1
-        if self._state["is_rerun"]:
-            self._state["is_rerun"] = False
-
-        elif self._state["hash"] is not None:
-            if self._state["hash"] != self._state["hasher"].to_bytes(self._state["data"], None):
-                self._state["is_rerun"] = True
-                self._state["session"].request_rerun()
-
-        self._state["hash"] = self._state["hasher"].to_bytes(self._state["data"], None)
-
-
-def _get_session():
-    session_id = get_report_ctx().session_id
-    session_info = Server.get_current()._get_session_info(session_id)
-
-    if session_info is None:
-        raise RuntimeError("Couldn't get your Streamlit Session object.")
-
-    return session_info.session
-
-
-def _get_state(hash_funcs=None):
-    session = _get_session()
-
-    if not hasattr(session, "_custom_session_state"):
-        session._custom_session_state = _SessionState(session, hash_funcs)
-
-    return session._custom_session_state
+# The hand-rolled _SessionState / _get_session / _get_state that used to live here
+# were built on streamlit.server.Server and streamlit.hashing._CodeHasher, both
+# removed in streamlit 1.x. _get_state is now imported from streamlit_utils and is
+# backed by st.session_state.
 
 
 if __name__ == "__main__":
