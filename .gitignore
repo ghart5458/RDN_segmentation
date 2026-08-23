@@ -133,3 +133,7 @@ runs/
 
 # uv lockfile - environment is resolved per-machine here
 uv.lock
+
+# Local working notes, not project content
+CLAUDE.md
+context/

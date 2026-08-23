@@ -49,7 +49,9 @@ def main():
     ap.add_argument("--config", required=True, help="Config.yaml from the reference run")
     ap.add_argument("--data-dir", required=True, help="Directory holding the copied dataset.hdf5 and CSVs")
     ap.add_argument("--out-dir", required=True, help="Where checkpoints go")
-    ap.add_argument("--weights", default="0.1,0.7,0.2", help="Per-class dice weights: air,non-bone,bone")
+    ap.add_argument("--weights", default="0.1,0.7,0.2",
+                    help="Per-class dice weights air,non-bone,bone, or 'none' for the "
+                         "unweighted objective (every class equal, the historical behaviour)")
     ap.add_argument("--tb-name", default="weighted_dice", help="Suffix for the TensorBoard run directory")
     ap.add_argument("--max-epochs", type=int, default=None,
                     help="Override the epoch count from the config (used for smoke tests)")
@@ -64,8 +66,12 @@ def main():
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    class_weights = [float(x) for x in args.weights.split(",")]
-    log(f"dice class weights (air, non-bone, bone): {class_weights}  sum={sum(class_weights):.4f}")
+    if args.weights.strip().lower() in ("none", "off", ""):
+        class_weights = None
+        log("dice weighting: OFF (all classes equal -- the historical objective)")
+    else:
+        class_weights = [float(x) for x in args.weights.split(",")]
+        log(f"dice class weights (air, non-bone, bone): {class_weights}  sum={sum(class_weights):.4f}")
 
     # Everything below mirrors the app; only the paths and the weighting differ.
     use_gpu = config["gpu_config"]["use_gpu"]
@@ -148,6 +154,7 @@ def main():
         "ratios": str(data_dir / "ratios.csv"),
     }
     run_config["dice_class_weights"] = class_weights
+    run_config["optimizer"] = dict(run_config["optimizer"])
     with open(out_dir / "Config.yaml", "w") as f:
         yaml.dump(run_config, f)
 
@@ -225,13 +232,13 @@ def main():
             writer.add_scalars("Losses", {
                 "total": float(loss.detach().cpu()),
                 "loss1_domain_enrich": float(loss1.detach().cpu()),
-                "loss2_bce_weighted_dice": float(loss2.detach().cpu()),
+                "loss2_bce_dice": float(loss2.detach().cpu()),
             }, global_step)
             global_step += 1
 
         writer.add_scalars("Average_losses", {
             "loss1_domain_enrich": loss1_sum / max(n_batches, 1),
-            "loss2_bce_weighted_dice": loss2_sum / max(n_batches, 1),
+            "loss2_bce_dice": loss2_sum / max(n_batches, 1),
         }, global_step)
 
         val_loss, class_val = rdn_val(net, data_set1, use_gpu=use_gpu,
